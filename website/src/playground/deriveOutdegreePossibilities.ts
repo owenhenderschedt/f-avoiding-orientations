@@ -12,6 +12,7 @@ type DeriveOutdegreePossibilitiesArgs = {
   degree: number
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+  balancedG: boolean
   balancedL: boolean
   balancedR: boolean
 }
@@ -25,6 +26,15 @@ function balancedInternalChoices(
   ])
 }
 
+function balancedWholeGraphChoices(
+  degree: number,
+): OutdegreeSet {
+  return uniqueSorted([
+    Math.floor(degree / 2),
+    Math.ceil(degree / 2),
+  ])
+}
+
 function possibilitiesForPart(
   degree: number,
   maxInternalDegree: number,
@@ -32,10 +42,6 @@ function possibilitiesForPart(
   acrossDirection: AcrossDirection | null,
   balanced: boolean,
 ): OutdegreeSet {
-  /*
-   * If the internal edges have not been balanced, then our only
-   * orientation information may come from the crossing edges.
-   */
   if (!balanced) {
     if (acrossDirection === null) {
       return allOutdegrees(degree)
@@ -48,17 +54,13 @@ function possibilitiesForPart(
     if (crossingEdgesPointOut) {
       const values: number[] = []
 
-      /*
-       * If a vertex has internal degree r, then it has d-r crossing
-       * edges, all directed outward. Its internal outdegree can still
-       * be anything from 0 through r.
-       */
       for (
         let internalDegree = 0;
         internalDegree <= maxInternalDegree;
         internalDegree += 1
       ) {
-        const crossingDegree = degree - internalDegree
+        const crossingDegree =
+          degree - internalDegree
 
         for (
           let internalOutdegree = 0;
@@ -74,10 +76,6 @@ function possibilitiesForPart(
       return uniqueSorted(values)
     }
 
-    /*
-     * All crossing edges point inward, so total outdegree comes only
-     * from internal edges.
-     */
     const values: number[] = []
 
     for (
@@ -98,11 +96,8 @@ function possibilitiesForPart(
   }
 
   /*
-   * If the internal graph is balanced but the crossing edges have not
-   * yet been oriented, then no useful uniform restriction on total
-   * outdegree follows yet. In particular, internal degree 0 is allowed
-   * by our current information, leaving every total outdegree 0,...,d
-   * possible.
+   * Balancing the internal graph alone does not yet restrict the
+   * total outdegree if the crossing edges remain unoriented.
    */
   if (acrossDirection === null) {
     return allOutdegrees(degree)
@@ -127,7 +122,10 @@ function possibilitiesForPart(
         ? degree - internalDegree
         : 0
 
-    for (const internalOutdegree of internalChoices) {
+    for (
+      const internalOutdegree
+      of internalChoices
+    ) {
       values.push(
         crossingContribution + internalOutdegree,
       )
@@ -141,10 +139,26 @@ export default function deriveOutdegreePossibilities({
   degree,
   partition,
   acrossDirection,
+  balancedG,
   balancedL,
   balancedR,
 }: DeriveOutdegreePossibilitiesArgs):
   PartOutdegreePossibilities {
+  /*
+   * A balanced orientation of the whole graph completely determines
+   * the only possible total outdegrees. For an even-regular graph,
+   * this is a single value d/2.
+   */
+  if (balancedG) {
+    const values =
+      balancedWholeGraphChoices(degree)
+
+    return {
+      L: values,
+      R: values,
+    }
+  }
+
   if (partition === null) {
     const all = allOutdegrees(degree)
 

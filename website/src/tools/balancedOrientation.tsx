@@ -1,26 +1,45 @@
 import Math from '../components/Math'
-import type { GraphPart } from '../playground/outdegreePossibilities'
 import type { LovaszPair } from './lovaszPartition'
+
+export type BalancedTarget = 'G' | 'L' | 'R'
 
 export const balancedOrientationTool = {
   id: 'balanced-orientation',
   name: 'Balanced Orientation',
 } as const
 
+export function getBalanceLabel(
+  target: BalancedTarget,
+) {
+  return `Balance ${target}`
+}
+
 type BalancedOrientationReferenceProps = {
-  part: GraphPart
-  partition: LovaszPair
+  target: BalancedTarget
+  degree: number
+  partition: LovaszPair | null
 }
 
 export function BalancedOrientationReference({
-  part,
+  target,
+  degree,
   partition,
 }: BalancedOrientationReferenceProps) {
+  const isWholeGraph = target === 'G'
+
   const subgraph =
-    part === 'L' ? 'G[L]' : 'G[R]'
+    target === 'G'
+      ? 'G'
+      : target === 'L'
+        ? 'G[L]'
+        : 'G[R]'
 
   const maxInternalDegree =
-    part === 'L' ? partition.s : partition.t
+    target === 'L'
+      ? partition?.s
+      : target === 'R'
+        ? partition?.t
+        : null
 
   return (
     <>
@@ -35,7 +54,12 @@ export function BalancedOrientationReference({
           <Math>{'v\\in V(H)'}</Math>,
         </p>
 
-        <div style={{ textAlign: 'center', margin: '18px 0' }}>
+        <div
+          style={{
+            textAlign: 'center',
+            margin: '18px 0',
+          }}
+        >
           <Math display>
             {
               'd_D^+(v)\\in'
@@ -68,9 +92,9 @@ export function BalancedOrientationReference({
         </p>
 
         <p>
-          Orient an Euler tour of each nontrivial component consistently
-          around the tour. Every vertex then has equal indegree and
-          outdegree in the augmented graph.
+          Orient an Euler tour of each nontrivial component
+          consistently around the tour. Every vertex then has equal
+          indegree and outdegree in the augmented graph.
         </p>
 
         <p>
@@ -79,7 +103,12 @@ export function BalancedOrientationReference({
           incident with <Math>{'v'}</Math>, so
         </p>
 
-        <div style={{ textAlign: 'center', margin: '18px 0' }}>
+        <div
+          style={{
+            textAlign: 'center',
+            margin: '18px 0',
+          }}
+        >
           <Math display>
             {'d_D^+(v)=\\frac{d_H(v)}{2}.'}
           </Math>
@@ -90,7 +119,12 @@ export function BalancedOrientationReference({
           deleted at <Math>{'v'}</Math>. Therefore
         </p>
 
-        <div style={{ textAlign: 'center', margin: '18px 0' }}>
+        <div
+          style={{
+            textAlign: 'center',
+            margin: '18px 0',
+          }}
+        >
           <Math display>
             {
               'd_D^+(v)\\in'
@@ -111,46 +145,115 @@ export function BalancedOrientationReference({
       <section>
         <h3>Application here</h3>
 
-        <p>
-          We apply the lemma to <Math>{subgraph}</Math>. The Lovász
-          partition gives
-        </p>
+        {isWholeGraph ? (
+          <>
+            <p>
+              We apply the lemma directly to the{' '}
+              <Math>{`${degree}`}</Math>-regular graph{' '}
+              <Math>{'G'}</Math>. Therefore every vertex has
+              outdegree
+            </p>
 
-        <div style={{ textAlign: 'center', margin: '18px 0' }}>
-          <Math display>
-            {`\\Delta(${subgraph})\\le ${maxInternalDegree}.`}
-          </Math>
-        </div>
+            <div
+              style={{
+                textAlign: 'center',
+                margin: '18px 0',
+              }}
+            >
+              <Math display>
+                {
+                  `d_D^+(v)\\in`
+                  + `\\left\\{`
+                  + `\\left\\lfloor\\frac{${degree}}{2}\\right\\rfloor,`
+                  + `\\left\\lceil\\frac{${degree}}{2}\\right\\rceil`
+                  + `\\right\\}.`
+                }
+              </Math>
+            </div>
 
-        <p>
-          Thus we may orient every edge of <Math>{subgraph}</Math> so
-          that each vertex <Math>{`v\\in ${part}`}</Math> has internal
-          outdegree
-        </p>
+            {degree % 2 === 0 && (
+              <p>
+                Since <Math>{`${degree}`}</Math> is even, this simply
+                gives
+              </p>
+            )}
 
-        <div style={{ textAlign: 'center', margin: '18px 0' }}>
-          <Math display>
-            {
-              'd_{'
-              + subgraph
-              + '}^+(v)\\in'
-              + '\\left\\{'
-              + '\\left\\lfloor\\frac{d_{'
-              + subgraph
-              + '}(v)}{2}\\right\\rfloor,'
-              + '\\left\\lceil\\frac{d_{'
-              + subgraph
-              + '}(v)}{2}\\right\\rceil'
-              + '\\right\\}.'
-            }
-          </Math>
-        </div>
+            {degree % 2 === 0 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  margin: '18px 0',
+                }}
+              >
+                <Math display>
+                  {`d_D^+(v)=${degree / 2}.`}
+                </Math>
+              </div>
+            )}
 
-        <p>
-          This move orients only the edges inside{' '}
-          <Math>{subgraph}</Math>. It does not orient or alter any edge
-          between <Math>{'L'}</Math> and <Math>{'R'}</Math>.
-        </p>
+            <p>
+              In this case the balanced orientation orients every edge
+              of <Math>{'G'}</Math>, so it is already a complete
+              orientation.
+            </p>
+          </>
+        ) : (
+          <>
+            <p>
+              We apply the lemma to <Math>{subgraph}</Math>. The
+              Lovász partition gives
+            </p>
+
+            <div
+              style={{
+                textAlign: 'center',
+                margin: '18px 0',
+              }}
+            >
+              <Math display>
+                {
+                  `\\Delta(${subgraph})\\le ${maxInternalDegree}.`
+                }
+              </Math>
+            </div>
+
+            <p>
+              Thus we may orient every edge of{' '}
+              <Math>{subgraph}</Math> so that each vertex{' '}
+              <Math>{`v\\in ${target}`}</Math> has internal outdegree
+            </p>
+
+            <div
+              style={{
+                textAlign: 'center',
+                margin: '18px 0',
+              }}
+            >
+              <Math display>
+                {
+                  'd_{'
+                  + subgraph
+                  + '}^+(v)\\in'
+                  + '\\left\\{'
+                  + '\\left\\lfloor\\frac{d_{'
+                  + subgraph
+                  + '}(v)}{2}\\right\\rfloor,'
+                  + '\\left\\lceil\\frac{d_{'
+                  + subgraph
+                  + '}(v)}{2}\\right\\rceil'
+                  + '\\right\\}.'
+                }
+              </Math>
+            </div>
+
+            <p>
+              This move orients only the edges inside{' '}
+              <Math>{subgraph}</Math>. It does not orient or alter any
+              edge between <Math>{'L'}</Math> and{' '}
+              <Math>{'R'}</Math>.
+            </p>
+          </>
+        )}
       </section>
     </>
   )

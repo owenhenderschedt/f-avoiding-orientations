@@ -17,10 +17,14 @@ export type PlaygroundMove =
       type: 'balanced-orientation'
       part: GraphPart
     }
+  | {
+      type: 'balanced-whole-graph'
+    }
 
 export type PlaygroundState = {
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+  balancedG: boolean
   balancedL: boolean
   balancedR: boolean
 }
@@ -28,6 +32,7 @@ export type PlaygroundState = {
 const initialState: PlaygroundState = {
   partition: null,
   acrossDirection: null,
+  balancedG: false,
   balancedL: false,
   balancedR: false,
 }
@@ -45,7 +50,8 @@ function deriveState(
     }
 
     if (move.type === 'orient-across') {
-      state.acrossDirection = move.direction
+      state.acrossDirection =
+        move.direction
     }
 
     if (move.type === 'balanced-orientation') {
@@ -57,6 +63,10 @@ function deriveState(
         state.balancedR = true
       }
     }
+
+    if (move.type === 'balanced-whole-graph') {
+      state.balancedG = true
+    }
   }
 
   return state
@@ -65,7 +75,8 @@ function deriveState(
 export default function usePlayground(
   degree: number,
 ) {
-  const [moves, setMoves] = useState<PlaygroundMove[]>([])
+  const [moves, setMoves] =
+    useState<PlaygroundMove[]>([])
 
   const state = deriveState(moves)
 
@@ -73,7 +84,9 @@ export default function usePlayground(
     deriveOutdegreePossibilities({
       degree,
       partition: state.partition,
-      acrossDirection: state.acrossDirection,
+      acrossDirection:
+        state.acrossDirection,
+      balancedG: state.balancedG,
       balancedL: state.balancedL,
       balancedR: state.balancedR,
     })
@@ -102,12 +115,23 @@ export default function usePlayground(
     ])
   }
 
-  function balancePart(part: GraphPart) {
+  function balancePart(
+    part: GraphPart,
+  ) {
     setMoves((current) => [
       ...current,
       {
         type: 'balanced-orientation',
         part,
+      },
+    ])
+  }
+
+  function balanceGraph() {
+    setMoves((current) => [
+      ...current,
+      {
+        type: 'balanced-whole-graph',
       },
     ])
   }
@@ -127,22 +151,22 @@ export default function usePlayground(
     state,
 
     partition: state.partition,
-    acrossDirection: state.acrossDirection,
+    acrossDirection:
+      state.acrossDirection,
+
+    balancedG: state.balancedG,
     balancedL: state.balancedL,
     balancedR: state.balancedR,
 
     outdegreePossibilities,
 
-    /*
-     * Temporary compatibility name for GraphView.
-     * We can remove this once all files use the more general
-     * "outdegreePossibilities" terminology.
-     */
-    outdegreeGuarantees: outdegreePossibilities,
+    outdegreeGuarantees:
+      outdegreePossibilities,
 
     applyLovaszPartition,
     orientAcross,
     balancePart,
+    balanceGraph,
 
     undo,
     reset,

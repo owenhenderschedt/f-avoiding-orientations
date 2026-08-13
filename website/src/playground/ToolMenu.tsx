@@ -11,21 +11,25 @@ import type { GraphPart } from './outdegreePossibilities'
 type ToolMenuProps = {
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+  balancedG: boolean
   balancedL: boolean
   balancedR: boolean
 
   onApplyLovasz: (pair: LovaszPair) => void
   onOrientAcross: (direction: AcrossDirection) => void
+  onBalanceGraph: () => void
   onBalancePart: (part: GraphPart) => void
 }
 
 export default function ToolMenu({
   partition,
   acrossDirection,
+  balancedG,
   balancedL,
   balancedR,
   onApplyLovasz,
   onOrientAcross,
+  onBalanceGraph,
   onBalancePart,
 }: ToolMenuProps) {
   const [toolsOpen, setToolsOpen] = useState(false)
@@ -46,6 +50,11 @@ export default function ToolMenu({
     direction: AcrossDirection,
   ) {
     onOrientAcross(direction)
+    setToolsOpen(false)
+  }
+
+  function applyBalanceGraph() {
+    onBalanceGraph()
     setToolsOpen(false)
   }
 
@@ -113,16 +122,35 @@ export default function ToolMenu({
             textAlign: 'left',
           }}
         >
-          {partition === null ? (
+          {balancedG ? (
+            <div
+              style={{
+                padding: '10px 14px',
+                color: '#64748b',
+              }}
+            >
+              No additional tools yet.
+            </div>
+          ) : partition === null ? (
             <>
               {!lovaszOpen ? (
-                <button
-                  type="button"
-                  onClick={() => setLovaszOpen(true)}
-                  style={menuButtonStyle}
-                >
-                  {lovaszPartitionTool.menuLabel} →
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setLovaszOpen(true)}
+                    style={menuButtonStyle}
+                  >
+                    {lovaszPartitionTool.menuLabel} →
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={applyBalanceGraph}
+                    style={menuButtonStyle}
+                  >
+                    Balance <Math>{'G'}</Math>
+                  </button>
+                </>
               ) : (
                 <>
                   <div

@@ -1,10 +1,15 @@
 import Math from '../components/Math'
 import PossibleOutdegrees from './PossibleOutdegrees'
-import { allOutdegrees } from './outdegreePossibilities'
+import {
+  allOutdegrees,
+} from './outdegreePossibilities'
 import {
   lovaszPartitionTool,
   type LovaszPair,
 } from '../tools/lovaszPartition'
+import type {
+  BalancedTarget,
+} from '../tools/balancedOrientation'
 import type {
   AcrossDirection,
   AcrossOutdegreeGuarantees,
@@ -15,16 +20,133 @@ type GraphViewProps = {
   forbiddenSet: readonly number[]
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+  balancedG: boolean
+  balancedL: boolean
+  balancedR: boolean
   outdegreeGuarantees: AcrossOutdegreeGuarantees | null
   onOpenLovaszReference: () => void
+  onOpenBalancedReference: (
+    target: BalancedTarget,
+  ) => void
 }
 
-function sameValues(a: number[], b: number[]) {
+type BalancedBadgeProps = {
+  target: BalancedTarget
+  x: number
+  y: number
+  onOpen: (
+    target: BalancedTarget,
+  ) => void
+}
+
+function sameValues(
+  a: readonly number[],
+  b: readonly number[],
+) {
   if (a.length !== b.length) {
     return false
   }
 
-  return a.every((value, index) => value === b[index])
+  return a.every(
+    (value, index) => value === b[index],
+  )
+}
+
+function BalancedBadge({
+  target,
+  x,
+  y,
+  onOpen,
+}: BalancedBadgeProps) {
+  return (
+    <foreignObject
+      x={x}
+      y={y}
+      width="130"
+      height="82"
+    >
+      <div
+        style={{
+          width: '100%',
+          textAlign: 'center',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => onOpen(target)}
+          aria-label={`Balanced orientation of ${target}`}
+          style={{
+            font: 'inherit',
+            color: '#64748b',
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-block',
+              fontSize: '20px',
+              lineHeight: 1.1,
+              borderBottom: '1px solid #94a3b8',
+              paddingBottom: '2px',
+            }}
+          >
+            balanced
+          </div>
+
+          <svg
+            viewBox="0 0 70 25"
+            width="70"
+            height="25"
+            aria-hidden="true"
+            style={{
+              display: 'block',
+              margin: '7px auto 0',
+            }}
+          >
+            <g
+              stroke="#64748b"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              fill="#64748b"
+            >
+              <line
+                x1="10"
+                y1="5"
+                x2="54"
+                y2="5"
+              />
+              <polygon
+                points="54,5 47,1.5 47,8.5"
+              />
+
+              <line
+                x1="58"
+                y1="12.5"
+                x2="14"
+                y2="12.5"
+              />
+              <polygon
+                points="14,12.5 21,9 21,16"
+              />
+
+              <line
+                x1="10"
+                y1="20"
+                x2="54"
+                y2="20"
+              />
+              <polygon
+                points="54,20 47,16.5 47,23.5"
+              />
+            </g>
+          </svg>
+        </button>
+      </div>
+    </foreignObject>
+  )
 }
 
 export default function GraphView({
@@ -32,25 +154,29 @@ export default function GraphView({
   forbiddenSet,
   partition,
   acrossDirection,
+  balancedG,
+  balancedL,
+  balancedR,
   outdegreeGuarantees,
   onOpenLovaszReference,
+  onOpenBalancedReference,
 }: GraphViewProps) {
-  const allPossible = allOutdegrees(degree)
+  const allPossible =
+    allOutdegrees(degree)
 
-  /*
-   * Before any information distinguishes the two parts, every vertex
-   * has the same possible total outdegrees 0,...,d.
-   */
   const possibleOutdegreesL =
-    outdegreeGuarantees?.L ?? allPossible
+    outdegreeGuarantees?.L ??
+    allPossible
 
   const possibleOutdegreesR =
-    outdegreeGuarantees?.R ?? allPossible
+    outdegreeGuarantees?.R ??
+    allPossible
 
-  const sharedPossibilities = sameValues(
-    possibleOutdegreesL,
-    possibleOutdegreesR,
-  )
+  const sharedPossibilities =
+    sameValues(
+      possibleOutdegreesL,
+      possibleOutdegreesR,
+    )
 
   if (partition === null) {
     return (
@@ -61,7 +187,8 @@ export default function GraphView({
             marginBottom: '20px',
           }}
         >
-          a <Math>{`${degree}`}</Math>-regular graph <Math>G</Math>
+          a <Math>{`${degree}`}</Math>-regular graph{' '}
+          <Math>G</Math>
         </div>
 
         <svg
@@ -105,7 +232,7 @@ export default function GraphView({
 
           <text
             x="300"
-            y="315"
+            y="295"
             textAnchor="middle"
             fontSize="54"
             fill="#334155"
@@ -114,6 +241,17 @@ export default function GraphView({
           >
             G
           </text>
+
+          {balancedG && (
+            <BalancedBadge
+              target="G"
+              x={235}
+              y={320}
+              onOpen={
+                onOpenBalancedReference
+              }
+            />
+          )}
         </svg>
 
         <div
@@ -123,8 +261,12 @@ export default function GraphView({
           }}
         >
           <PossibleOutdegrees
-            values={allPossible}
-            forbiddenSet={forbiddenSet}
+            values={
+              possibleOutdegreesL
+            }
+            forbiddenSet={
+              forbiddenSet
+            }
           />
         </div>
       </>
@@ -143,7 +285,9 @@ export default function GraphView({
         -
         <button
           type="button"
-          onClick={onOpenLovaszReference}
+          onClick={
+            onOpenLovaszReference
+          }
           style={{
             font: 'inherit',
             color: '#334155',
@@ -232,7 +376,7 @@ export default function GraphView({
 
         <text
           x="230"
-          y="235"
+          y="225"
           textAnchor="middle"
           fontSize="48"
           fill="#334155"
@@ -244,7 +388,7 @@ export default function GraphView({
 
         <text
           x="570"
-          y="235"
+          y="225"
           textAnchor="middle"
           fontSize="48"
           fill="#334155"
@@ -254,6 +398,28 @@ export default function GraphView({
           R
         </text>
 
+        {balancedL && (
+          <BalancedBadge
+            target="L"
+            x={165}
+            y={245}
+            onOpen={
+              onOpenBalancedReference
+            }
+          />
+        )}
+
+        {balancedR && (
+          <BalancedBadge
+            target="R"
+            x={505}
+            y={245}
+            onOpen={
+              onOpenBalancedReference
+            }
+          />
+        )}
+
         {acrossDirection !== null && (
           <g
             stroke="#475569"
@@ -261,16 +427,28 @@ export default function GraphView({
             strokeLinecap="round"
             fill="none"
           >
-            {[175, 205, 235, 265].map((y) => (
-              <line
-                key={y}
-                x1={acrossDirection === 'L-to-R' ? 360 : 440}
-                y1={y}
-                x2={acrossDirection === 'L-to-R' ? 440 : 360}
-                y2={y}
-                markerEnd="url(#filled-arrowhead)"
-              />
-            ))}
+            {[175, 205, 235, 265].map(
+              (y) => (
+                <line
+                  key={y}
+                  x1={
+                    acrossDirection ===
+                    'L-to-R'
+                      ? 360
+                      : 440
+                  }
+                  y1={y}
+                  x2={
+                    acrossDirection ===
+                    'L-to-R'
+                      ? 440
+                      : 360
+                  }
+                  y2={y}
+                  markerEnd="url(#filled-arrowhead)"
+                />
+              ),
+            )}
           </g>
         )}
 
@@ -323,8 +501,12 @@ export default function GraphView({
           }}
         >
           <PossibleOutdegrees
-            values={possibleOutdegreesL}
-            forbiddenSet={forbiddenSet}
+            values={
+              possibleOutdegreesL
+            }
+            forbiddenSet={
+              forbiddenSet
+            }
           />
         </div>
       ) : (
@@ -333,18 +515,27 @@ export default function GraphView({
             maxWidth: '620px',
             margin: '8px auto 0',
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns:
+              '1fr 1fr',
             gap: '30px',
           }}
         >
           <PossibleOutdegrees
-            values={possibleOutdegreesL}
-            forbiddenSet={forbiddenSet}
+            values={
+              possibleOutdegreesL
+            }
+            forbiddenSet={
+              forbiddenSet
+            }
           />
 
           <PossibleOutdegrees
-            values={possibleOutdegreesR}
-            forbiddenSet={forbiddenSet}
+            values={
+              possibleOutdegreesR
+            }
+            forbiddenSet={
+              forbiddenSet
+            }
           />
         </div>
       )}
