@@ -21,17 +21,28 @@ import {
   OrientedTwoFactorReference,
   orientedTwoFactorTool,
 } from '../tools/orientedTwoFactor'
+import {
+  HasanvandCompressionReference,
+  hasanvandCompressionTool,
+} from '../tools/hasanvandCompression'
 
 type ActiveReference =
   | {
       type: 'lovasz'
     }
   | {
-      type: 'balanced-orientation'
-      target: BalancedTarget
+      type:
+        'balanced-orientation'
+      target:
+        BalancedTarget
     }
   | {
-      type: 'oriented-two-factor'
+      type:
+        'oriented-two-factor'
+    }
+  | {
+      type:
+        'hasanvand-compression'
     }
   | null
 
@@ -39,10 +50,14 @@ export default function BlobLab() {
   const [
     activeReference,
     setActiveReference,
-  ] = useState<ActiveReference>(null)
+  ] = useState<ActiveReference>(
+    null,
+  )
 
   const playground =
-    usePlayground(prototypeCase.degree)
+    usePlayground(
+      prototypeCase.degree,
+    )
 
   const orientationStatus =
     getOrientationStatus({
@@ -50,13 +65,20 @@ export default function BlobLab() {
         prototypeCase.forbiddenSet,
 
       outdegreePossibilities:
-        playground.outdegreePossibilities,
+        playground
+          .outdegreePossibilities,
 
       balancedG:
         playground.balancedG,
 
+      hasanvandG:
+        playground.hasanvandG !==
+        null,
+
       acrossOriented:
-        playground.acrossDirection !== null,
+        playground
+          .acrossDirection !==
+        null,
 
       balancedL:
         playground.balancedL,
@@ -67,11 +89,13 @@ export default function BlobLab() {
 
   function undo() {
     playground.undo()
+
     setActiveReference(null)
   }
 
   function reset() {
     playground.reset()
+
     setActiveReference(null)
   }
 
@@ -82,7 +106,10 @@ export default function BlobLab() {
       : activeReference?.type ===
           'oriented-two-factor'
         ? orientedTwoFactorTool.name
-        : lovaszPartitionTool.name
+        : activeReference?.type ===
+            'hasanvand-compression'
+          ? hasanvandCompressionTool.name
+          : lovaszPartitionTool.name
 
   return (
     <>
@@ -107,8 +134,8 @@ export default function BlobLab() {
             marginBottom: '40px',
           }}
         >
-          Visual experiments for the symbolic graph
-          representation.
+          Visual experiments for the
+          symbolic graph representation.
         </p>
 
         <CaseStatus
@@ -116,13 +143,16 @@ export default function BlobLab() {
             prototypeCase.degree
           }
           forbiddenSet={
-            prototypeCase.forbiddenSet
+            prototypeCase
+              .forbiddenSet
           }
           isComplete={
-            orientationStatus.isComplete
+            orientationStatus
+              .isComplete
           }
           isValid={
-            orientationStatus.isValidFAvoiding
+            orientationStatus
+              .isValidFAvoiding
           }
         />
 
@@ -136,22 +166,27 @@ export default function BlobLab() {
               prototypeCase.degree
             }
             workingDegree={
-              playground.workingDegree
+              playground
+                .workingDegree
             }
             fixedOutdegreeContribution={
-              playground.fixedOutdegreeContribution
+              playground
+                .fixedOutdegreeContribution
             }
             orientedTwoFactorCount={
-              playground.orientedTwoFactorCount
+              playground
+                .orientedTwoFactorCount
             }
             forbiddenSet={
-              prototypeCase.forbiddenSet
+              prototypeCase
+                .forbiddenSet
             }
             partition={
               playground.partition
             }
             acrossDirection={
-              playground.acrossDirection
+              playground
+                .acrossDirection
             }
             balancedG={
               playground.balancedG
@@ -162,8 +197,12 @@ export default function BlobLab() {
             balancedR={
               playground.balancedR
             }
+            hasanvandG={
+              playground.hasanvandG
+            }
             outdegreeGuarantees={
-              playground.outdegreePossibilities
+              playground
+                .outdegreePossibilities
             }
             onOpenLovaszReference={() =>
               setActiveReference({
@@ -185,13 +224,20 @@ export default function BlobLab() {
                   'oriented-two-factor',
               })
             }
+            onOpenHasanvandReference={() =>
+              setActiveReference({
+                type:
+                  'hasanvand-compression',
+              })
+            }
           />
 
           <div
             style={{
               marginTop: '28px',
               display: 'flex',
-              justifyContent: 'center',
+              justifyContent:
+                'center',
               gap: '14px',
               alignItems:
                 'flex-start',
@@ -199,13 +245,15 @@ export default function BlobLab() {
           >
             <ToolMenu
               workingDegree={
-                playground.workingDegree
+                playground
+                  .workingDegree
               }
               partition={
                 playground.partition
               }
               acrossDirection={
-                playground.acrossDirection
+                playground
+                  .acrossDirection
               }
               balancedG={
                 playground.balancedG
@@ -216,20 +264,32 @@ export default function BlobLab() {
               balancedR={
                 playground.balancedR
               }
+              hasanvandG={
+                playground.hasanvandG
+              }
               onApplyLovasz={
-                playground.applyLovaszPartition
+                playground
+                  .applyLovaszPartition
               }
               onOrientAcross={
-                playground.orientAcross
+                playground
+                  .orientAcross
               }
               onBalanceGraph={
-                playground.balanceGraph
+                playground
+                  .balanceGraph
               }
               onBalancePart={
-                playground.balancePart
+                playground
+                  .balancePart
               }
               onTakeOrientedTwoFactor={
-                playground.takeOrientedTwoFactor
+                playground
+                  .takeOrientedTwoFactor
+              }
+              onApplyHasanvand={
+                playground
+                  .applyHasanvandCompression
               }
             />
 
@@ -239,14 +299,18 @@ export default function BlobLab() {
                 onClick={reset}
                 style={{
                   font: 'inherit',
-                  padding: '10px 18px',
+                  padding:
+                    '10px 18px',
                   border:
                     '1px solid #64748b',
-                  borderRadius: '8px',
+                  borderRadius:
+                    '8px',
                   background:
                     '#f8fafc',
-                  color: '#334155',
-                  cursor: 'pointer',
+                  color:
+                    '#334155',
+                  cursor:
+                    'pointer',
                 }}
               >
                 Reset
@@ -262,13 +326,18 @@ export default function BlobLab() {
             <ProofHistory
               steps={
                 playground.moves.map(
-                  (move, index) => {
+                  (
+                    move,
+                    index,
+                  ) => {
                     if (
                       move.type ===
                       'lovasz-partition'
                     ) {
                       return (
-                        <span key={index}>
+                        <span
+                          key={index}
+                        >
                           Lovász{' '}
                           <Math>
                             {`(${move.pair.s},${move.pair.t})`}
@@ -282,7 +351,9 @@ export default function BlobLab() {
                       'orient-across'
                     ) {
                       return (
-                        <span key={index}>
+                        <span
+                          key={index}
+                        >
                           Orient{' '}
                           <Math>
                             {move.direction ===
@@ -299,10 +370,14 @@ export default function BlobLab() {
                       'balanced-orientation'
                     ) {
                       return (
-                        <span key={index}>
+                        <span
+                          key={index}
+                        >
                           Balance{' '}
                           <Math>
-                            {move.part}
+                            {
+                              move.part
+                            }
                           </Math>
                         </span>
                       )
@@ -313,9 +388,13 @@ export default function BlobLab() {
                       'balanced-whole-graph'
                     ) {
                       return (
-                        <span key={index}>
+                        <span
+                          key={index}
+                        >
                           Balance{' '}
-                          <Math>{'G'}</Math>
+                          <Math>
+                            {'G'}
+                          </Math>
                         </span>
                       )
                     }
@@ -325,8 +404,26 @@ export default function BlobLab() {
                       'oriented-two-factor'
                     ) {
                       return (
-                        <span key={index}>
+                        <span
+                          key={index}
+                        >
                           Orient a 2-factor
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
+                      'hasanvand-compression'
+                    ) {
+                      return (
+                        <span
+                          key={index}
+                        >
+                          Hasanvand{' '}
+                          <Math>
+                            {`(${move.parameters.p},${move.parameters.q})`}
+                          </Math>
                         </span>
                       )
                     }
@@ -348,7 +445,9 @@ export default function BlobLab() {
         open={
           activeReference !== null
         }
-        title={referenceTitle}
+        title={
+          referenceTitle
+        }
         onClose={() =>
           setActiveReference(null)
         }
@@ -369,7 +468,8 @@ export default function BlobLab() {
               activeReference.target
             }
             degree={
-              playground.workingDegree
+              playground
+                .workingDegree
             }
             partition={
               playground.partition
@@ -381,10 +481,24 @@ export default function BlobLab() {
           'oriented-two-factor' && (
           <OrientedTwoFactorReference
             degree={
-              playground.workingDegree + 2
+              playground
+                .workingDegree + 2
             }
           />
         )}
+
+        {activeReference?.type ===
+          'hasanvand-compression' &&
+          playground.hasanvandG !==
+            null && (
+            <HasanvandCompressionReference
+              target="G"
+              parameters={
+                playground
+                  .hasanvandG
+              }
+            />
+          )}
       </ToolReferencePanel>
     </>
   )

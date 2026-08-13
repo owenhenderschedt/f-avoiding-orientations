@@ -8,22 +8,49 @@ import {
 import {
   orientedTwoFactorTool,
 } from '../tools/orientedTwoFactor'
-import type { AcrossDirection } from '../tools/orientAcrossPartition'
-import type { GraphPart } from './outdegreePossibilities'
+import {
+  getHasanvandParameterPairs,
+  hasanvandCompressionTool,
+  type HasanvandParameters,
+} from '../tools/hasanvandCompression'
+import type {
+  AcrossDirection,
+} from '../tools/orientAcrossPartition'
+import type {
+  GraphPart,
+} from './outdegreePossibilities'
 
 type ToolMenuProps = {
   workingDegree: number
+
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
 
-  onApplyLovasz: (pair: LovaszPair) => void
-  onOrientAcross: (direction: AcrossDirection) => void
+  hasanvandG:
+    HasanvandParameters | null
+
+  onApplyLovasz:
+    (pair: LovaszPair) => void
+
+  onOrientAcross:
+    (direction: AcrossDirection) => void
+
   onBalanceGraph: () => void
-  onBalancePart: (part: GraphPart) => void
-  onTakeOrientedTwoFactor: () => void
+
+  onBalancePart:
+    (part: GraphPart) => void
+
+  onTakeOrientedTwoFactor:
+    () => void
+
+  onApplyHasanvand:
+    (
+      parameters: HasanvandParameters,
+    ) => void
 }
 
 export default function ToolMenu({
@@ -33,23 +60,55 @@ export default function ToolMenu({
   balancedG,
   balancedL,
   balancedR,
+  hasanvandG,
   onApplyLovasz,
   onOrientAcross,
   onBalanceGraph,
   onBalancePart,
   onTakeOrientedTwoFactor,
+  onApplyHasanvand,
 }: ToolMenuProps) {
-  const [toolsOpen, setToolsOpen] =
-    useState(false)
+  const [
+    toolsOpen,
+    setToolsOpen,
+  ] = useState(false)
 
-  const [lovaszOpen, setLovaszOpen] =
-    useState(false)
+  const [
+    lovaszOpen,
+    setLovaszOpen,
+  ] = useState(false)
+
+  const [
+    hasanvandOpen,
+    setHasanvandOpen,
+  ] = useState(false)
 
   const lovaszPairs =
-    getLovaszPairs(workingDegree)
+    getLovaszPairs(
+      workingDegree,
+    )
+
+  const hasanvandPairs =
+    getHasanvandParameterPairs(
+      workingDegree,
+    )
 
   function toggleTools() {
-    setToolsOpen((current) => !current)
+    setToolsOpen(
+      (current) => !current,
+    )
+
+    setLovaszOpen(false)
+    setHasanvandOpen(false)
+  }
+
+  function openLovaszMenu() {
+    setLovaszOpen(true)
+    setHasanvandOpen(false)
+  }
+
+  function openHasanvandMenu() {
+    setHasanvandOpen(true)
     setLovaszOpen(false)
   }
 
@@ -57,19 +116,23 @@ export default function ToolMenu({
     pair: LovaszPair,
   ) {
     onApplyLovasz(pair)
+
     setToolsOpen(false)
     setLovaszOpen(false)
+    setHasanvandOpen(false)
   }
 
   function applyAcrossOrientation(
     direction: AcrossDirection,
   ) {
     onOrientAcross(direction)
+
     setToolsOpen(false)
   }
 
   function applyBalanceGraph() {
     onBalanceGraph()
+
     setToolsOpen(false)
   }
 
@@ -77,18 +140,34 @@ export default function ToolMenu({
     part: GraphPart,
   ) {
     onBalancePart(part)
+
     setToolsOpen(false)
   }
 
   function takeOrientedTwoFactor() {
     onTakeOrientedTwoFactor()
+
     setToolsOpen(false)
+  }
+
+  function applyHasanvand(
+    parameters:
+      HasanvandParameters,
+  ) {
+    onApplyHasanvand(
+      parameters,
+    )
+
+    setToolsOpen(false)
+    setHasanvandOpen(false)
+    setLovaszOpen(false)
   }
 
   const controlButtonStyle = {
     font: 'inherit',
     padding: '10px 18px',
-    border: '1px solid #64748b',
+    border:
+      '1px solid #64748b',
     borderRadius: '8px',
     background: '#f8fafc',
     color: '#334155',
@@ -107,11 +186,21 @@ export default function ToolMenu({
     textAlign: 'left' as const,
   }
 
+  const orientationFinished =
+    balancedG ||
+    hasanvandG !== null
+
   const canTakeTwoFactor =
     partition === null &&
-    !balancedG &&
+    !orientationFinished &&
     workingDegree >= 2 &&
     workingDegree % 2 === 0
+
+  const canApplyHasanvand =
+    partition === null &&
+    !orientationFinished &&
+    workingDegree > 0 &&
+    hasanvandPairs.length > 0
 
   const hasAvailablePartitionTool =
     acrossDirection === null ||
@@ -122,7 +211,7 @@ export default function ToolMenu({
     <div
       style={{
         position: 'relative',
-        width: '250px',
+        width: '300px',
       }}
     >
       <button
@@ -133,7 +222,10 @@ export default function ToolMenu({
           width: '100%',
         }}
       >
-        Tools {toolsOpen ? '▴' : '▾'}
+        Tools{' '}
+        {toolsOpen
+          ? '▴'
+          : '▾'}
       </button>
 
       {toolsOpen && (
@@ -141,7 +233,8 @@ export default function ToolMenu({
           style={{
             marginTop: '8px',
             padding: '6px',
-            border: '1px solid #cbd5e1',
+            border:
+              '1px solid #cbd5e1',
             borderRadius: '10px',
             background: '#ffffff',
             boxShadow:
@@ -149,10 +242,11 @@ export default function ToolMenu({
             textAlign: 'left',
           }}
         >
-          {balancedG ? (
+          {orientationFinished ? (
             <div
               style={{
-                padding: '10px 14px',
+                padding:
+                  '10px 14px',
                 color: '#64748b',
               }}
             >
@@ -160,82 +254,211 @@ export default function ToolMenu({
             </div>
           ) : partition === null ? (
             <>
-              {!lovaszOpen ? (
+              {!lovaszOpen &&
+              !hasanvandOpen ? (
                 <>
-                  {workingDegree > 0 && (
+                  {workingDegree >
+                    0 && (
                     <button
                       type="button"
-                      onClick={() =>
-                        setLovaszOpen(true)
+                      onClick={
+                        openLovaszMenu
                       }
-                      style={menuButtonStyle}
+                      style={
+                        menuButtonStyle
+                      }
                     >
-                      {lovaszPartitionTool.menuLabel} →
+                      {
+                        lovaszPartitionTool
+                          .menuLabel
+                      }{' '}
+                      →
                     </button>
                   )}
 
-                  {workingDegree > 0 && (
+                  {workingDegree >
+                    0 && (
                     <button
                       type="button"
-                      onClick={applyBalanceGraph}
-                      style={menuButtonStyle}
+                      onClick={
+                        applyBalanceGraph
+                      }
+                      style={
+                        menuButtonStyle
+                      }
                     >
-                      Balance <Math>{'G'}</Math>
+                      Balance{' '}
+                      <Math>
+                        {'G'}
+                      </Math>
                     </button>
                   )}
 
                   {canTakeTwoFactor && (
                     <button
                       type="button"
-                      onClick={takeOrientedTwoFactor}
-                      style={menuButtonStyle}
+                      onClick={
+                        takeOrientedTwoFactor
+                      }
+                      style={
+                        menuButtonStyle
+                      }
                     >
-                      {orientedTwoFactorTool.menuLabel}
+                      {
+                        orientedTwoFactorTool
+                          .menuLabel
+                      }
                     </button>
                   )}
+
+                  {canApplyHasanvand && (
+                    <button
+                      type="button"
+                      onClick={
+                        openHasanvandMenu
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      {
+                        hasanvandCompressionTool
+                          .menuLabel
+                      }{' '}
+                      →
+                    </button>
+                  )}
+                </>
+              ) : lovaszOpen ? (
+                <>
+                  <div
+                    style={{
+                      padding:
+                        '8px 10px 10px',
+                      borderBottom:
+                        '1px solid #e2e8f0',
+                      marginBottom:
+                        '4px',
+                    }}
+                  >
+                    Choose{' '}
+                    <Math>
+                      {'(s,t)'}
+                    </Math>
+                  </div>
+
+                  {lovaszPairs.map(
+                    (pair) => (
+                      <button
+                        key={
+                          `${pair.s}-${pair.t}`
+                        }
+                        type="button"
+                        onClick={() =>
+                          applyLovasz(
+                            pair,
+                          )
+                        }
+                        style={{
+                          ...menuButtonStyle,
+                          textAlign:
+                            'center',
+                        }}
+                      >
+                        <Math>
+                          {`(${pair.s},${pair.t})`}
+                        </Math>
+                      </button>
+                    ),
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLovaszOpen(
+                        false,
+                      )
+                    }
+                    style={{
+                      ...menuButtonStyle,
+                      marginTop:
+                        '4px',
+                      borderTop:
+                        '1px solid #e2e8f0',
+                      textAlign:
+                        'center',
+                    }}
+                  >
+                    ← Back
+                  </button>
                 </>
               ) : (
                 <>
                   <div
                     style={{
-                      padding: '8px 10px 10px',
+                      padding:
+                        '8px 10px 10px',
                       borderBottom:
                         '1px solid #e2e8f0',
-                      marginBottom: '4px',
+                      marginBottom:
+                        '4px',
                     }}
                   >
-                    Choose <Math>{'(s,t)'}</Math>
+                    Choose{' '}
+                    <Math>
+                      {'(p,q)'}
+                    </Math>
                   </div>
 
-                  {lovaszPairs.map((pair) => (
-                    <button
-                      key={`${pair.s}-${pair.t}`}
-                      type="button"
-                      onClick={() =>
-                        applyLovasz(pair)
-                      }
-                      style={{
-                        ...menuButtonStyle,
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Math>
-                        {`(${pair.s},${pair.t})`}
-                      </Math>
-                    </button>
-                  ))}
+                  <div
+                    style={{
+                      maxHeight:
+                        '300px',
+                      overflowY:
+                        'auto',
+                    }}
+                  >
+                    {hasanvandPairs.map(
+                      (pair) => (
+                        <button
+                          key={
+                            `${pair.p}-${pair.q}`
+                          }
+                          type="button"
+                          onClick={() =>
+                            applyHasanvand(
+                              pair,
+                            )
+                          }
+                          style={{
+                            ...menuButtonStyle,
+                            textAlign:
+                              'center',
+                          }}
+                        >
+                          <Math>
+                            {`(${pair.p},${pair.q})`}
+                          </Math>
+                        </button>
+                      ),
+                    )}
+                  </div>
 
                   <button
                     type="button"
                     onClick={() =>
-                      setLovaszOpen(false)
+                      setHasanvandOpen(
+                        false,
+                      )
                     }
                     style={{
                       ...menuButtonStyle,
-                      marginTop: '4px',
+                      marginTop:
+                        '4px',
                       borderTop:
                         '1px solid #e2e8f0',
-                      textAlign: 'center',
+                      textAlign:
+                        'center',
                     }}
                   >
                     ← Back
@@ -245,7 +468,8 @@ export default function ToolMenu({
             </>
           ) : hasAvailablePartitionTool ? (
             <>
-              {acrossDirection === null && (
+              {acrossDirection ===
+                null && (
                 <>
                   <button
                     type="button"
@@ -254,9 +478,14 @@ export default function ToolMenu({
                         'L-to-R',
                       )
                     }
-                    style={menuButtonStyle}
+                    style={
+                      menuButtonStyle
+                    }
                   >
-                    Orient <Math>{'L\\to R'}</Math>
+                    Orient{' '}
+                    <Math>
+                      {'L\\to R'}
+                    </Math>
                   </button>
 
                   <button
@@ -266,9 +495,14 @@ export default function ToolMenu({
                         'R-to-L',
                       )
                     }
-                    style={menuButtonStyle}
+                    style={
+                      menuButtonStyle
+                    }
                   >
-                    Orient <Math>{'R\\to L'}</Math>
+                    Orient{' '}
+                    <Math>
+                      {'R\\to L'}
+                    </Math>
                   </button>
                 </>
               )}
@@ -277,11 +511,18 @@ export default function ToolMenu({
                 <button
                   type="button"
                   onClick={() =>
-                    applyBalancedOrientation('L')
+                    applyBalancedOrientation(
+                      'L',
+                    )
                   }
-                  style={menuButtonStyle}
+                  style={
+                    menuButtonStyle
+                  }
                 >
-                  Balance <Math>{'L'}</Math>
+                  Balance{' '}
+                  <Math>
+                    {'L'}
+                  </Math>
                 </button>
               )}
 
@@ -289,18 +530,26 @@ export default function ToolMenu({
                 <button
                   type="button"
                   onClick={() =>
-                    applyBalancedOrientation('R')
+                    applyBalancedOrientation(
+                      'R',
+                    )
                   }
-                  style={menuButtonStyle}
+                  style={
+                    menuButtonStyle
+                  }
                 >
-                  Balance <Math>{'R'}</Math>
+                  Balance{' '}
+                  <Math>
+                    {'R'}
+                  </Math>
                 </button>
               )}
             </>
           ) : (
             <div
               style={{
-                padding: '10px 14px',
+                padding:
+                  '10px 14px',
                 color: '#64748b',
               }}
             >

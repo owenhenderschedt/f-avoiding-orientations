@@ -11,6 +11,9 @@ import type {
   BalancedTarget,
 } from '../tools/balancedOrientation'
 import type {
+  HasanvandParameters,
+} from '../tools/hasanvandCompression'
+import type {
   AcrossDirection,
   AcrossOutdegreeGuarantees,
 } from '../tools/orientAcrossPartition'
@@ -29,6 +32,9 @@ type GraphViewProps = {
   balancedL: boolean
   balancedR: boolean
 
+  hasanvandG:
+    HasanvandParameters | null
+
   outdegreeGuarantees:
     AcrossOutdegreeGuarantees | null
 
@@ -39,12 +45,15 @@ type GraphViewProps = {
   ) => void
 
   onOpenTwoFactorReference: () => void
+
+  onOpenHasanvandReference: () => void
 }
 
 type BalancedBadgeProps = {
   target: BalancedTarget
   x: number
   y: number
+
   onOpen: (
     target: BalancedTarget,
   ) => void
@@ -133,6 +142,7 @@ function BalancedBadge({
                 x2="54"
                 y2="5"
               />
+
               <polygon
                 points="54,5 47,1.5 47,8.5"
               />
@@ -143,6 +153,7 @@ function BalancedBadge({
                 x2="14"
                 y2="12.5"
               />
+
               <polygon
                 points="14,12.5 21,9 21,16"
               />
@@ -153,11 +164,57 @@ function BalancedBadge({
                 x2="54"
                 y2="20"
               />
+
               <polygon
                 points="54,20 47,16.5 47,23.5"
               />
             </g>
           </svg>
+        </button>
+      </div>
+    </foreignObject>
+  )
+}
+
+function HasanvandBadge({
+  parameters,
+  onOpen,
+}: {
+  parameters: HasanvandParameters
+  onOpen: () => void
+}) {
+  return (
+    <foreignObject
+      x="175"
+      y="320"
+      width="250"
+      height="70"
+    >
+      <div
+        style={{
+          width: '100%',
+          textAlign: 'center',
+        }}
+      >
+        <button
+          type="button"
+          onClick={onOpen}
+          style={{
+            font: 'inherit',
+            fontSize: '20px',
+            color: '#475569',
+            background: 'transparent',
+            border: 'none',
+            borderBottom:
+              '1px solid #64748b',
+            padding: '0 2px 2px',
+            cursor: 'pointer',
+          }}
+        >
+          Hasanvand{' '}
+          <Math>
+            {`(${parameters.p},${parameters.q})`}
+          </Math>
         </button>
       </div>
     </foreignObject>
@@ -197,7 +254,8 @@ function TwoFactorNote({
               cursor: 'pointer',
             }}
           >
-            oriented 2-factor <Math>{'C'}</Math>
+            oriented 2-factor{' '}
+            <Math>{'C'}</Math>
           </button>
         </>
       ) : (
@@ -217,7 +275,8 @@ function TwoFactorNote({
               cursor: 'pointer',
             }}
           >
-            <Math>{`${count}`}</Math> oriented 2-factors
+            <Math>{`${count}`}</Math>{' '}
+            oriented 2-factors
           </button>
         </>
       )}
@@ -236,10 +295,12 @@ export default function GraphView({
   balancedG,
   balancedL,
   balancedR,
+  hasanvandG,
   outdegreeGuarantees,
   onOpenLovaszReference,
   onOpenBalancedReference,
   onOpenTwoFactorReference,
+  onOpenHasanvandReference,
 }: GraphViewProps) {
   const allPossible =
     allOutdegrees(degree)
@@ -373,6 +434,17 @@ export default function GraphView({
               y={320}
               onOpen={
                 onOpenBalancedReference
+              }
+            />
+          )}
+
+          {hasanvandG !== null && (
+            <HasanvandBadge
+              parameters={
+                hasanvandG
+              }
+              onOpen={
+                onOpenHasanvandReference
               }
             />
           )}
@@ -626,7 +698,7 @@ export default function GraphView({
             }}
           >
             <Math>
-              {`\\Delta(G[L])\\le ${partition.s}`}
+              {`\\Delta(G[L])\\leq ${partition.s}`}
             </Math>
           </div>
         </foreignObject>
@@ -646,7 +718,7 @@ export default function GraphView({
             }}
           >
             <Math>
-              {`\\Delta(G[R])\\le ${partition.t}`}
+              {`\\Delta(G[R])\\leq ${partition.t}`}
             </Math>
           </div>
         </foreignObject>

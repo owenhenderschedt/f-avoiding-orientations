@@ -1,10 +1,25 @@
 import { useState } from 'react'
-import type { LovaszPair } from '../tools/lovaszPartition'
-import type { AcrossDirection } from '../tools/orientAcrossPartition'
-import type { GraphPart } from './outdegreePossibilities'
+import type {
+  LovaszPair,
+} from '../tools/lovaszPartition'
+import type {
+  AcrossDirection,
+} from '../tools/orientAcrossPartition'
+import type {
+  GraphPart,
+  PartOutdegreePossibilities,
+} from './outdegreePossibilities'
+import {
+  getHasanvandValues,
+  type HasanvandParameters,
+} from '../tools/hasanvandCompression'
 import deriveOutdegreePossibilities from './deriveOutdegreePossibilities'
-import { getResidualGraphState } from './residualGraphState'
-import { shiftPartOutdegrees } from './shiftOutdegrees'
+import {
+  getResidualGraphState,
+} from './residualGraphState'
+import {
+  shiftPartOutdegrees,
+} from './shiftOutdegrees'
 
 export type PlaygroundMove =
   | {
@@ -25,23 +40,36 @@ export type PlaygroundMove =
   | {
       type: 'oriented-two-factor'
     }
+  | {
+      type: 'hasanvand-compression'
+      parameters: HasanvandParameters
+    }
 
 export type PlaygroundState = {
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
+
   orientedTwoFactorCount: number
+
+  hasanvandG:
+    HasanvandParameters | null
 }
 
 const initialState: PlaygroundState = {
   partition: null,
   acrossDirection: null,
+
   balancedG: false,
   balancedL: false,
   balancedR: false,
+
   orientedTwoFactorCount: 0,
+
+  hasanvandG: null,
 }
 
 function deriveState(
@@ -52,16 +80,25 @@ function deriveState(
   }
 
   for (const move of moves) {
-    if (move.type === 'lovasz-partition') {
+    if (
+      move.type ===
+      'lovasz-partition'
+    ) {
       state.partition = move.pair
     }
 
-    if (move.type === 'orient-across') {
+    if (
+      move.type ===
+      'orient-across'
+    ) {
       state.acrossDirection =
         move.direction
     }
 
-    if (move.type === 'balanced-orientation') {
+    if (
+      move.type ===
+      'balanced-orientation'
+    ) {
       if (move.part === 'L') {
         state.balancedL = true
       }
@@ -71,12 +108,26 @@ function deriveState(
       }
     }
 
-    if (move.type === 'balanced-whole-graph') {
+    if (
+      move.type ===
+      'balanced-whole-graph'
+    ) {
       state.balancedG = true
     }
 
-    if (move.type === 'oriented-two-factor') {
+    if (
+      move.type ===
+      'oriented-two-factor'
+    ) {
       state.orientedTwoFactorCount += 1
+    }
+
+    if (
+      move.type ===
+      'hasanvand-compression'
+    ) {
+      state.hasanvandG =
+        move.parameters
     }
   }
 
@@ -86,64 +137,62 @@ function deriveState(
 export default function usePlayground(
   originalDegree: number,
 ) {
-  const [moves, setMoves] =
-    useState<PlaygroundMove[]>([])
+  const [
+    moves,
+    setMoves,
+  ] = useState<PlaygroundMove[]>([])
 
-  const state = deriveState(moves)
+  const state =
+    deriveState(moves)
 
-  /*
-   * This describes the graph on which the NEXT orientation
-   * tool is currently operating.
-   *
-   * For example, after one oriented 2-factor in a 12-regular
-   * graph:
-   *
-   * workingDegree = 10
-   * fixedOutdegreeContribution = 1
-   */
   const residualGraph =
     getResidualGraphState(
       originalDegree,
       state.orientedTwoFactorCount,
     )
 
-  /*
-   * First calculate possibilities inside the residual graph
-   * itself.
-   */
-  const residualOutdegreePossibilities =
-    deriveOutdegreePossibilities({
-      degree:
-        residualGraph.workingDegree,
+  let residualOutdegreePossibilities:
+    PartOutdegreePossibilities
 
-      partition:
-        state.partition,
+  if (state.hasanvandG !== null) {
+    const hasanvandValues =
+      getHasanvandValues(
+        state.hasanvandG.p,
+        state.hasanvandG.q,
+      )
 
-      acrossDirection:
-        state.acrossDirection,
+    residualOutdegreePossibilities = {
+      L: hasanvandValues,
+      R: hasanvandValues,
+    }
+  } else {
+    residualOutdegreePossibilities =
+      deriveOutdegreePossibilities({
+        degree:
+          residualGraph.workingDegree,
 
-      balancedG:
-        state.balancedG,
+        partition:
+          state.partition,
 
-      balancedL:
-        state.balancedL,
+        acrossDirection:
+          state.acrossDirection,
 
-      balancedR:
-        state.balancedR,
-    })
+        balancedG:
+          state.balancedG,
 
-  /*
-   * Then add back the outgoing edges that have already been
-   * fixed by oriented 2-factors.
-   *
-   * These are the TOTAL outdegrees in the original graph G,
-   * and therefore these are the values that should be compared
-   * with the original forbidden set F.
-   */
+        balancedL:
+          state.balancedL,
+
+        balancedR:
+          state.balancedR,
+      })
+  }
+
   const outdegreePossibilities =
     shiftPartOutdegrees(
       residualOutdegreePossibilities,
-      residualGraph.fixedOutdegreeContribution,
+      residualGraph
+        .fixedOutdegreeContribution,
     )
 
   function applyLovaszPartition(
@@ -152,7 +201,8 @@ export default function usePlayground(
     setMoves((current) => [
       ...current,
       {
-        type: 'lovasz-partition',
+        type:
+          'lovasz-partition',
         pair,
       },
     ])
@@ -164,7 +214,8 @@ export default function usePlayground(
     setMoves((current) => [
       ...current,
       {
-        type: 'orient-across',
+        type:
+          'orient-across',
         direction,
       },
     ])
@@ -176,7 +227,8 @@ export default function usePlayground(
     setMoves((current) => [
       ...current,
       {
-        type: 'balanced-orientation',
+        type:
+          'balanced-orientation',
         part,
       },
     ])
@@ -186,7 +238,8 @@ export default function usePlayground(
     setMoves((current) => [
       ...current,
       {
-        type: 'balanced-whole-graph',
+        type:
+          'balanced-whole-graph',
       },
     ])
   }
@@ -195,7 +248,21 @@ export default function usePlayground(
     setMoves((current) => [
       ...current,
       {
-        type: 'oriented-two-factor',
+        type:
+          'oriented-two-factor',
+      },
+    ])
+  }
+
+  function applyHasanvandCompression(
+    parameters: HasanvandParameters,
+  ) {
+    setMoves((current) => [
+      ...current,
+      {
+        type:
+          'hasanvand-compression',
+        parameters,
       },
     ])
   }
@@ -214,26 +281,18 @@ export default function usePlayground(
     moves,
     state,
 
-    /*
-     * Original problem data.
-     */
     originalDegree,
 
-    /*
-     * Current residual graph data.
-     */
     workingDegree:
       residualGraph.workingDegree,
 
     fixedOutdegreeContribution:
-      residualGraph.fixedOutdegreeContribution,
+      residualGraph
+        .fixedOutdegreeContribution,
 
     orientedTwoFactorCount:
       state.orientedTwoFactorCount,
 
-    /*
-     * Orientation state on the current residual graph.
-     */
     partition:
       state.partition,
 
@@ -249,30 +308,26 @@ export default function usePlayground(
     balancedR:
       state.balancedR,
 
-    /*
-     * Both versions are useful.
-     *
-     * residualOutdegreePossibilities describes only the
-     * remaining graph.
-     *
-     * outdegreePossibilities describes total outdegrees in
-     * the original graph G and is what the user should see.
-     */
+    hasanvandG:
+      state.hasanvandG,
+
     residualOutdegreePossibilities,
 
     outdegreePossibilities,
 
+    /*
+     * Kept for compatibility with
+     * existing GraphView code.
+     */
     outdegreeGuarantees:
       outdegreePossibilities,
 
-    /*
-     * Moves.
-     */
     applyLovaszPartition,
     orientAcross,
     balancePart,
     balanceGraph,
     takeOrientedTwoFactor,
+    applyHasanvandCompression,
 
     undo,
     reset,

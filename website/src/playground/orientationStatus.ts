@@ -1,9 +1,17 @@
-import type { PartOutdegreePossibilities } from './outdegreePossibilities'
+import type {
+  PartOutdegreePossibilities,
+} from './outdegreePossibilities'
 
 type OrientationStatusArgs = {
-  forbiddenSet: readonly number[]
-  outdegreePossibilities: PartOutdegreePossibilities
+  forbiddenSet:
+    readonly number[]
+
+  outdegreePossibilities:
+    PartOutdegreePossibilities
+
   balancedG: boolean
+  hasanvandG: boolean
+
   acrossOriented: boolean
   balancedL: boolean
   balancedR: boolean
@@ -16,10 +24,14 @@ export type OrientationStatus = {
 
 function avoidsForbiddenSet(
   values: readonly number[],
-  forbiddenSet: readonly number[],
+  forbiddenSet:
+    readonly number[],
 ) {
   return values.every(
-    (value) => !forbiddenSet.includes(value),
+    (value) =>
+      !forbiddenSet.includes(
+        value,
+      ),
   )
 }
 
@@ -27,19 +39,14 @@ export default function getOrientationStatus({
   forbiddenSet,
   outdegreePossibilities,
   balancedG,
+  hasanvandG,
   acrossOriented,
   balancedL,
   balancedR,
 }: OrientationStatusArgs): OrientationStatus {
-  /*
-   * Balancing G orients the whole graph immediately.
-   *
-   * Otherwise, in the partitioned picture all edges are oriented
-   * exactly when the crossing edges, G[L], and G[R] have all been
-   * oriented.
-   */
   const isComplete =
     balancedG ||
+    hasanvandG ||
     (
       acrossOriented &&
       balancedL &&
@@ -49,23 +56,28 @@ export default function getOrientationStatus({
   if (!isComplete) {
     return {
       isComplete: false,
-      isValidFAvoiding: false,
+      isValidFAvoiding:
+        false,
     }
   }
 
-  const leftAvoidsF = avoidsForbiddenSet(
-    outdegreePossibilities.L,
-    forbiddenSet,
-  )
+  const leftAvoidsF =
+    avoidsForbiddenSet(
+      outdegreePossibilities.L,
+      forbiddenSet,
+    )
 
-  const rightAvoidsF = avoidsForbiddenSet(
-    outdegreePossibilities.R,
-    forbiddenSet,
-  )
+  const rightAvoidsF =
+    avoidsForbiddenSet(
+      outdegreePossibilities.R,
+      forbiddenSet,
+    )
 
   return {
     isComplete: true,
+
     isValidFAvoiding:
-      leftAvoidsF && rightAvoidsF,
+      leftAvoidsF &&
+      rightAvoidsF,
   }
 }
