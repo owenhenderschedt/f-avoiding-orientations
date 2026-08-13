@@ -5,23 +5,28 @@ import {
   lovaszPartitionTool,
   type LovaszPair,
 } from '../tools/lovaszPartition'
-import {
-  getAcrossDirectionLabel,
-  type AcrossDirection,
-} from '../tools/orientAcrossPartition'
+import type { AcrossDirection } from '../tools/orientAcrossPartition'
+import type { GraphPart } from './outdegreePossibilities'
 
 type ToolMenuProps = {
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+  balancedL: boolean
+  balancedR: boolean
+
   onApplyLovasz: (pair: LovaszPair) => void
   onOrientAcross: (direction: AcrossDirection) => void
+  onBalancePart: (part: GraphPart) => void
 }
 
 export default function ToolMenu({
   partition,
   acrossDirection,
+  balancedL,
+  balancedR,
   onApplyLovasz,
   onOrientAcross,
+  onBalancePart,
 }: ToolMenuProps) {
   const [toolsOpen, setToolsOpen] = useState(false)
   const [lovaszOpen, setLovaszOpen] = useState(false)
@@ -37,8 +42,17 @@ export default function ToolMenu({
     setLovaszOpen(false)
   }
 
-  function applyAcrossOrientation(direction: AcrossDirection) {
+  function applyAcrossOrientation(
+    direction: AcrossDirection,
+  ) {
     onOrientAcross(direction)
+    setToolsOpen(false)
+  }
+
+  function applyBalancedOrientation(
+    part: GraphPart,
+  ) {
+    onBalancePart(part)
     setToolsOpen(false)
   }
 
@@ -63,6 +77,11 @@ export default function ToolMenu({
     cursor: 'pointer',
     textAlign: 'left' as const,
   }
+
+  const hasAvailablePartitionTool =
+    acrossDirection === null ||
+    !balancedL ||
+    !balancedR
 
   return (
     <div
@@ -113,7 +132,7 @@ export default function ToolMenu({
                       marginBottom: '4px',
                     }}
                   >
-                    Choose <Math>(s,t)</Math>
+                    Choose <Math>{'(s,t)'}</Math>
                   </div>
 
                   {lovaszPairs.map((pair) => (
@@ -145,27 +164,55 @@ export default function ToolMenu({
                 </>
               )}
             </>
-          ) : acrossDirection === null ? (
+          ) : hasAvailablePartitionTool ? (
             <>
-              <button
-                type="button"
-                onClick={() => applyAcrossOrientation('L-to-R')}
-                style={menuButtonStyle}
-              >
+              {acrossDirection === null && (
                 <>
-  Orient <Math>{'L\\to R'}</Math>
-</>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyAcrossOrientation('L-to-R')
+                    }
+                    style={menuButtonStyle}
+                  >
+                    Orient <Math>{'L\\to R'}</Math>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => applyAcrossOrientation('R-to-L')}
-                style={menuButtonStyle}
-              >
-                <>
-  Orient <Math>{'R\\to L'}</Math>
-</>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyAcrossOrientation('R-to-L')
+                    }
+                    style={menuButtonStyle}
+                  >
+                    Orient <Math>{'R\\to L'}</Math>
+                  </button>
+                </>
+              )}
+
+              {!balancedL && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyBalancedOrientation('L')
+                  }
+                  style={menuButtonStyle}
+                >
+                  Balance <Math>{'L'}</Math>
+                </button>
+              )}
+
+              {!balancedR && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyBalancedOrientation('R')
+                  }
+                  style={menuButtonStyle}
+                >
+                  Balance <Math>{'R'}</Math>
+                </button>
+              )}
             </>
           ) : (
             <div

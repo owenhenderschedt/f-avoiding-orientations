@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import type { LovaszPair } from '../tools/lovaszPartition'
-import {
-  getAcrossOutdegreeGuarantees,
-  type AcrossDirection,
-} from '../tools/orientAcrossPartition'
+import type { AcrossDirection } from '../tools/orientAcrossPartition'
+import type { GraphPart } from './outdegreePossibilities'
+import deriveOutdegreePossibilities from './deriveOutdegreePossibilities'
 
 export type PlaygroundMove =
   | {
@@ -14,21 +13,30 @@ export type PlaygroundMove =
       type: 'orient-across'
       direction: AcrossDirection
     }
+  | {
+      type: 'balanced-orientation'
+      part: GraphPart
+    }
 
 export type PlaygroundState = {
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+  balancedL: boolean
+  balancedR: boolean
 }
 
 const initialState: PlaygroundState = {
   partition: null,
   acrossDirection: null,
+  balancedL: false,
+  balancedR: false,
 }
 
-function deriveState(moves: PlaygroundMove[]): PlaygroundState {
+function deriveState(
+  moves: PlaygroundMove[],
+): PlaygroundState {
   const state: PlaygroundState = {
-    partition: null,
-    acrossDirection: null,
+    ...initialState,
   }
 
   for (const move of moves) {
@@ -39,26 +47,40 @@ function deriveState(moves: PlaygroundMove[]): PlaygroundState {
     if (move.type === 'orient-across') {
       state.acrossDirection = move.direction
     }
+
+    if (move.type === 'balanced-orientation') {
+      if (move.part === 'L') {
+        state.balancedL = true
+      }
+
+      if (move.part === 'R') {
+        state.balancedR = true
+      }
+    }
   }
 
   return state
 }
 
-export default function usePlayground(degree: number) {
+export default function usePlayground(
+  degree: number,
+) {
   const [moves, setMoves] = useState<PlaygroundMove[]>([])
 
   const state = deriveState(moves)
 
-  const outdegreeGuarantees =
-    state.partition !== null && state.acrossDirection !== null
-      ? getAcrossOutdegreeGuarantees(
-          degree,
-          state.partition,
-          state.acrossDirection,
-        )
-      : null
+  const outdegreePossibilities =
+    deriveOutdegreePossibilities({
+      degree,
+      partition: state.partition,
+      acrossDirection: state.acrossDirection,
+      balancedL: state.balancedL,
+      balancedR: state.balancedR,
+    })
 
-  function applyLovaszPartition(pair: LovaszPair) {
+  function applyLovaszPartition(
+    pair: LovaszPair,
+  ) {
     setMoves((current) => [
       ...current,
       {
@@ -68,7 +90,9 @@ export default function usePlayground(degree: number) {
     ])
   }
 
-  function orientAcross(direction: AcrossDirection) {
+  function orientAcross(
+    direction: AcrossDirection,
+  ) {
     setMoves((current) => [
       ...current,
       {
@@ -78,8 +102,20 @@ export default function usePlayground(degree: number) {
     ])
   }
 
+  function balancePart(part: GraphPart) {
+    setMoves((current) => [
+      ...current,
+      {
+        type: 'balanced-orientation',
+        part,
+      },
+    ])
+  }
+
   function undo() {
-    setMoves((current) => current.slice(0, -1))
+    setMoves((current) =>
+      current.slice(0, -1),
+    )
   }
 
   function reset() {
@@ -89,13 +125,28 @@ export default function usePlayground(degree: number) {
   return {
     moves,
     state,
+
     partition: state.partition,
     acrossDirection: state.acrossDirection,
-    outdegreeGuarantees,
+    balancedL: state.balancedL,
+    balancedR: state.balancedR,
+
+    outdegreePossibilities,
+
+    /*
+     * Temporary compatibility name for GraphView.
+     * We can remove this once all files use the more general
+     * "outdegreePossibilities" terminology.
+     */
+    outdegreeGuarantees: outdegreePossibilities,
+
     applyLovaszPartition,
     orientAcross,
+    balancePart,
+
     undo,
     reset,
+
     canUndo: moves.length > 0,
   }
 }

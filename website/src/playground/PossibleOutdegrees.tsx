@@ -1,21 +1,15 @@
 import Math from '../components/Math'
-import type { OutdegreeRange } from '../tools/orientAcrossPartition'
+import type { OutdegreeSet } from './outdegreePossibilities'
 
 type PossibleOutdegreesProps = {
-  range: OutdegreeRange
+  values: OutdegreeSet
   forbiddenSet: readonly number[]
 }
 
 export default function PossibleOutdegrees({
-  range,
+  values,
   forbiddenSet,
 }: PossibleOutdegreesProps) {
-  const values = []
-
-  for (let value = range.min; value <= range.max; value += 1) {
-    values.push(value)
-  }
-
   return (
     <div style={{ textAlign: 'center' }}>
       <div
@@ -55,23 +49,18 @@ export default function PossibleOutdegrees({
                 height: '36px',
                 padding: '0 8px',
                 borderRadius: '7px',
-
                 border: forbidden
                   ? '2px solid #dc2626'
                   : '1px solid #cbd5e1',
-
                 backgroundColor: forbidden
                   ? '#fecaca'
                   : '#ffffff',
-
                 color: forbidden
                   ? '#991b1b'
                   : '#334155',
-
                 boxShadow: forbidden
                   ? 'inset 0 0 0 1px #ef4444'
                   : 'none',
-
                 fontWeight: forbidden ? 700 : 400,
               }}
             >

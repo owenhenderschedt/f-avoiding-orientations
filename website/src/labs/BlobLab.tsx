@@ -17,6 +17,11 @@ export default function BlobLab() {
 
   const playground = usePlayground(prototypeCase.degree)
 
+  /*
+   * We do not yet automatically certify completion.
+   * This will become derived from the mathematical state once all
+   * edges have been oriented and the possible outdegrees avoid F.
+   */
   const isValidFAvoidingOrientation = false
 
   function undo() {
@@ -38,9 +43,16 @@ export default function BlobLab() {
           margin: '0 auto',
         }}
       >
-        <h1 style={{ marginBottom: '12px' }}>Blob Lab</h1>
+        <h1 style={{ marginBottom: '12px' }}>
+          Blob Lab
+        </h1>
 
-        <p style={{ marginTop: 0, marginBottom: '40px' }}>
+        <p
+          style={{
+            marginTop: 0,
+            marginBottom: '40px',
+          }}
+        >
           Visual experiments for the symbolic graph representation.
         </p>
 
@@ -56,8 +68,12 @@ export default function BlobLab() {
             forbiddenSet={prototypeCase.forbiddenSet}
             partition={playground.partition}
             acrossDirection={playground.acrossDirection}
-            outdegreeGuarantees={playground.outdegreeGuarantees}
-            onOpenLovaszReference={() => setReferenceOpen(true)}
+            outdegreeGuarantees={
+              playground.outdegreePossibilities
+            }
+            onOpenLovaszReference={() =>
+              setReferenceOpen(true)
+            }
           />
 
           <div
@@ -72,8 +88,13 @@ export default function BlobLab() {
             <ToolMenu
               partition={playground.partition}
               acrossDirection={playground.acrossDirection}
-              onApplyLovasz={playground.applyLovaszPartition}
+              balancedL={playground.balancedL}
+              balancedR={playground.balancedR}
+              onApplyLovasz={
+                playground.applyLovaszPartition
+              }
               onOrientAcross={playground.orientAcross}
+              onBalancePart={playground.balancePart}
             />
 
             {playground.canUndo && (
@@ -97,33 +118,54 @@ export default function BlobLab() {
 
           <div style={{ marginTop: '24px' }}>
             <ProofHistory
-              steps={playground.moves.map((move, index) => {
-                if (move.type === 'lovasz-partition') {
-                  return (
-                    <span key={index}>
-                      Lovász{' '}
-                      <Math>
-                        {`(${move.pair.s},${move.pair.t})`}
-                      </Math>
-                    </span>
-                  )
-                }
+              steps={playground.moves.map(
+                (move, index) => {
+                  if (
+                    move.type ===
+                    'lovasz-partition'
+                  ) {
+                    return (
+                      <span key={index}>
+                        Lovász{' '}
+                        <Math>
+                          {`(${move.pair.s},${move.pair.t})`}
+                        </Math>
+                      </span>
+                    )
+                  }
 
-                if (move.type === 'orient-across') {
-                  return (
-                    <span key={index}>
-                      Orient{' '}
-                      <Math>
-                        {move.direction === 'L-to-R'
-                          ? 'L\\to R'
-                          : 'R\\to L'}
-                      </Math>
-                    </span>
-                  )
-                }
+                  if (
+                    move.type ===
+                    'orient-across'
+                  ) {
+                    return (
+                      <span key={index}>
+                        Orient{' '}
+                        <Math>
+                          {move.direction ===
+                          'L-to-R'
+                            ? 'L\\to R'
+                            : 'R\\to L'}
+                        </Math>
+                      </span>
+                    )
+                  }
 
-                return null
-              })}
+                  if (
+                    move.type ===
+                    'balanced-orientation'
+                  ) {
+                    return (
+                      <span key={index}>
+                        Balance{' '}
+                        <Math>{move.part}</Math>
+                      </span>
+                    )
+                  }
+
+                  return null
+                },
+              )}
               canUndo={playground.canUndo}
               onUndo={undo}
             />
@@ -134,7 +176,9 @@ export default function BlobLab() {
       <ToolReferencePanel
         open={referenceOpen}
         title={lovaszPartitionTool.name}
-        onClose={() => setReferenceOpen(false)}
+        onClose={() =>
+          setReferenceOpen(false)
+        }
       >
         <LovaszPartitionReference
           partition={playground.partition}

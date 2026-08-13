@@ -1,23 +1,22 @@
 import type { LovaszPair } from './lovaszPartition'
+import {
+  integerRange,
+  type PartOutdegreePossibilities,
+} from '../playground/outdegreePossibilities'
 
 export type AcrossDirection = 'L-to-R' | 'R-to-L'
 
-export type OutdegreeRange = {
-  min: number
-  max: number
-}
-
-export type AcrossOutdegreeGuarantees = {
-  L: OutdegreeRange
-  R: OutdegreeRange
-}
+export type AcrossOutdegreeGuarantees =
+  PartOutdegreePossibilities
 
 export const orientAcrossPartitionTool = {
   id: 'orient-across-partition',
   name: 'Orient Across Partition',
 } as const
 
-export function getAcrossDirectionLabel(direction: AcrossDirection) {
+export function getAcrossDirectionLabel(
+  direction: AcrossDirection,
+) {
   if (direction === 'L-to-R') {
     return 'Orient L → R'
   }
@@ -32,25 +31,25 @@ export function getAcrossOutdegreeGuarantees(
 ): AcrossOutdegreeGuarantees {
   if (direction === 'L-to-R') {
     return {
-      L: {
-        min: degree - partition.s,
-        max: degree,
-      },
-      R: {
-        min: 0,
-        max: partition.t,
-      },
+      L: integerRange(
+        degree - partition.s,
+        degree,
+      ),
+      R: integerRange(
+        0,
+        partition.t,
+      ),
     }
   }
 
   return {
-    L: {
-      min: 0,
-      max: partition.s,
-    },
-    R: {
-      min: degree - partition.t,
-      max: degree,
-    },
+    L: integerRange(
+      0,
+      partition.s,
+    ),
+    R: integerRange(
+      degree - partition.t,
+      degree,
+    ),
   }
 }

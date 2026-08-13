@@ -1,5 +1,6 @@
 import Math from '../components/Math'
 import PossibleOutdegrees from './PossibleOutdegrees'
+import { allOutdegrees } from './outdegreePossibilities'
 import {
   lovaszPartitionTool,
   type LovaszPair,
@@ -18,6 +19,14 @@ type GraphViewProps = {
   onOpenLovaszReference: () => void
 }
 
+function sameValues(a: number[], b: number[]) {
+  if (a.length !== b.length) {
+    return false
+  }
+
+  return a.every((value, index) => value === b[index])
+}
+
 export default function GraphView({
   degree,
   forbiddenSet,
@@ -26,6 +35,23 @@ export default function GraphView({
   outdegreeGuarantees,
   onOpenLovaszReference,
 }: GraphViewProps) {
+  const allPossible = allOutdegrees(degree)
+
+  /*
+   * Before any information distinguishes the two parts, every vertex
+   * has the same possible total outdegrees 0,...,d.
+   */
+  const possibleOutdegreesL =
+    outdegreeGuarantees?.L ?? allPossible
+
+  const possibleOutdegreesR =
+    outdegreeGuarantees?.R ?? allPossible
+
+  const sharedPossibilities = sameValues(
+    possibleOutdegreesL,
+    possibleOutdegreesR,
+  )
+
   if (partition === null) {
     return (
       <>
@@ -89,6 +115,18 @@ export default function GraphView({
             G
           </text>
         </svg>
+
+        <div
+          style={{
+            maxWidth: '620px',
+            margin: '8px auto 0',
+          }}
+        >
+          <PossibleOutdegrees
+            values={allPossible}
+            forbiddenSet={forbiddenSet}
+          />
+        </div>
       </>
     )
   }
@@ -122,7 +160,7 @@ export default function GraphView({
       </div>
 
       <svg
-        viewBox="0 0 800 650"
+        viewBox="0 0 800 500"
         width="100%"
         role="img"
         aria-label={
@@ -275,35 +313,41 @@ export default function GraphView({
             </Math>
           </div>
         </foreignObject>
-
-        {outdegreeGuarantees !== null && (
-          <>
-            <foreignObject
-              x="55"
-              y="475"
-              width="350"
-              height="160"
-            >
-              <PossibleOutdegrees
-                range={outdegreeGuarantees.L}
-                forbiddenSet={forbiddenSet}
-              />
-            </foreignObject>
-
-            <foreignObject
-              x="395"
-              y="475"
-              width="350"
-              height="160"
-            >
-              <PossibleOutdegrees
-                range={outdegreeGuarantees.R}
-                forbiddenSet={forbiddenSet}
-              />
-            </foreignObject>
-          </>
-        )}
       </svg>
+
+      {sharedPossibilities ? (
+        <div
+          style={{
+            maxWidth: '620px',
+            margin: '8px auto 0',
+          }}
+        >
+          <PossibleOutdegrees
+            values={possibleOutdegreesL}
+            forbiddenSet={forbiddenSet}
+          />
+        </div>
+      ) : (
+        <div
+          style={{
+            maxWidth: '620px',
+            margin: '8px auto 0',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '30px',
+          }}
+        >
+          <PossibleOutdegrees
+            values={possibleOutdegreesL}
+            forbiddenSet={forbiddenSet}
+          />
+
+          <PossibleOutdegrees
+            values={possibleOutdegreesR}
+            forbiddenSet={forbiddenSet}
+          />
+        </div>
+      )}
     </>
   )
 }
