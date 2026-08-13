@@ -1,6 +1,68 @@
+import { useState } from 'react'
 import Math from '../components/Math'
 
+type LovaszPair = {
+  s: number
+  t: number
+}
+
+const lovaszPairs: LovaszPair[] = [
+  { s: 11, t: 0 },
+  { s: 10, t: 1 },
+  { s: 9, t: 2 },
+  { s: 8, t: 3 },
+  { s: 7, t: 4 },
+  { s: 6, t: 5 },
+]
+
 export default function BlobLab() {
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const [lovaszOpen, setLovaszOpen] = useState(false)
+  const [partition, setPartition] = useState<LovaszPair | null>(null)
+
+  function openTools() {
+    setToolsOpen((current) => !current)
+    setLovaszOpen(false)
+  }
+
+  function openLovaszMenu() {
+    setLovaszOpen(true)
+  }
+
+  function applyLovaszPartition(pair: LovaszPair) {
+    setPartition(pair)
+    setToolsOpen(false)
+    setLovaszOpen(false)
+  }
+
+  function resetPlayground() {
+    setPartition(null)
+    setToolsOpen(false)
+    setLovaszOpen(false)
+  }
+
+  const controlButtonStyle = {
+    font: 'inherit',
+    padding: '10px 18px',
+    border: '1px solid #64748b',
+    borderRadius: '8px',
+    background: '#f8fafc',
+    color: '#334155',
+    cursor: 'pointer',
+  }
+
+  const menuButtonStyle = {
+    font: 'inherit',
+    width: '100%',
+    padding: '10px 14px',
+    border: 'none',
+    borderRadius: '6px',
+    background: 'transparent',
+    color: '#334155',
+    cursor: 'pointer',
+    textAlign: 'left' as const,
+  }
+
   return (
     <main
       style={{
@@ -15,215 +77,302 @@ export default function BlobLab() {
         Visual experiments for the symbolic graph representation.
       </p>
 
-      <section style={{ marginBottom: '72px' }}>
-        <h2
+      <div style={{ textAlign: 'center' }}>
+        {partition === null ? (
+          <>
+            <div
+              style={{
+                fontSize: '1.15rem',
+                marginBottom: '20px',
+              }}
+            >
+              a <Math>12</Math>-regular graph <Math>G</Math>
+            </div>
+
+            <svg
+              viewBox="0 0 600 600"
+              width="100%"
+              role="img"
+              aria-label="A 12-regular graph G represented symbolically as a circle"
+              style={{
+                display: 'block',
+                maxWidth: '420px',
+                margin: '0 auto',
+              }}
+            >
+              <defs>
+                <filter
+                  id="soft-shadow-circle"
+                  x="-20%"
+                  y="-20%"
+                  width="140%"
+                  height="140%"
+                >
+                  <feDropShadow
+                    dx="0"
+                    dy="8"
+                    stdDeviation="12"
+                    floodColor="#000000"
+                    floodOpacity="0.10"
+                  />
+                </filter>
+              </defs>
+
+              <circle
+                cx="300"
+                cy="300"
+                r="200"
+                fill="#f8fafc"
+                stroke="#64748b"
+                strokeWidth="3"
+                filter="url(#soft-shadow-circle)"
+              />
+
+              <text
+                x="300"
+                y="315"
+                textAnchor="middle"
+                fontSize="54"
+                fill="#334155"
+                fontFamily="KaTeX_Math, KaTeX_Main, serif"
+                fontStyle="italic"
+              >
+                G
+              </text>
+            </svg>
+          </>
+        ) : (
+          <>
+            <div
+              style={{
+                fontSize: '1.15rem',
+                marginBottom: '20px',
+              }}
+            >
+              an{' '}
+              <Math>{`(${partition.s},${partition.t})`}</Math>
+              -Lovász partition of <Math>G</Math>
+            </div>
+
+            <svg
+              viewBox="0 0 800 500"
+              width="100%"
+              role="img"
+              aria-label={`A ${partition.s},${partition.t} Lovasz partition of G into parts L and R`}
+              style={{
+                display: 'block',
+                maxWidth: '620px',
+                margin: '0 auto',
+              }}
+            >
+              <defs>
+                <filter
+                  id="soft-shadow-ellipse"
+                  x="-20%"
+                  y="-20%"
+                  width="140%"
+                  height="140%"
+                >
+                  <feDropShadow
+                    dx="0"
+                    dy="8"
+                    stdDeviation="12"
+                    floodColor="#000000"
+                    floodOpacity="0.10"
+                  />
+                </filter>
+              </defs>
+
+              <ellipse
+                cx="260"
+                cy="220"
+                rx="120"
+                ry="165"
+                fill="#f8fafc"
+                stroke="#64748b"
+                strokeWidth="3"
+                filter="url(#soft-shadow-ellipse)"
+              />
+
+              <ellipse
+                cx="540"
+                cy="220"
+                rx="120"
+                ry="165"
+                fill="#f8fafc"
+                stroke="#64748b"
+                strokeWidth="3"
+                filter="url(#soft-shadow-ellipse)"
+              />
+
+              <text
+                x="260"
+                y="235"
+                textAnchor="middle"
+                fontSize="48"
+                fill="#334155"
+                fontFamily="KaTeX_Math, KaTeX_Main, serif"
+                fontStyle="italic"
+              >
+                L
+              </text>
+
+              <text
+                x="540"
+                y="235"
+                textAnchor="middle"
+                fontSize="48"
+                fill="#334155"
+                fontFamily="KaTeX_Math, KaTeX_Main, serif"
+                fontStyle="italic"
+              >
+                R
+              </text>
+
+              <foreignObject
+                x="140"
+                y="405"
+                width="240"
+                height="60"
+              >
+                <div
+                  style={{
+                    width: '100%',
+                    textAlign: 'center',
+                    fontSize: '24px',
+                    color: '#334155',
+                  }}
+                >
+                  <Math>
+                    {`\\Delta(G[L])\\le ${partition.s}`}
+                  </Math>
+                </div>
+              </foreignObject>
+
+              <foreignObject
+                x="420"
+                y="405"
+                width="240"
+                height="60"
+              >
+                <div
+                  style={{
+                    width: '100%',
+                    textAlign: 'center',
+                    fontSize: '24px',
+                    color: '#334155',
+                  }}
+                >
+                  <Math>
+                    {`\\Delta(G[R])\\le ${partition.t}`}
+                  </Math>
+                </div>
+              </foreignObject>
+            </svg>
+          </>
+        )}
+
+        <div
           style={{
-            fontSize: '1.1rem',
-            fontWeight: 600,
-            marginBottom: '20px',
+            marginTop: '28px',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '14px',
+            alignItems: 'flex-start',
           }}
         >
-          State 0: Unpartitioned graph
-        </h2>
-
-        <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              fontSize: '1.15rem',
-              marginBottom: '20px',
-            }}
-          >
-            a <Math>12</Math>-regular graph <Math>G</Math>
-          </div>
-
-          <svg
-            viewBox="0 0 600 600"
-            width="100%"
-            role="img"
-            aria-label="A 12-regular graph G represented symbolically as a circle"
-            style={{
-              display: 'block',
-              maxWidth: '420px',
-              margin: '0 auto',
-            }}
-          >
-            <defs>
-              <filter
-                id="soft-shadow-circle"
-                x="-20%"
-                y="-20%"
-                width="140%"
-                height="140%"
-              >
-                <feDropShadow
-                  dx="0"
-                  dy="8"
-                  stdDeviation="12"
-                  floodColor="#000000"
-                  floodOpacity="0.10"
-                />
-              </filter>
-            </defs>
-
-            <circle
-              cx="300"
-              cy="300"
-              r="200"
-              fill="#f8fafc"
-              stroke="#64748b"
-              strokeWidth="3"
-              filter="url(#soft-shadow-circle)"
-            />
-
-            <text
-              x="300"
-              y="315"
-              textAnchor="middle"
-              fontSize="54"
-              fill="#334155"
-              fontFamily="KaTeX_Math, KaTeX_Main, serif"
-              fontStyle="italic"
+          {partition === null ? (
+            <div
+              style={{
+                position: 'relative',
+                width: '230px',
+              }}
             >
-              G
-            </text>
-          </svg>
-        </div>
-      </section>
-
-      <section>
-        <h2
-          style={{
-            fontSize: '1.1rem',
-            fontWeight: 600,
-            marginBottom: '20px',
-          }}
-        >
-          State 1: Lovász partition
-        </h2>
-
-        <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              fontSize: '1.15rem',
-              marginBottom: '20px',
-            }}
-          >
-            an <Math>(8,3)</Math>-Lovász partition of <Math>G</Math>
-          </div>
-
-          <svg
-            viewBox="0 0 800 500"
-            width="100%"
-            role="img"
-            aria-label="An 8,3 Lovasz partition of G into parts L and R"
-            style={{
-              display: 'block',
-              maxWidth: '620px',
-              margin: '0 auto',
-            }}
-          >
-            <defs>
-              <filter
-                id="soft-shadow-ellipse"
-                x="-20%"
-                y="-20%"
-                width="140%"
-                height="140%"
-              >
-                <feDropShadow
-                  dx="0"
-                  dy="8"
-                  stdDeviation="12"
-                  floodColor="#000000"
-                  floodOpacity="0.10"
-                />
-              </filter>
-            </defs>
-
-            <ellipse
-              cx="260"
-              cy="220"
-              rx="120"
-              ry="165"
-              fill="#f8fafc"
-              stroke="#64748b"
-              strokeWidth="3"
-              filter="url(#soft-shadow-ellipse)"
-            />
-
-            <ellipse
-              cx="540"
-              cy="220"
-              rx="120"
-              ry="165"
-              fill="#f8fafc"
-              stroke="#64748b"
-              strokeWidth="3"
-              filter="url(#soft-shadow-ellipse)"
-            />
-
-            <text
-              x="260"
-              y="235"
-              textAnchor="middle"
-              fontSize="48"
-              fill="#334155"
-              fontFamily="KaTeX_Math, KaTeX_Main, serif"
-              fontStyle="italic"
-            >
-              L
-            </text>
-
-            <text
-              x="540"
-              y="235"
-              textAnchor="middle"
-              fontSize="48"
-              fill="#334155"
-              fontFamily="KaTeX_Math, KaTeX_Main, serif"
-              fontStyle="italic"
-            >
-              R
-            </text>
-
-            <foreignObject
-              x="140"
-              y="405"
-              width="240"
-              height="60"
-            >
-              <div
+              <button
+                type="button"
+                onClick={openTools}
                 style={{
+                  ...controlButtonStyle,
                   width: '100%',
-                  textAlign: 'center',
-                  fontSize: '24px',
-                  color: '#334155',
                 }}
               >
-                <Math>{'\\Delta(G[L])\\le 8'}</Math>
-              </div>
-            </foreignObject>
+                Tools {toolsOpen ? '▴' : '▾'}
+              </button>
 
-            <foreignObject
-              x="420"
-              y="405"
-              width="240"
-              height="60"
+              {toolsOpen && (
+                <div
+                  style={{
+                    marginTop: '8px',
+                    padding: '6px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '10px',
+                    background: '#ffffff',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
+                    textAlign: 'left',
+                  }}
+                >
+                  {!lovaszOpen ? (
+                    <button
+                      type="button"
+                      onClick={openLovaszMenu}
+                      style={menuButtonStyle}
+                    >
+                      Lovász partition →
+                    </button>
+                  ) : (
+                    <>
+                      <div
+                        style={{
+                          padding: '8px 10px 10px',
+                          borderBottom: '1px solid #e2e8f0',
+                          marginBottom: '4px',
+                        }}
+                      >
+                        Choose <Math>(s,t)</Math>
+                      </div>
+
+                      {lovaszPairs.map((pair) => (
+                        <button
+                          key={`${pair.s}-${pair.t}`}
+                          type="button"
+                          onClick={() => applyLovaszPartition(pair)}
+                          style={{
+                            ...menuButtonStyle,
+                            textAlign: 'center',
+                          }}
+                        >
+                          <Math>{`(${pair.s},${pair.t})`}</Math>
+                        </button>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={() => setLovaszOpen(false)}
+                        style={{
+                          ...menuButtonStyle,
+                          marginTop: '4px',
+                          borderTop: '1px solid #e2e8f0',
+                          textAlign: 'center',
+                        }}
+                      >
+                        ← Back
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={resetPlayground}
+              style={controlButtonStyle}
             >
-              <div
-                style={{
-                  width: '100%',
-                  textAlign: 'center',
-                  fontSize: '24px',
-                  color: '#334155',
-                }}
-              >
-                <Math>{'\\Delta(G[R])\\le 3'}</Math>
-              </div>
-            </foreignObject>
-          </svg>
+              Reset
+            </button>
+          )}
         </div>
-      </section>
+      </div>
     </main>
   )
 }
