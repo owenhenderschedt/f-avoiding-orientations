@@ -98,7 +98,7 @@ export default function BlobLab() {
             marginBottom: '20px',
           }}
         >
-          State 1: First partition view
+          State 1: Lovász partition
         </h2>
 
         <div style={{ textAlign: 'center' }}>
@@ -108,15 +108,14 @@ export default function BlobLab() {
               marginBottom: '20px',
             }}
           >
-            a partition of <Math>G</Math> into parts <Math>L</Math> and{' '}
-            <Math>R</Math>
+            an <Math>(8,3)</Math>-Lovász partition of <Math>G</Math>
           </div>
 
           <svg
             viewBox="0 0 800 500"
             width="100%"
             role="img"
-            aria-label="A partition of G into parts L and R represented by two vertical ellipses"
+            aria-label="An 8,3 Lovasz partition of G into parts L and R"
             style={{
               display: 'block',
               maxWidth: '620px',
@@ -143,7 +142,7 @@ export default function BlobLab() {
 
             <ellipse
               cx="260"
-              cy="250"
+              cy="220"
               rx="120"
               ry="165"
               fill="#f8fafc"
@@ -154,7 +153,7 @@ export default function BlobLab() {
 
             <ellipse
               cx="540"
-              cy="250"
+              cy="220"
               rx="120"
               ry="165"
               fill="#f8fafc"
@@ -165,9 +164,9 @@ export default function BlobLab() {
 
             <text
               x="260"
-              y="263"
+              y="235"
               textAnchor="middle"
-              fontSize="42"
+              fontSize="48"
               fill="#334155"
               fontFamily="KaTeX_Math, KaTeX_Main, serif"
               fontStyle="italic"
@@ -177,15 +176,51 @@ export default function BlobLab() {
 
             <text
               x="540"
-              y="263"
+              y="235"
               textAnchor="middle"
-              fontSize="42"
+              fontSize="48"
               fill="#334155"
               fontFamily="KaTeX_Math, KaTeX_Main, serif"
               fontStyle="italic"
             >
               R
             </text>
+
+            <foreignObject
+              x="140"
+              y="405"
+              width="240"
+              height="60"
+            >
+              <div
+                style={{
+                  width: '100%',
+                  textAlign: 'center',
+                  fontSize: '24px',
+                  color: '#334155',
+                }}
+              >
+                <Math>{'\\Delta(G[L])\\le 8'}</Math>
+              </div>
+            </foreignObject>
+
+            <foreignObject
+              x="420"
+              y="405"
+              width="240"
+              height="60"
+            >
+              <div
+                style={{
+                  width: '100%',
+                  textAlign: 'center',
+                  fontSize: '24px',
+                  color: '#334155',
+                }}
+              >
+                <Math>{'\\Delta(G[R])\\le 3'}</Math>
+              </div>
+            </foreignObject>
           </svg>
         </div>
       </section>
