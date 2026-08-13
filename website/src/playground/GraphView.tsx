@@ -17,17 +17,28 @@ import type {
 
 type GraphViewProps = {
   degree: number
+  workingDegree: number
+  fixedOutdegreeContribution: number
+  orientedTwoFactorCount: number
+
   forbiddenSet: readonly number[]
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
-  outdegreeGuarantees: AcrossOutdegreeGuarantees | null
+
+  outdegreeGuarantees:
+    AcrossOutdegreeGuarantees | null
+
   onOpenLovaszReference: () => void
+
   onOpenBalancedReference: (
     target: BalancedTarget,
   ) => void
+
+  onOpenTwoFactorReference: () => void
 }
 
 type BalancedBadgeProps = {
@@ -48,7 +59,8 @@ function sameValues(
   }
 
   return a.every(
-    (value, index) => value === b[index],
+    (value, index) =>
+      value === b[index],
   )
 }
 
@@ -73,7 +85,9 @@ function BalancedBadge({
       >
         <button
           type="button"
-          onClick={() => onOpen(target)}
+          onClick={() =>
+            onOpen(target)
+          }
           aria-label={`Balanced orientation of ${target}`}
           style={{
             font: 'inherit',
@@ -89,7 +103,8 @@ function BalancedBadge({
               display: 'inline-block',
               fontSize: '20px',
               lineHeight: 1.1,
-              borderBottom: '1px solid #94a3b8',
+              borderBottom:
+                '1px solid #94a3b8',
               paddingBottom: '2px',
             }}
           >
@@ -149,8 +164,72 @@ function BalancedBadge({
   )
 }
 
+function TwoFactorNote({
+  count,
+  onOpen,
+}: {
+  count: number
+  onOpen: () => void
+}) {
+  return (
+    <div
+      style={{
+        margin: '4px auto 20px',
+        textAlign: 'center',
+        color: '#64748b',
+        fontSize: '20px',
+      }}
+    >
+      {count === 1 ? (
+        <>
+          removed:{' '}
+          <button
+            type="button"
+            onClick={onOpen}
+            style={{
+              font: 'inherit',
+              color: '#475569',
+              background: 'transparent',
+              border: 'none',
+              borderBottom:
+                '1px solid #64748b',
+              padding: '0 1px 2px',
+              cursor: 'pointer',
+            }}
+          >
+            oriented 2-factor <Math>{'C'}</Math>
+          </button>
+        </>
+      ) : (
+        <>
+          removed:{' '}
+          <button
+            type="button"
+            onClick={onOpen}
+            style={{
+              font: 'inherit',
+              color: '#475569',
+              background: 'transparent',
+              border: 'none',
+              borderBottom:
+                '1px solid #64748b',
+              padding: '0 1px 2px',
+              cursor: 'pointer',
+            }}
+          >
+            <Math>{`${count}`}</Math> oriented 2-factors
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function GraphView({
   degree,
+  workingDegree,
+  fixedOutdegreeContribution,
+  orientedTwoFactorCount,
   forbiddenSet,
   partition,
   acrossDirection,
@@ -160,6 +239,7 @@ export default function GraphView({
   outdegreeGuarantees,
   onOpenLovaszReference,
   onOpenBalancedReference,
+  onOpenTwoFactorReference,
 }: GraphViewProps) {
   const allPossible =
     allOutdegrees(degree)
@@ -178,24 +258,58 @@ export default function GraphView({
       possibleOutdegreesR,
     )
 
+  const hasResidualGraph =
+    orientedTwoFactorCount > 0
+
   if (partition === null) {
     return (
       <>
         <div
           style={{
             fontSize: '1.15rem',
-            marginBottom: '20px',
+            marginBottom: '16px',
           }}
         >
-          a <Math>{`${degree}`}</Math>-regular graph{' '}
-          <Math>G</Math>
+          {hasResidualGraph ? (
+            <>
+              a{' '}
+              <Math>
+                {`${workingDegree}`}
+              </Math>
+              -regular residual graph
+            </>
+          ) : (
+            <>
+              a{' '}
+              <Math>
+                {`${degree}`}
+              </Math>
+              -regular graph{' '}
+              <Math>{'G'}</Math>
+            </>
+          )}
         </div>
+
+        {hasResidualGraph && (
+          <TwoFactorNote
+            count={
+              orientedTwoFactorCount
+            }
+            onOpen={
+              onOpenTwoFactorReference
+            }
+          />
+        )}
 
         <svg
           viewBox="0 0 600 600"
           width="100%"
           role="img"
-          aria-label={`A ${degree}-regular graph G represented symbolically as a circle`}
+          aria-label={
+            hasResidualGraph
+              ? `The ${workingDegree}-regular residual graph after removing oriented 2-factors`
+              : `A ${degree}-regular graph G represented symbolically as a circle`
+          }
           style={{
             display: 'block',
             maxWidth: '420px',
@@ -230,17 +344,27 @@ export default function GraphView({
             filter="url(#soft-shadow-circle)"
           />
 
-          <text
-            x="300"
-            y="295"
-            textAnchor="middle"
-            fontSize="54"
-            fill="#334155"
-            fontFamily="KaTeX_Math, KaTeX_Main, serif"
-            fontStyle="italic"
+          <foreignObject
+            x="150"
+            y="245"
+            width="300"
+            height="110"
           >
-            G
-          </text>
+            <div
+              style={{
+                width: '100%',
+                textAlign: 'center',
+                fontSize: '44px',
+                color: '#334155',
+              }}
+            >
+              {hasResidualGraph ? (
+                <Math>{'G-C'}</Math>
+              ) : (
+                <Math>{'G'}</Math>
+              )}
+            </div>
+          </foreignObject>
 
           {balancedG && (
             <BalancedBadge
@@ -253,6 +377,24 @@ export default function GraphView({
             />
           )}
         </svg>
+
+        {hasResidualGraph && (
+          <div
+            style={{
+              maxWidth: '620px',
+              margin:
+                '-4px auto 18px',
+              color: '#64748b',
+              fontSize: '19px',
+            }}
+          >
+            fixed contribution:{' '}
+            <Math>
+              {`+${fixedOutdegreeContribution}`}
+            </Math>{' '}
+            to every outdegree
+          </div>
+        )}
 
         <div
           style={{
@@ -275,13 +417,27 @@ export default function GraphView({
 
   return (
     <>
+      {hasResidualGraph && (
+        <TwoFactorNote
+          count={
+            orientedTwoFactorCount
+          }
+          onOpen={
+            onOpenTwoFactorReference
+          }
+        />
+      )}
+
       <div
         style={{
           fontSize: '1.15rem',
           marginBottom: '20px',
         }}
       >
-        an <Math>{`(${partition.s},${partition.t})`}</Math>
+        an{' '}
+        <Math>
+          {`(${partition.s},${partition.t})`}
+        </Math>
         -
         <button
           type="button"
@@ -293,25 +449,28 @@ export default function GraphView({
             color: '#334155',
             background: 'transparent',
             border: 'none',
-            borderBottom: '1px solid #64748b',
+            borderBottom:
+              '1px solid #64748b',
             padding: 0,
             cursor: 'pointer',
           }}
         >
-          {lovaszPartitionTool.menuLabel}
+          {
+            lovaszPartitionTool
+              .menuLabel
+          }
         </button>{' '}
-        of <Math>G</Math>
+        of the{' '}
+        <Math>
+          {`${workingDegree}`}
+        </Math>
+        -regular residual graph
       </div>
 
       <svg
         viewBox="0 0 800 500"
         width="100%"
         role="img"
-        aria-label={
-          acrossDirection === null
-            ? `A ${partition.s},${partition.t} Lovasz partition of G into parts L and R`
-            : `A ${partition.s},${partition.t} Lovasz partition with crossing edges oriented ${acrossDirection}`
-        }
         style={{
           display: 'block',
           maxWidth: '620px',
@@ -492,6 +651,24 @@ export default function GraphView({
           </div>
         </foreignObject>
       </svg>
+
+      {hasResidualGraph && (
+        <div
+          style={{
+            maxWidth: '620px',
+            margin:
+              '0 auto 18px',
+            color: '#64748b',
+            fontSize: '19px',
+          }}
+        >
+          fixed contribution:{' '}
+          <Math>
+            {`+${fixedOutdegreeContribution}`}
+          </Math>{' '}
+          to every outdegree
+        </div>
+      )}
 
       {sharedPossibilities ? (
         <div

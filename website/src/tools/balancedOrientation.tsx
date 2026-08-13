@@ -191,11 +191,7 @@ export function BalancedOrientationReference({
               </div>
             )}
 
-            <p>
-              In this case the balanced orientation orients every edge
-              of <Math>{'G'}</Math>, so it is already a complete
-              orientation.
-            </p>
+
           </>
         ) : (
           <>

@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import Math from '../components/Math'
 import {
-  lovaszPairs,
+  getLovaszPairs,
   lovaszPartitionTool,
   type LovaszPair,
 } from '../tools/lovaszPartition'
+import {
+  orientedTwoFactorTool,
+} from '../tools/orientedTwoFactor'
 import type { AcrossDirection } from '../tools/orientAcrossPartition'
 import type { GraphPart } from './outdegreePossibilities'
 
 type ToolMenuProps = {
+  workingDegree: number
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
   balancedG: boolean
@@ -19,9 +23,11 @@ type ToolMenuProps = {
   onOrientAcross: (direction: AcrossDirection) => void
   onBalanceGraph: () => void
   onBalancePart: (part: GraphPart) => void
+  onTakeOrientedTwoFactor: () => void
 }
 
 export default function ToolMenu({
+  workingDegree,
   partition,
   acrossDirection,
   balancedG,
@@ -31,16 +37,25 @@ export default function ToolMenu({
   onOrientAcross,
   onBalanceGraph,
   onBalancePart,
+  onTakeOrientedTwoFactor,
 }: ToolMenuProps) {
-  const [toolsOpen, setToolsOpen] = useState(false)
-  const [lovaszOpen, setLovaszOpen] = useState(false)
+  const [toolsOpen, setToolsOpen] =
+    useState(false)
+
+  const [lovaszOpen, setLovaszOpen] =
+    useState(false)
+
+  const lovaszPairs =
+    getLovaszPairs(workingDegree)
 
   function toggleTools() {
     setToolsOpen((current) => !current)
     setLovaszOpen(false)
   }
 
-  function applyLovasz(pair: LovaszPair) {
+  function applyLovasz(
+    pair: LovaszPair,
+  ) {
     onApplyLovasz(pair)
     setToolsOpen(false)
     setLovaszOpen(false)
@@ -62,6 +77,11 @@ export default function ToolMenu({
     part: GraphPart,
   ) {
     onBalancePart(part)
+    setToolsOpen(false)
+  }
+
+  function takeOrientedTwoFactor() {
+    onTakeOrientedTwoFactor()
     setToolsOpen(false)
   }
 
@@ -87,6 +107,12 @@ export default function ToolMenu({
     textAlign: 'left' as const,
   }
 
+  const canTakeTwoFactor =
+    partition === null &&
+    !balancedG &&
+    workingDegree >= 2 &&
+    workingDegree % 2 === 0
+
   const hasAvailablePartitionTool =
     acrossDirection === null ||
     !balancedL ||
@@ -96,7 +122,7 @@ export default function ToolMenu({
     <div
       style={{
         position: 'relative',
-        width: '230px',
+        width: '250px',
       }}
     >
       <button
@@ -118,7 +144,8 @@ export default function ToolMenu({
             border: '1px solid #cbd5e1',
             borderRadius: '10px',
             background: '#ffffff',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
+            boxShadow:
+              '0 8px 24px rgba(0, 0, 0, 0.08)',
             textAlign: 'left',
           }}
         >
@@ -135,28 +162,45 @@ export default function ToolMenu({
             <>
               {!lovaszOpen ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => setLovaszOpen(true)}
-                    style={menuButtonStyle}
-                  >
-                    {lovaszPartitionTool.menuLabel} →
-                  </button>
+                  {workingDegree > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLovaszOpen(true)
+                      }
+                      style={menuButtonStyle}
+                    >
+                      {lovaszPartitionTool.menuLabel} →
+                    </button>
+                  )}
 
-                  <button
-                    type="button"
-                    onClick={applyBalanceGraph}
-                    style={menuButtonStyle}
-                  >
-                    Balance <Math>{'G'}</Math>
-                  </button>
+                  {workingDegree > 0 && (
+                    <button
+                      type="button"
+                      onClick={applyBalanceGraph}
+                      style={menuButtonStyle}
+                    >
+                      Balance <Math>{'G'}</Math>
+                    </button>
+                  )}
+
+                  {canTakeTwoFactor && (
+                    <button
+                      type="button"
+                      onClick={takeOrientedTwoFactor}
+                      style={menuButtonStyle}
+                    >
+                      {orientedTwoFactorTool.menuLabel}
+                    </button>
+                  )}
                 </>
               ) : (
                 <>
                   <div
                     style={{
                       padding: '8px 10px 10px',
-                      borderBottom: '1px solid #e2e8f0',
+                      borderBottom:
+                        '1px solid #e2e8f0',
                       marginBottom: '4px',
                     }}
                   >
@@ -167,23 +211,30 @@ export default function ToolMenu({
                     <button
                       key={`${pair.s}-${pair.t}`}
                       type="button"
-                      onClick={() => applyLovasz(pair)}
+                      onClick={() =>
+                        applyLovasz(pair)
+                      }
                       style={{
                         ...menuButtonStyle,
                         textAlign: 'center',
                       }}
                     >
-                      <Math>{`(${pair.s},${pair.t})`}</Math>
+                      <Math>
+                        {`(${pair.s},${pair.t})`}
+                      </Math>
                     </button>
                   ))}
 
                   <button
                     type="button"
-                    onClick={() => setLovaszOpen(false)}
+                    onClick={() =>
+                      setLovaszOpen(false)
+                    }
                     style={{
                       ...menuButtonStyle,
                       marginTop: '4px',
-                      borderTop: '1px solid #e2e8f0',
+                      borderTop:
+                        '1px solid #e2e8f0',
                       textAlign: 'center',
                     }}
                   >
@@ -199,7 +250,9 @@ export default function ToolMenu({
                   <button
                     type="button"
                     onClick={() =>
-                      applyAcrossOrientation('L-to-R')
+                      applyAcrossOrientation(
+                        'L-to-R',
+                      )
                     }
                     style={menuButtonStyle}
                   >
@@ -209,7 +262,9 @@ export default function ToolMenu({
                   <button
                     type="button"
                     onClick={() =>
-                      applyAcrossOrientation('R-to-L')
+                      applyAcrossOrientation(
+                        'R-to-L',
+                      )
                     }
                     style={menuButtonStyle}
                   >

@@ -3,6 +3,8 @@ import type { LovaszPair } from '../tools/lovaszPartition'
 import type { AcrossDirection } from '../tools/orientAcrossPartition'
 import type { GraphPart } from './outdegreePossibilities'
 import deriveOutdegreePossibilities from './deriveOutdegreePossibilities'
+import { getResidualGraphState } from './residualGraphState'
+import { shiftPartOutdegrees } from './shiftOutdegrees'
 
 export type PlaygroundMove =
   | {
@@ -20,6 +22,9 @@ export type PlaygroundMove =
   | {
       type: 'balanced-whole-graph'
     }
+  | {
+      type: 'oriented-two-factor'
+    }
 
 export type PlaygroundState = {
   partition: LovaszPair | null
@@ -27,6 +32,7 @@ export type PlaygroundState = {
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
+  orientedTwoFactorCount: number
 }
 
 const initialState: PlaygroundState = {
@@ -35,6 +41,7 @@ const initialState: PlaygroundState = {
   balancedG: false,
   balancedL: false,
   balancedR: false,
+  orientedTwoFactorCount: 0,
 }
 
 function deriveState(
@@ -67,29 +74,77 @@ function deriveState(
     if (move.type === 'balanced-whole-graph') {
       state.balancedG = true
     }
+
+    if (move.type === 'oriented-two-factor') {
+      state.orientedTwoFactorCount += 1
+    }
   }
 
   return state
 }
 
 export default function usePlayground(
-  degree: number,
+  originalDegree: number,
 ) {
   const [moves, setMoves] =
     useState<PlaygroundMove[]>([])
 
   const state = deriveState(moves)
 
-  const outdegreePossibilities =
+  /*
+   * This describes the graph on which the NEXT orientation
+   * tool is currently operating.
+   *
+   * For example, after one oriented 2-factor in a 12-regular
+   * graph:
+   *
+   * workingDegree = 10
+   * fixedOutdegreeContribution = 1
+   */
+  const residualGraph =
+    getResidualGraphState(
+      originalDegree,
+      state.orientedTwoFactorCount,
+    )
+
+  /*
+   * First calculate possibilities inside the residual graph
+   * itself.
+   */
+  const residualOutdegreePossibilities =
     deriveOutdegreePossibilities({
-      degree,
-      partition: state.partition,
+      degree:
+        residualGraph.workingDegree,
+
+      partition:
+        state.partition,
+
       acrossDirection:
         state.acrossDirection,
-      balancedG: state.balancedG,
-      balancedL: state.balancedL,
-      balancedR: state.balancedR,
+
+      balancedG:
+        state.balancedG,
+
+      balancedL:
+        state.balancedL,
+
+      balancedR:
+        state.balancedR,
     })
+
+  /*
+   * Then add back the outgoing edges that have already been
+   * fixed by oriented 2-factors.
+   *
+   * These are the TOTAL outdegrees in the original graph G,
+   * and therefore these are the values that should be compared
+   * with the original forbidden set F.
+   */
+  const outdegreePossibilities =
+    shiftPartOutdegrees(
+      residualOutdegreePossibilities,
+      residualGraph.fixedOutdegreeContribution,
+    )
 
   function applyLovaszPartition(
     pair: LovaszPair,
@@ -136,6 +191,15 @@ export default function usePlayground(
     ])
   }
 
+  function takeOrientedTwoFactor() {
+    setMoves((current) => [
+      ...current,
+      {
+        type: 'oriented-two-factor',
+      },
+    ])
+  }
+
   function undo() {
     setMoves((current) =>
       current.slice(0, -1),
@@ -150,27 +214,70 @@ export default function usePlayground(
     moves,
     state,
 
-    partition: state.partition,
+    /*
+     * Original problem data.
+     */
+    originalDegree,
+
+    /*
+     * Current residual graph data.
+     */
+    workingDegree:
+      residualGraph.workingDegree,
+
+    fixedOutdegreeContribution:
+      residualGraph.fixedOutdegreeContribution,
+
+    orientedTwoFactorCount:
+      state.orientedTwoFactorCount,
+
+    /*
+     * Orientation state on the current residual graph.
+     */
+    partition:
+      state.partition,
+
     acrossDirection:
       state.acrossDirection,
 
-    balancedG: state.balancedG,
-    balancedL: state.balancedL,
-    balancedR: state.balancedR,
+    balancedG:
+      state.balancedG,
+
+    balancedL:
+      state.balancedL,
+
+    balancedR:
+      state.balancedR,
+
+    /*
+     * Both versions are useful.
+     *
+     * residualOutdegreePossibilities describes only the
+     * remaining graph.
+     *
+     * outdegreePossibilities describes total outdegrees in
+     * the original graph G and is what the user should see.
+     */
+    residualOutdegreePossibilities,
 
     outdegreePossibilities,
 
     outdegreeGuarantees:
       outdegreePossibilities,
 
+    /*
+     * Moves.
+     */
     applyLovaszPartition,
     orientAcross,
     balancePart,
     balanceGraph,
+    takeOrientedTwoFactor,
 
     undo,
     reset,
 
-    canUndo: moves.length > 0,
+    canUndo:
+      moves.length > 0,
   }
 }

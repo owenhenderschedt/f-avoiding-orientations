@@ -17,6 +17,10 @@ import {
   balancedOrientationTool,
   type BalancedTarget,
 } from '../tools/balancedOrientation'
+import {
+  OrientedTwoFactorReference,
+  orientedTwoFactorTool,
+} from '../tools/orientedTwoFactor'
 
 type ActiveReference =
   | {
@@ -25,6 +29,9 @@ type ActiveReference =
   | {
       type: 'balanced-orientation'
       target: BalancedTarget
+    }
+  | {
+      type: 'oriented-two-factor'
     }
   | null
 
@@ -72,7 +79,10 @@ export default function BlobLab() {
     activeReference?.type ===
     'balanced-orientation'
       ? balancedOrientationTool.name
-      : lovaszPartitionTool.name
+      : activeReference?.type ===
+          'oriented-two-factor'
+        ? orientedTwoFactorTool.name
+        : lovaszPartitionTool.name
 
   return (
     <>
@@ -83,7 +93,11 @@ export default function BlobLab() {
           margin: '0 auto',
         }}
       >
-        <h1 style={{ marginBottom: '12px' }}>
+        <h1
+          style={{
+            marginBottom: '12px',
+          }}
+        >
           Blob Lab
         </h1>
 
@@ -108,8 +122,7 @@ export default function BlobLab() {
             orientationStatus.isComplete
           }
           isValid={
-            orientationStatus
-              .isValidFAvoiding
+            orientationStatus.isValidFAvoiding
           }
         />
 
@@ -121,6 +134,15 @@ export default function BlobLab() {
           <GraphView
             degree={
               prototypeCase.degree
+            }
+            workingDegree={
+              playground.workingDegree
+            }
+            fixedOutdegreeContribution={
+              playground.fixedOutdegreeContribution
+            }
+            orientedTwoFactorCount={
+              playground.orientedTwoFactorCount
             }
             forbiddenSet={
               prototypeCase.forbiddenSet
@@ -157,6 +179,12 @@ export default function BlobLab() {
                 target,
               })
             }
+            onOpenTwoFactorReference={() =>
+              setActiveReference({
+                type:
+                  'oriented-two-factor',
+              })
+            }
           />
 
           <div
@@ -170,6 +198,9 @@ export default function BlobLab() {
             }}
           >
             <ToolMenu
+              workingDegree={
+                playground.workingDegree
+              }
               partition={
                 playground.partition
               }
@@ -186,8 +217,7 @@ export default function BlobLab() {
                 playground.balancedR
               }
               onApplyLovasz={
-                playground
-                  .applyLovaszPartition
+                playground.applyLovaszPartition
               }
               onOrientAcross={
                 playground.orientAcross
@@ -197,6 +227,9 @@ export default function BlobLab() {
               }
               onBalancePart={
                 playground.balancePart
+              }
+              onTakeOrientedTwoFactor={
+                playground.takeOrientedTwoFactor
               }
             />
 
@@ -287,6 +320,17 @@ export default function BlobLab() {
                       )
                     }
 
+                    if (
+                      move.type ===
+                      'oriented-two-factor'
+                    ) {
+                      return (
+                        <span key={index}>
+                          Orient a 2-factor
+                        </span>
+                      )
+                    }
+
                     return null
                   },
                 )
@@ -325,10 +369,19 @@ export default function BlobLab() {
               activeReference.target
             }
             degree={
-              prototypeCase.degree
+              playground.workingDegree
             }
             partition={
               playground.partition
+            }
+          />
+        )}
+
+        {activeReference?.type ===
+          'oriented-two-factor' && (
+          <OrientedTwoFactorReference
+            degree={
+              playground.workingDegree + 2
             }
           />
         )}
