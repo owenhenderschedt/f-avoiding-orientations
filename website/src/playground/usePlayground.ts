@@ -1,6 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { LovaszPair } from '../tools/lovaszPartition'
-import type { AcrossDirection } from '../tools/orientAcrossPartition'
+import {
+  getAcrossOutdegreeGuarantees,
+  type AcrossDirection,
+} from '../tools/orientAcrossPartition'
 
 export type PlaygroundMove =
   | {
@@ -24,7 +27,8 @@ const initialState: PlaygroundState = {
 
 function deriveState(moves: PlaygroundMove[]): PlaygroundState {
   const state: PlaygroundState = {
-    ...initialState,
+    partition: null,
+    acrossDirection: null,
   }
 
   for (const move of moves) {
@@ -40,13 +44,19 @@ function deriveState(moves: PlaygroundMove[]): PlaygroundState {
   return state
 }
 
-export default function usePlayground() {
+export default function usePlayground(degree: number) {
   const [moves, setMoves] = useState<PlaygroundMove[]>([])
 
-  const state = useMemo(
-    () => deriveState(moves),
-    [moves],
-  )
+  const state = deriveState(moves)
+
+  const outdegreeGuarantees =
+    state.partition !== null && state.acrossDirection !== null
+      ? getAcrossOutdegreeGuarantees(
+          degree,
+          state.partition,
+          state.acrossDirection,
+        )
+      : null
 
   function applyLovaszPartition(pair: LovaszPair) {
     setMoves((current) => [
@@ -69,13 +79,7 @@ export default function usePlayground() {
   }
 
   function undo() {
-    setMoves((current) => {
-      if (current.length === 0) {
-        return current
-      }
-
-      return current.slice(0, -1)
-    })
+    setMoves((current) => current.slice(0, -1))
   }
 
   function reset() {
@@ -87,6 +91,7 @@ export default function usePlayground() {
     state,
     partition: state.partition,
     acrossDirection: state.acrossDirection,
+    outdegreeGuarantees,
     applyLovaszPartition,
     orientAcross,
     undo,

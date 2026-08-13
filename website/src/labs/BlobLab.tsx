@@ -2,9 +2,11 @@ import { useState } from 'react'
 import Math from '../components/Math'
 import ProofHistory from '../components/ProofHistory'
 import ToolReferencePanel from '../components/ToolReferencePanel'
+import CaseStatus from '../playground/CaseStatus'
 import GraphView from '../playground/GraphView'
 import ToolMenu from '../playground/ToolMenu'
 import usePlayground from '../playground/usePlayground'
+import { prototypeCase } from '../cases/prototypeCase'
 import {
   LovaszPartitionReference,
   lovaszPartitionTool,
@@ -13,7 +15,9 @@ import {
 export default function BlobLab() {
   const [referenceOpen, setReferenceOpen] = useState(false)
 
-  const playground = usePlayground()
+  const playground = usePlayground(prototypeCase.degree)
+
+  const isValidFAvoidingOrientation = false
 
   function undo() {
     playground.undo()
@@ -40,10 +44,19 @@ export default function BlobLab() {
           Visual experiments for the symbolic graph representation.
         </p>
 
+        <CaseStatus
+          degree={prototypeCase.degree}
+          forbiddenSet={prototypeCase.forbiddenSet}
+          isValid={isValidFAvoidingOrientation}
+        />
+
         <div style={{ textAlign: 'center' }}>
           <GraphView
+            degree={prototypeCase.degree}
+            forbiddenSet={prototypeCase.forbiddenSet}
             partition={playground.partition}
             acrossDirection={playground.acrossDirection}
+            outdegreeGuarantees={playground.outdegreeGuarantees}
             onOpenLovaszReference={() => setReferenceOpen(true)}
           />
 

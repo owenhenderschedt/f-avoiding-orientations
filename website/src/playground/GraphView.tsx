@@ -1,35 +1,31 @@
 import Math from '../components/Math'
+import PossibleOutdegrees from './PossibleOutdegrees'
 import {
   lovaszPartitionTool,
   type LovaszPair,
 } from '../tools/lovaszPartition'
-import {
-  getAcrossOutdegreeGuarantees,
-  type AcrossDirection,
-  type OutdegreeRange,
+import type {
+  AcrossDirection,
+  AcrossOutdegreeGuarantees,
 } from '../tools/orientAcrossPartition'
 
 type GraphViewProps = {
+  degree: number
+  forbiddenSet: readonly number[]
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+  outdegreeGuarantees: AcrossOutdegreeGuarantees | null
   onOpenLovaszReference: () => void
 }
 
-function outdegreeRangeLatex(range: OutdegreeRange) {
-  if (range.min === range.max) {
-    return `d^+(v)=${range.min}`
-  }
-
-  return `d^+(v)\\in\\{${range.min},\\ldots,${range.max}\\}`
-}
-
 export default function GraphView({
+  degree,
+  forbiddenSet,
   partition,
   acrossDirection,
+  outdegreeGuarantees,
   onOpenLovaszReference,
 }: GraphViewProps) {
-  const degree = 12
-
   if (partition === null) {
     return (
       <>
@@ -97,15 +93,6 @@ export default function GraphView({
     )
   }
 
-  const guarantees =
-    acrossDirection === null
-      ? null
-      : getAcrossOutdegreeGuarantees(
-          degree,
-          partition,
-          acrossDirection,
-        )
-
   return (
     <>
       <div
@@ -135,7 +122,7 @@ export default function GraphView({
       </div>
 
       <svg
-        viewBox="0 0 800 500"
+        viewBox="0 0 800 650"
         width="100%"
         role="img"
         aria-label={
@@ -253,7 +240,7 @@ export default function GraphView({
           x="90"
           y="405"
           width="280"
-          height="70"
+          height="55"
         >
           <div
             style={{
@@ -263,15 +250,9 @@ export default function GraphView({
               color: '#334155',
             }}
           >
-            {guarantees === null ? (
-              <Math>
-                {`\\Delta(G[L])\\le ${partition.s}`}
-              </Math>
-            ) : (
-              <Math>
-                {outdegreeRangeLatex(guarantees.L)}
-              </Math>
-            )}
+            <Math>
+              {`\\Delta(G[L])\\le ${partition.s}`}
+            </Math>
           </div>
         </foreignObject>
 
@@ -279,7 +260,7 @@ export default function GraphView({
           x="430"
           y="405"
           width="280"
-          height="70"
+          height="55"
         >
           <div
             style={{
@@ -289,17 +270,39 @@ export default function GraphView({
               color: '#334155',
             }}
           >
-            {guarantees === null ? (
-              <Math>
-                {`\\Delta(G[R])\\le ${partition.t}`}
-              </Math>
-            ) : (
-              <Math>
-                {outdegreeRangeLatex(guarantees.R)}
-              </Math>
-            )}
+            <Math>
+              {`\\Delta(G[R])\\le ${partition.t}`}
+            </Math>
           </div>
         </foreignObject>
+
+        {outdegreeGuarantees !== null && (
+          <>
+            <foreignObject
+              x="55"
+              y="475"
+              width="350"
+              height="160"
+            >
+              <PossibleOutdegrees
+                range={outdegreeGuarantees.L}
+                forbiddenSet={forbiddenSet}
+              />
+            </foreignObject>
+
+            <foreignObject
+              x="395"
+              y="475"
+              width="350"
+              height="160"
+            >
+              <PossibleOutdegrees
+                range={outdegreeGuarantees.R}
+                forbiddenSet={forbiddenSet}
+              />
+            </foreignObject>
+          </>
+        )}
       </svg>
     </>
   )

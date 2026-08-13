@@ -152,7 +152,9 @@ export default function ToolMenu({
                 onClick={() => applyAcrossOrientation('L-to-R')}
                 style={menuButtonStyle}
               >
-                {getAcrossDirectionLabel('L-to-R')}
+                <>
+  Orient <Math>{'L\\to R'}</Math>
+</>
               </button>
 
               <button
@@ -160,7 +162,9 @@ export default function ToolMenu({
                 onClick={() => applyAcrossOrientation('R-to-L')}
                 style={menuButtonStyle}
               >
-                {getAcrossDirectionLabel('R-to-L')}
+                <>
+  Orient <Math>{'R\\to L'}</Math>
+</>
               </button>
             </>
           ) : (
