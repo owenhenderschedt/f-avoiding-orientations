@@ -3,7 +3,11 @@ import {
   lovaszPartitionTool,
   type LovaszPair,
 } from '../tools/lovaszPartition'
-import type { AcrossDirection } from '../tools/orientAcrossPartition'
+import {
+  getAcrossOutdegreeGuarantees,
+  type AcrossDirection,
+  type OutdegreeRange,
+} from '../tools/orientAcrossPartition'
 
 type GraphViewProps = {
   partition: LovaszPair | null
@@ -11,11 +15,21 @@ type GraphViewProps = {
   onOpenLovaszReference: () => void
 }
 
+function outdegreeRangeLatex(range: OutdegreeRange) {
+  if (range.min === range.max) {
+    return `d^+(v)=${range.min}`
+  }
+
+  return `d^+(v)\\in\\{${range.min},\\ldots,${range.max}\\}`
+}
+
 export default function GraphView({
   partition,
   acrossDirection,
   onOpenLovaszReference,
 }: GraphViewProps) {
+  const degree = 12
+
   if (partition === null) {
     return (
       <>
@@ -25,14 +39,14 @@ export default function GraphView({
             marginBottom: '20px',
           }}
         >
-          a <Math>12</Math>-regular graph <Math>G</Math>
+          a <Math>{`${degree}`}</Math>-regular graph <Math>G</Math>
         </div>
 
         <svg
           viewBox="0 0 600 600"
           width="100%"
           role="img"
-          aria-label="A 12-regular graph G represented symbolically as a circle"
+          aria-label={`A ${degree}-regular graph G represented symbolically as a circle`}
           style={{
             display: 'block',
             maxWidth: '420px',
@@ -82,6 +96,15 @@ export default function GraphView({
       </>
     )
   }
+
+  const guarantees =
+    acrossDirection === null
+      ? null
+      : getAcrossOutdegreeGuarantees(
+          degree,
+          partition,
+          acrossDirection,
+        )
 
   return (
     <>
@@ -142,10 +165,26 @@ export default function GraphView({
               floodOpacity="0.10"
             />
           </filter>
+
+          <marker
+            id="filled-arrowhead"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="7"
+            markerHeight="7"
+            orient="auto"
+            markerUnits="strokeWidth"
+          >
+            <path
+              d="M 0 0 L 10 5 L 0 10 z"
+              fill="#475569"
+            />
+          </marker>
         </defs>
 
         <ellipse
-          cx="260"
+          cx="230"
           cy="220"
           rx="120"
           ry="165"
@@ -156,7 +195,7 @@ export default function GraphView({
         />
 
         <ellipse
-          cx="540"
+          cx="570"
           cy="220"
           rx="120"
           ry="165"
@@ -167,7 +206,7 @@ export default function GraphView({
         />
 
         <text
-          x="260"
+          x="230"
           y="235"
           textAnchor="middle"
           fontSize="48"
@@ -179,7 +218,7 @@ export default function GraphView({
         </text>
 
         <text
-          x="540"
+          x="570"
           y="235"
           textAnchor="middle"
           fontSize="48"
@@ -191,23 +230,30 @@ export default function GraphView({
         </text>
 
         {acrossDirection !== null && (
-          <text
-            x="400"
-            y="235"
-            textAnchor="middle"
-            fontSize="48"
-            fill="#475569"
-            fontFamily="KaTeX_Main, serif"
+          <g
+            stroke="#475569"
+            strokeWidth="3"
+            strokeLinecap="round"
+            fill="none"
           >
-            {acrossDirection === 'L-to-R' ? '→' : '←'}
-          </text>
+            {[175, 205, 235, 265].map((y) => (
+              <line
+                key={y}
+                x1={acrossDirection === 'L-to-R' ? 360 : 440}
+                y1={y}
+                x2={acrossDirection === 'L-to-R' ? 440 : 360}
+                y2={y}
+                markerEnd="url(#filled-arrowhead)"
+              />
+            ))}
+          </g>
         )}
 
         <foreignObject
-          x="140"
+          x="90"
           y="405"
-          width="240"
-          height="60"
+          width="280"
+          height="70"
         >
           <div
             style={{
@@ -217,17 +263,23 @@ export default function GraphView({
               color: '#334155',
             }}
           >
-            <Math>
-              {`\\Delta(G[L])\\le ${partition.s}`}
-            </Math>
+            {guarantees === null ? (
+              <Math>
+                {`\\Delta(G[L])\\le ${partition.s}`}
+              </Math>
+            ) : (
+              <Math>
+                {outdegreeRangeLatex(guarantees.L)}
+              </Math>
+            )}
           </div>
         </foreignObject>
 
         <foreignObject
-          x="420"
+          x="430"
           y="405"
-          width="240"
-          height="60"
+          width="280"
+          height="70"
         >
           <div
             style={{
@@ -237,9 +289,15 @@ export default function GraphView({
               color: '#334155',
             }}
           >
-            <Math>
-              {`\\Delta(G[R])\\le ${partition.t}`}
-            </Math>
+            {guarantees === null ? (
+              <Math>
+                {`\\Delta(G[R])\\le ${partition.t}`}
+              </Math>
+            ) : (
+              <Math>
+                {outdegreeRangeLatex(guarantees.R)}
+              </Math>
+            )}
           </div>
         </foreignObject>
       </svg>
