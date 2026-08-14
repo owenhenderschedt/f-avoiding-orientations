@@ -7,7 +7,6 @@ import GraphView from '../playground/GraphView'
 import ToolMenu from '../playground/ToolMenu'
 import usePlayground from '../playground/usePlayground'
 import getOrientationStatus from '../playground/orientationStatus'
-import { prototypeCase } from '../cases/prototypeCase'
 import {
   LovaszPartitionReference,
   lovaszPartitionTool,
@@ -25,6 +24,13 @@ import {
   HasanvandCompressionReference,
   hasanvandCompressionTool,
 } from '../tools/hasanvandCompression'
+
+type BlobLabProps = {
+  degree: number
+  forbiddenSet: readonly number[]
+  onBackToCases: () => void
+  onHome: () => void
+}
 
 type ActiveReference =
   | {
@@ -46,7 +52,12 @@ type ActiveReference =
     }
   | null
 
-export default function BlobLab() {
+export default function BlobLab({
+  degree,
+  forbiddenSet,
+  onBackToCases,
+  onHome,
+}: BlobLabProps) {
   const [
     activeReference,
     setActiveReference,
@@ -55,14 +66,11 @@ export default function BlobLab() {
   )
 
   const playground =
-    usePlayground(
-      prototypeCase.degree,
-    )
+    usePlayground(degree)
 
   const orientationStatus =
     getOrientationStatus({
-      forbiddenSet:
-        prototypeCase.forbiddenSet,
+      forbiddenSet,
 
       outdegreePossibilities:
         playground
@@ -89,13 +97,11 @@ export default function BlobLab() {
 
   function undo() {
     playground.undo()
-
     setActiveReference(null)
   }
 
   function reset() {
     playground.reset()
-
     setActiveReference(null)
   }
 
@@ -111,40 +117,89 @@ export default function BlobLab() {
           ? hasanvandCompressionTool.name
           : lovaszPartitionTool.name
 
+  const forbiddenSetMath =
+    `\\{${forbiddenSet.join(',')}\\}`
+
   return (
     <>
       <main
         style={{
-          padding: '48px',
+          padding:
+            '42px 48px 60px',
           maxWidth: '1000px',
           margin: '0 auto',
         }}
       >
-        <h1
+        <div
           style={{
-            marginBottom: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent:
+              'space-between',
+            marginBottom: '28px',
           }}
         >
-          Blob Lab
+          <button
+            type="button"
+            onClick={
+              onBackToCases
+            }
+            style={{
+              font: 'inherit',
+              border: 'none',
+              background:
+                'transparent',
+              color: '#64748b',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            ← Back to cases
+          </button>
+
+          <button
+            type="button"
+            onClick={onHome}
+            style={{
+              font: 'inherit',
+              border: 'none',
+              background:
+                'transparent',
+              color: '#64748b',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            Home
+          </button>
+        </div>
+
+        <h1
+          style={{
+            marginBottom: '10px',
+          }}
+        >
+          <Math>{`${degree}`}</Math>
+          -Regular Playground
         </h1>
 
         <p
           style={{
             marginTop: 0,
-            marginBottom: '40px',
+            marginBottom: '34px',
+            color: '#64748b',
           }}
         >
-          Visual experiments for the
-          symbolic graph representation.
+          Forbidden set{' '}
+          <Math>
+            {`F=${forbiddenSetMath}`}
+          </Math>
         </p>
 
         <CaseStatus
-          degree={
-            prototypeCase.degree
-          }
+          degree={degree}
           forbiddenSet={
-            prototypeCase
-              .forbiddenSet
+            forbiddenSet
           }
           isComplete={
             orientationStatus
@@ -162,9 +217,7 @@ export default function BlobLab() {
           }}
         >
           <GraphView
-            degree={
-              prototypeCase.degree
-            }
+            degree={degree}
             workingDegree={
               playground
                 .workingDegree
@@ -178,8 +231,7 @@ export default function BlobLab() {
                 .orientedTwoFactorCount
             }
             forbiddenSet={
-              prototypeCase
-                .forbiddenSet
+              forbiddenSet
             }
             partition={
               playground.partition
@@ -375,9 +427,7 @@ export default function BlobLab() {
                         >
                           Balance{' '}
                           <Math>
-                            {
-                              move.part
-                            }
+                            {move.part}
                           </Math>
                         </span>
                       )
@@ -407,7 +457,8 @@ export default function BlobLab() {
                         <span
                           key={index}
                         >
-                          Orient a 2-factor
+                          Orient a
+                          2-factor
                         </span>
                       )
                     }
