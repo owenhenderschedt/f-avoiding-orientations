@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import Math from './components/Math'
 import BlobLab from './labs/BlobLab'
+import ForbiddenSetFilter, {
+  emptyForbiddenSetFilter,
+  type ForbiddenSetFilterState,
+} from './components/ForbiddenSetFilter'
 import {
   getCaseGroupsForDegree,
   playgroundDegrees,
@@ -22,6 +26,28 @@ function forbiddenSetLatex(
   forbiddenSet: readonly number[],
 ) {
   return `\\{${forbiddenSet.join(',')}\\}`
+}
+
+function forbiddenSetMatchesFilter(
+  forbiddenSet: readonly number[],
+  filter: ForbiddenSetFilterState,
+) {
+  const includesEverything =
+    filter.mustInclude.every(
+      (value) =>
+        forbiddenSet.includes(value),
+    )
+
+  const excludesEverything =
+    filter.mustExclude.every(
+      (value) =>
+        !forbiddenSet.includes(value),
+    )
+
+  return (
+    includesEverything &&
+    excludesEverything
+  )
 }
 
 function App() {
@@ -46,10 +72,22 @@ function App() {
       null,
     )
 
+  const [
+    forbiddenSetFilter,
+    setForbiddenSetFilter,
+  ] =
+    useState<ForbiddenSetFilterState>(
+      emptyForbiddenSetFilter(),
+    )
+
   function goHome() {
     setScreen('home')
     setSelectedDegree(null)
     setSelectedCase(null)
+
+    setForbiddenSetFilter(
+      emptyForbiddenSetFilter(),
+    )
   }
 
   function chooseDegree(
@@ -57,6 +95,11 @@ function App() {
   ) {
     setSelectedDegree(degree)
     setSelectedCase(null)
+
+    setForbiddenSetFilter(
+      emptyForbiddenSetFilter(),
+    )
+
     setScreen('cases')
   }
 
@@ -102,11 +145,58 @@ function App() {
         selectedDegree,
       )
 
+    /*
+     * Individual-list mode:
+     *
+     * Keep the reversal class if at
+     * least one member satisfies the
+     * filter.
+     *
+     * Entire-pair mode:
+     *
+     * Keep the reversal class only if
+     * every member satisfies the
+     * filter.
+     */
+    const filteredGroups =
+      groups.filter(
+        (group) => {
+          const matches =
+            group.options.map(
+              (option) =>
+                forbiddenSetMatchesFilter(
+                  option.forbiddenSet,
+                  forbiddenSetFilter,
+                ),
+            )
+
+          if (
+            forbiddenSetFilter
+              .matchMode === 'pair'
+          ) {
+            return matches.every(
+              Boolean,
+            )
+          }
+
+          return matches.some(
+            Boolean,
+          )
+        },
+      )
+
+    const hasActiveFilters =
+      forbiddenSetFilter
+        .mustInclude.length > 0 ||
+      forbiddenSetFilter
+        .mustExclude.length > 0
+
     return (
       <main
         style={{
           minHeight: '100vh',
-          padding: '54px 30px 80px',
+          padding:
+            '54px 30px 80px',
           background:
             'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
         }}
@@ -269,127 +359,205 @@ function App() {
             </div>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns:
-                'repeat(auto-fill, minmax(250px, 1fr))',
-              gap: '12px',
-              alignItems: 'stretch',
-            }}
-          >
-            {groups.map(
-              (group) => (
-                <div
-                  key={group.id}
-                  style={{
-                    minHeight: '68px',
-                    padding:
-                      '12px 14px',
-                    border:
-                      '1px solid #dbe3ec',
-                    borderRadius:
-                      '10px',
-                    background:
-                      '#ffffff',
-                    boxShadow:
-                      '0 4px 14px rgba(15, 23, 42, 0.04)',
-                    display: 'flex',
-                    alignItems:
-                      'center',
-                    justifyContent:
-                      'center',
-                  }}
-                >
+          <ForbiddenSetFilter
+            degree={
+              selectedDegree
+            }
+            totalCount={
+              groups.length
+            }
+            filteredCount={
+              filteredGroups.length
+            }
+            value={
+              forbiddenSetFilter
+            }
+            onChange={
+              setForbiddenSetFilter
+            }
+          />
+
+          {filteredGroups.length >
+          0 ? (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns:
+                  'repeat(auto-fill, minmax(250px, 1fr))',
+                gap: '12px',
+                alignItems:
+                  'stretch',
+              }}
+            >
+              {filteredGroups.map(
+                (group) => (
                   <div
+                    key={group.id}
                     style={{
+                      minHeight: '68px',
+                      padding:
+                        '12px 14px',
+                      border:
+                        '1px solid #dbe3ec',
+                      borderRadius:
+                        '10px',
+                      background:
+                        '#ffffff',
+                      boxShadow:
+                        '0 4px 14px rgba(15, 23, 42, 0.04)',
                       display: 'flex',
                       alignItems:
                         'center',
                       justifyContent:
                         'center',
-                      gap: '10px',
-                      flexWrap:
-                        'nowrap',
-                      width: '100%',
                     }}
                   >
-                    {group.options.map(
-                      (
-                        option,
-                        index,
-                      ) => (
-                        <div
-                          key={
-                            option
-                              .forbiddenSet
-                              .join('-')
-                          }
-                          style={{
-                            display:
-                              'flex',
-                            alignItems:
-                              'center',
-                            gap: '10px',
-                          }}
-                        >
-                          {index > 0 && (
-                            <span
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems:
+                          'center',
+                        justifyContent:
+                          'center',
+                        gap: '10px',
+                        flexWrap:
+                          'nowrap',
+                        width: '100%',
+                      }}
+                    >
+                      {group.options.map(
+                        (
+                          option,
+                          index,
+                        ) => {
+                          const matches =
+                            forbiddenSetMatchesFilter(
+                              option
+                                .forbiddenSet,
+                              forbiddenSetFilter,
+                            )
+
+                          /*
+                           * In individual
+                           * mode, a card may
+                           * survive because
+                           * only one member
+                           * matches, so mute
+                           * its partner.
+                           *
+                           * In pair mode,
+                           * every visible
+                           * member matches.
+                           */
+                          const muted =
+                            forbiddenSetFilter
+                              .matchMode ===
+                              'individual' &&
+                            hasActiveFilters &&
+                            !matches
+
+                          return (
+                            <div
+                              key={
+                                option
+                                  .forbiddenSet
+                                  .join('-')
+                              }
                               style={{
-                                color:
-                                  '#94a3b8',
-                                fontSize:
-                                  '22px',
-                                lineHeight: 1,
+                                display:
+                                  'flex',
+                                alignItems:
+                                  'center',
+                                gap:
+                                  '10px',
                               }}
                             >
-                              ↔
-                            </span>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              chooseCase(
-                                selectedDegree,
-                                option
-                                  .forbiddenSet,
-                              )
-                            }
-                            style={{
-                              font:
-                                'inherit',
-                              fontSize:
-                                '19px',
-                              padding:
-                                '5px 3px',
-                              border:
-                                'none',
-                              background:
-                                'transparent',
-                              color:
-                                '#334155',
-                              cursor:
-                                'pointer',
-                              whiteSpace:
-                                'nowrap',
-                            }}
-                          >
-                            <Math>
-                              {forbiddenSetLatex(
-                                option
-                                  .forbiddenSet,
+                              {index >
+                                0 && (
+                                <span
+                                  style={{
+                                    color:
+                                      '#94a3b8',
+                                    fontSize:
+                                      '22px',
+                                    lineHeight:
+                                      1,
+                                  }}
+                                >
+                                  ↔
+                                </span>
                               )}
-                            </Math>
-                          </button>
-                        </div>
-                      ),
-                    )}
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  chooseCase(
+                                    selectedDegree,
+                                    option
+                                      .forbiddenSet,
+                                  )
+                                }
+                                style={{
+                                  font:
+                                    'inherit',
+                                  fontSize:
+                                    '19px',
+                                  padding:
+                                    '5px 3px',
+                                  border:
+                                    'none',
+                                  background:
+                                    'transparent',
+                                  color:
+                                    muted
+                                      ? '#a8b3c1'
+                                      : '#334155',
+                                  opacity:
+                                    muted
+                                      ? 0.62
+                                      : 1,
+                                  cursor:
+                                    'pointer',
+                                  whiteSpace:
+                                    'nowrap',
+                                }}
+                              >
+                                <Math>
+                                  {forbiddenSetLatex(
+                                    option
+                                      .forbiddenSet,
+                                  )}
+                                </Math>
+                              </button>
+                            </div>
+                          )
+                        },
+                      )}
+                    </div>
                   </div>
-                </div>
-              ),
-            )}
-          </div>
+                ),
+              )}
+            </div>
+          ) : (
+            <div
+              style={{
+                textAlign: 'center',
+                padding:
+                  '54px 20px',
+                color: '#64748b',
+                border:
+                  '1px solid #e2e8f0',
+                borderRadius:
+                  '12px',
+                background:
+                  '#ffffff',
+              }}
+            >
+              No forbidden sets match
+              these filters.
+            </div>
+          )}
+
           <div
             style={{
               textAlign: 'center',
@@ -398,7 +566,8 @@ function App() {
               fontSize: '18px',
             }}
           >
-            Click any individual forbidden set to open it!
+            Click any forbidden set to
+            open it in the playground.
           </div>
         </div>
       </main>
