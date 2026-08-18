@@ -1,5 +1,12 @@
-import type { LovaszPair } from '../tools/lovaszPartition'
-import type { AcrossDirection } from '../tools/orientAcrossPartition'
+import type {
+  LovaszPair,
+} from '../tools/lovaszPartition'
+import type {
+  AcrossDirection,
+} from '../tools/orientAcrossPartition'
+import {
+  getAvoidCChoices,
+} from '../tools/avoidC'
 import {
   allOutdegrees,
   uniqueSorted,
@@ -12,17 +19,32 @@ type DeriveOutdegreePossibilitiesArgs = {
   degree: number
   partition: LovaszPair | null
   acrossDirection: AcrossDirection | null
+
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
+
+  /*
+   * These are optional for now so that
+   * the existing playground continues
+   * to behave exactly as before until
+   * Avoid c is wired into the state.
+   */
+  avoidCG?: number | null
+  avoidCL?: number | null
+  avoidCR?: number | null
 }
 
 function balancedInternalChoices(
   internalDegree: number,
 ): number[] {
   return uniqueSorted([
-    Math.floor(internalDegree / 2),
-    Math.ceil(internalDegree / 2),
+    Math.floor(
+      internalDegree / 2,
+    ),
+    Math.ceil(
+      internalDegree / 2,
+    ),
   ])
 }
 
@@ -35,91 +57,87 @@ function balancedWholeGraphChoices(
   ])
 }
 
+function unrestrictedInternalChoices(
+  internalDegree: number,
+): OutdegreeSet {
+  return allOutdegrees(
+    internalDegree,
+  )
+}
+
+function avoidCInternalChoices(
+  internalDegree: number,
+  c: number,
+): OutdegreeSet {
+  return getAvoidCChoices(
+    internalDegree,
+    c,
+  )
+}
+
 function possibilitiesForPart(
   degree: number,
   maxInternalDegree: number,
   part: GraphPart,
   acrossDirection: AcrossDirection | null,
   balanced: boolean,
+  avoidC: number | null,
 ): OutdegreeSet {
-  if (!balanced) {
-    if (acrossDirection === null) {
-      return allOutdegrees(degree)
-    }
-
-    const crossingEdgesPointOut =
-      (part === 'L' && acrossDirection === 'L-to-R') ||
-      (part === 'R' && acrossDirection === 'R-to-L')
-
-    if (crossingEdgesPointOut) {
-      const values: number[] = []
-
-      for (
-        let internalDegree = 0;
-        internalDegree <= maxInternalDegree;
-        internalDegree += 1
-      ) {
-        const crossingDegree =
-          degree - internalDegree
-
-        for (
-          let internalOutdegree = 0;
-          internalOutdegree <= internalDegree;
-          internalOutdegree += 1
-        ) {
-          values.push(
-            crossingDegree + internalOutdegree,
-          )
-        }
-      }
-
-      return uniqueSorted(values)
-    }
-
-    const values: number[] = []
-
-    for (
-      let internalDegree = 0;
-      internalDegree <= maxInternalDegree;
-      internalDegree += 1
-    ) {
-      for (
-        let internalOutdegree = 0;
-        internalOutdegree <= internalDegree;
-        internalOutdegree += 1
-      ) {
-        values.push(internalOutdegree)
-      }
-    }
-
-    return uniqueSorted(values)
-  }
-
   /*
-   * Balancing the internal graph alone does not yet restrict the
-   * total outdegree if the crossing edges remain unoriented.
+   * An orientation only inside the part
+   * does not yet restrict the total
+   * outdegree while the crossing edges
+   * remain unoriented.
    */
   if (acrossDirection === null) {
     return allOutdegrees(degree)
   }
 
   const crossingEdgesPointOut =
-    (part === 'L' && acrossDirection === 'L-to-R') ||
-    (part === 'R' && acrossDirection === 'R-to-L')
+    (
+      part === 'L' &&
+      acrossDirection ===
+        'L-to-R'
+    ) ||
+    (
+      part === 'R' &&
+      acrossDirection ===
+        'R-to-L'
+    )
 
   const values: number[] = []
 
   for (
     let internalDegree = 0;
-    internalDegree <= maxInternalDegree;
+    internalDegree <=
+    maxInternalDegree;
     internalDegree += 1
   ) {
-    const internalChoices =
-      balancedInternalChoices(internalDegree)
+    let internalChoices:
+      OutdegreeSet
+
+    if (balanced) {
+      internalChoices =
+        balancedInternalChoices(
+          internalDegree,
+        )
+    } else if (avoidC !== null) {
+      internalChoices =
+        avoidCInternalChoices(
+          internalDegree,
+          avoidC,
+        )
+    } else {
+      internalChoices =
+        unrestrictedInternalChoices(
+          internalDegree,
+        )
+    }
 
     const crossingContribution =
       crossingEdgesPointOut
-        ? degree - internalDegree
+        ? degree -
+          internalDegree
         : 0
 
     for (
@@ -127,7 +145,8 @@ function possibilitiesForPart(
       of internalChoices
     ) {
       values.push(
-        crossingContribution + internalOutdegree,
+        crossingContribution +
+          internalOutdegree,
       )
     }
   }
@@ -142,16 +161,39 @@ export default function deriveOutdegreePossibilities({
   balancedG,
   balancedL,
   balancedR,
+  avoidCG = null,
+  avoidCL = null,
+  avoidCR = null,
 }: DeriveOutdegreePossibilitiesArgs):
   PartOutdegreePossibilities {
   /*
-   * A balanced orientation of the whole graph completely determines
-   * the only possible total outdegrees. For an even-regular graph,
-   * this is a single value d/2.
+   * A balanced orientation of the whole
+   * graph completely determines the
+   * possible total outdegrees.
    */
   if (balancedG) {
     const values =
-      balancedWholeGraphChoices(degree)
+      balancedWholeGraphChoices(
+        degree,
+      )
+
+    return {
+      L: values,
+      R: values,
+    }
+  }
+
+  /*
+   * Avoid c on the whole graph removes
+   * c from the set of possible total
+   * outdegrees.
+   */
+  if (avoidCG !== null) {
+    const values =
+      getAvoidCChoices(
+        degree,
+        avoidCG,
+      )
 
     return {
       L: values,
@@ -160,7 +202,8 @@ export default function deriveOutdegreePossibilities({
   }
 
   if (partition === null) {
-    const all = allOutdegrees(degree)
+    const all =
+      allOutdegrees(degree)
 
     return {
       L: all,
@@ -175,6 +218,7 @@ export default function deriveOutdegreePossibilities({
       'L',
       acrossDirection,
       balancedL,
+      avoidCL,
     ),
 
     R: possibilitiesForPart(
@@ -183,6 +227,7 @@ export default function deriveOutdegreePossibilities({
       'R',
       acrossDirection,
       balancedR,
+      avoidCR,
     ),
   }
 }

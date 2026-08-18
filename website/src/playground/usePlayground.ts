@@ -44,6 +44,15 @@ export type PlaygroundMove =
       type: 'hasanvand-compression'
       parameters: HasanvandParameters
     }
+  | {
+      type: 'avoid-c-whole-graph'
+      c: number
+    }
+  | {
+      type: 'avoid-c-part'
+      part: GraphPart
+      c: number
+    }
 
 export type PlaygroundState = {
   partition: LovaszPair | null
@@ -52,6 +61,10 @@ export type PlaygroundState = {
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
+
+  avoidCG: number | null
+  avoidCL: number | null
+  avoidCR: number | null
 
   orientedTwoFactorCount: number
 
@@ -66,6 +79,10 @@ const initialState: PlaygroundState = {
   balancedG: false,
   balancedL: false,
   balancedR: false,
+
+  avoidCG: null,
+  avoidCL: null,
+  avoidCR: null,
 
   orientedTwoFactorCount: 0,
 
@@ -113,6 +130,26 @@ function deriveState(
       'balanced-whole-graph'
     ) {
       state.balancedG = true
+    }
+
+    if (
+      move.type ===
+      'avoid-c-whole-graph'
+    ) {
+      state.avoidCG = move.c
+    }
+
+    if (
+      move.type ===
+      'avoid-c-part'
+    ) {
+      if (move.part === 'L') {
+        state.avoidCL = move.c
+      }
+
+      if (move.part === 'R') {
+        state.avoidCR = move.c
+      }
     }
 
     if (
@@ -185,6 +222,15 @@ export default function usePlayground(
 
         balancedR:
           state.balancedR,
+
+        avoidCG:
+          state.avoidCG,
+
+        avoidCL:
+          state.avoidCL,
+
+        avoidCR:
+          state.avoidCR,
       })
   }
 
@@ -240,6 +286,34 @@ export default function usePlayground(
       {
         type:
           'balanced-whole-graph',
+      },
+    ])
+  }
+
+  function avoidCGraph(
+    c: number,
+  ) {
+    setMoves((current) => [
+      ...current,
+      {
+        type:
+          'avoid-c-whole-graph',
+        c,
+      },
+    ])
+  }
+
+  function avoidCPart(
+    part: GraphPart,
+    c: number,
+  ) {
+    setMoves((current) => [
+      ...current,
+      {
+        type:
+          'avoid-c-part',
+        part,
+        c,
       },
     ])
   }
@@ -308,6 +382,15 @@ export default function usePlayground(
     balancedR:
       state.balancedR,
 
+    avoidCG:
+      state.avoidCG,
+
+    avoidCL:
+      state.avoidCL,
+
+    avoidCR:
+      state.avoidCR,
+
     hasanvandG:
       state.hasanvandG,
 
@@ -326,6 +409,8 @@ export default function usePlayground(
     orientAcross,
     balancePart,
     balanceGraph,
+    avoidCGraph,
+    avoidCPart,
     takeOrientedTwoFactor,
     applyHasanvandCompression,
 

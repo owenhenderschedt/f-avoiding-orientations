@@ -1,5 +1,6 @@
 import Math from '../components/Math'
 import BalancedBadge from '../components/BalancedBadge'
+import AvoidCBadge from '../components/AvoidCBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
 import {
   lovaszPartitionTool,
@@ -8,6 +9,9 @@ import {
 import type {
   BalancedTarget,
 } from '../tools/balancedOrientation'
+import type {
+  AvoidCTarget,
+} from '../tools/avoidC'
 import type {
   AcrossDirection,
 } from '../tools/orientAcrossPartition'
@@ -27,6 +31,9 @@ type PartitionGraphViewProps = {
   balancedL: boolean
   balancedR: boolean
 
+  avoidCL: number | null
+  avoidCR: number | null
+
   possibleOutdegreesL: OutdegreeSet
   possibleOutdegreesR: OutdegreeSet
 
@@ -34,6 +41,11 @@ type PartitionGraphViewProps = {
 
   onOpenBalancedReference: (
     target: BalancedTarget,
+  ) => void
+
+  onOpenAvoidCReference: (
+    target: AvoidCTarget,
+    c: number,
   ) => void
 
   onOpenTwoFactorReference: () => void
@@ -125,10 +137,13 @@ export default function PartitionGraphView({
   acrossDirection,
   balancedL,
   balancedR,
+  avoidCL,
+  avoidCR,
   possibleOutdegreesL,
   possibleOutdegreesR,
   onOpenLovaszReference,
   onOpenBalancedReference,
+  onOpenAvoidCReference,
   onOpenTwoFactorReference,
 }: PartitionGraphViewProps) {
   const hasResidualGraph =
@@ -293,6 +308,18 @@ export default function PartitionGraphView({
           />
         )}
 
+        {avoidCL !== null && (
+          <AvoidCBadge
+            target="L"
+            c={avoidCL}
+            x={155}
+            y={250}
+            onOpen={
+              onOpenAvoidCReference
+            }
+          />
+        )}
+
         {balancedR && (
           <BalancedBadge
             target="R"
@@ -300,6 +327,18 @@ export default function PartitionGraphView({
             y={245}
             onOpen={
               onOpenBalancedReference
+            }
+          />
+        )}
+
+        {avoidCR !== null && (
+          <AvoidCBadge
+            target="R"
+            c={avoidCR}
+            x={495}
+            y={250}
+            onOpen={
+              onOpenAvoidCReference
             }
           />
         )}

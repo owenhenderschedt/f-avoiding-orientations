@@ -1,9 +1,13 @@
 import Math from '../components/Math'
 import BalancedBadge from '../components/BalancedBadge'
+import AvoidCBadge from '../components/AvoidCBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
 import type {
   BalancedTarget,
 } from '../tools/balancedOrientation'
+import type {
+  AvoidCTarget,
+} from '../tools/avoidC'
 import type {
   HasanvandParameters,
 } from '../tools/hasanvandCompression'
@@ -21,12 +25,18 @@ type InitialGraphViewProps = {
   possibleOutdegrees: OutdegreeSet
 
   balancedG: boolean
+  avoidCG: number | null
 
   hasanvandG:
     HasanvandParameters | null
 
   onOpenBalancedReference: (
     target: BalancedTarget,
+  ) => void
+
+  onOpenAvoidCReference: (
+    target: AvoidCTarget,
+    c: number,
   ) => void
 
   onOpenTwoFactorReference: () => void
@@ -150,8 +160,10 @@ export default function InitialGraphView({
   forbiddenSet,
   possibleOutdegrees,
   balancedG,
+  avoidCG,
   hasanvandG,
   onOpenBalancedReference,
+  onOpenAvoidCReference,
   onOpenTwoFactorReference,
   onOpenHasanvandReference,
 }: InitialGraphViewProps) {
@@ -269,6 +281,18 @@ export default function InitialGraphView({
             y={320}
             onOpen={
               onOpenBalancedReference
+            }
+          />
+        )}
+
+        {avoidCG !== null && (
+          <AvoidCBadge
+            target="G"
+            c={avoidCG}
+            x={225}
+            y={320}
+            onOpen={
+              onOpenAvoidCReference
             }
           />
         )}

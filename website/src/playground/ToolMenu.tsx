@@ -17,6 +17,9 @@ import type {
   AcrossDirection,
 } from '../tools/orientAcrossPartition'
 import type {
+  AvoidCTarget,
+} from '../tools/avoidC'
+import type {
   GraphPart,
 } from './outdegreePossibilities'
 
@@ -29,6 +32,10 @@ type ToolMenuProps = {
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
+
+  avoidCG: number | null
+  avoidCL: number | null
+  avoidCR: number | null
 
   hasanvandG:
     HasanvandParameters | null
@@ -44,6 +51,15 @@ type ToolMenuProps = {
   onBalancePart:
     (part: GraphPart) => void
 
+  onAvoidCGraph:
+    (c: number) => void
+
+  onAvoidCPart:
+    (
+      part: GraphPart,
+      c: number,
+    ) => void
+
   onTakeOrientedTwoFactor:
     () => void
 
@@ -53,6 +69,22 @@ type ToolMenuProps = {
     ) => void
 }
 
+function getAvoidCValues(
+  maxDegree: number,
+) {
+  const values: number[] = []
+
+  for (
+    let c = 2;
+    c <= maxDegree;
+    c += 1
+  ) {
+    values.push(c)
+  }
+
+  return values
+}
+
 export default function ToolMenu({
   workingDegree,
   partition,
@@ -60,11 +92,16 @@ export default function ToolMenu({
   balancedG,
   balancedL,
   balancedR,
+  avoidCG,
+  avoidCL,
+  avoidCR,
   hasanvandG,
   onApplyLovasz,
   onOrientAcross,
   onBalanceGraph,
   onBalancePart,
+  onAvoidCGraph,
+  onAvoidCPart,
   onTakeOrientedTwoFactor,
   onApplyHasanvand,
 }: ToolMenuProps) {
@@ -83,6 +120,14 @@ export default function ToolMenu({
     setHasanvandOpen,
   ] = useState(false)
 
+  const [
+    avoidCTarget,
+    setAvoidCTarget,
+  ] =
+    useState<AvoidCTarget | null>(
+      null,
+    )
+
   const lovaszPairs =
     getLovaszPairs(
       workingDegree,
@@ -93,23 +138,79 @@ export default function ToolMenu({
       workingDegree,
     )
 
+  /*
+   * Avoid c is only useful for
+   * 2 <= c <= the relevant maximum
+   * degree.
+   *
+   * For the whole graph, that is the
+   * current working degree.
+   *
+   * After a Lovasz partition,
+   * Delta(G[L]) <= s and
+   * Delta(G[R]) <= t, so the useful
+   * ranges are 2,...,s and 2,...,t.
+   */
+  let avoidCMaxDegree = 0
+
+  if (avoidCTarget === 'G') {
+    avoidCMaxDegree =
+      workingDegree
+  }
+
+  if (
+    avoidCTarget === 'L' &&
+    partition !== null
+  ) {
+    avoidCMaxDegree =
+      partition.s
+  }
+
+  if (
+    avoidCTarget === 'R' &&
+    partition !== null
+  ) {
+    avoidCMaxDegree =
+      partition.t
+  }
+
+  const avoidCValues =
+    getAvoidCValues(
+      avoidCMaxDegree,
+    )
+
+  function closeSubmenus() {
+    setLovaszOpen(false)
+    setHasanvandOpen(false)
+    setAvoidCTarget(null)
+  }
+
   function toggleTools() {
     setToolsOpen(
       (current) => !current,
     )
 
-    setLovaszOpen(false)
-    setHasanvandOpen(false)
+    closeSubmenus()
   }
 
   function openLovaszMenu() {
     setLovaszOpen(true)
     setHasanvandOpen(false)
+    setAvoidCTarget(null)
   }
 
   function openHasanvandMenu() {
     setHasanvandOpen(true)
     setLovaszOpen(false)
+    setAvoidCTarget(null)
+  }
+
+  function openAvoidCMenu(
+    target: AvoidCTarget,
+  ) {
+    setAvoidCTarget(target)
+    setLovaszOpen(false)
+    setHasanvandOpen(false)
   }
 
   function applyLovasz(
@@ -118,8 +219,7 @@ export default function ToolMenu({
     onApplyLovasz(pair)
 
     setToolsOpen(false)
-    setLovaszOpen(false)
-    setHasanvandOpen(false)
+    closeSubmenus()
   }
 
   function applyAcrossOrientation(
@@ -128,12 +228,14 @@ export default function ToolMenu({
     onOrientAcross(direction)
 
     setToolsOpen(false)
+    closeSubmenus()
   }
 
   function applyBalanceGraph() {
     onBalanceGraph()
 
     setToolsOpen(false)
+    closeSubmenus()
   }
 
   function applyBalancedOrientation(
@@ -142,12 +244,35 @@ export default function ToolMenu({
     onBalancePart(part)
 
     setToolsOpen(false)
+    closeSubmenus()
+  }
+
+  function applyAvoidC(
+    c: number,
+  ) {
+    if (avoidCTarget === 'G') {
+      onAvoidCGraph(c)
+    }
+
+    if (
+      avoidCTarget === 'L' ||
+      avoidCTarget === 'R'
+    ) {
+      onAvoidCPart(
+        avoidCTarget,
+        c,
+      )
+    }
+
+    setToolsOpen(false)
+    closeSubmenus()
   }
 
   function takeOrientedTwoFactor() {
     onTakeOrientedTwoFactor()
 
     setToolsOpen(false)
+    closeSubmenus()
   }
 
   function applyHasanvand(
@@ -159,8 +284,7 @@ export default function ToolMenu({
     )
 
     setToolsOpen(false)
-    setHasanvandOpen(false)
-    setLovaszOpen(false)
+    closeSubmenus()
   }
 
   const controlButtonStyle = {
@@ -188,7 +312,16 @@ export default function ToolMenu({
 
   const orientationFinished =
     balancedG ||
+    avoidCG !== null ||
     hasanvandG !== null
+
+  const leftInternallyOriented =
+    balancedL ||
+    avoidCL !== null
+
+  const rightInternallyOriented =
+    balancedR ||
+    avoidCR !== null
 
   const canTakeTwoFactor =
     partition === null &&
@@ -202,10 +335,25 @@ export default function ToolMenu({
     workingDegree > 0 &&
     hasanvandPairs.length > 0
 
+  const canAvoidCInG =
+    partition === null &&
+    !orientationFinished &&
+    workingDegree >= 2
+
+  const canAvoidCInL =
+    partition !== null &&
+    !leftInternallyOriented &&
+    partition.s >= 2
+
+  const canAvoidCInR =
+    partition !== null &&
+    !rightInternallyOriented &&
+    partition.t >= 2
+
   const hasAvailablePartitionTool =
     acrossDirection === null ||
-    !balancedL ||
-    !balancedR
+    !leftInternallyOriented ||
+    !rightInternallyOriented
 
   return (
     <div
@@ -242,7 +390,97 @@ export default function ToolMenu({
             textAlign: 'left',
           }}
         >
-          {orientationFinished ? (
+          {avoidCTarget !== null ? (
+            <>
+              <div
+                style={{
+                  padding:
+                    '8px 10px 10px',
+                  borderBottom:
+                    '1px solid #e2e8f0',
+                  marginBottom:
+                    '4px',
+                  textAlign:
+                    'center',
+                }}
+              >
+                Avoid{' '}
+                <Math>{'c'}</Math>{' '}
+                in{' '}
+                <Math>
+                  {avoidCTarget}
+                </Math>
+
+                <div
+                  style={{
+                    marginTop:
+                      '5px',
+                    color:
+                      '#64748b',
+                    fontSize:
+                      '16px',
+                  }}
+                >
+                  Choose{' '}
+                  <Math>
+                    {`2\\leq c\\leq ${avoidCMaxDegree}`}
+                  </Math>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  maxHeight:
+                    '300px',
+                  overflowY:
+                    'auto',
+                }}
+              >
+                {avoidCValues.map(
+                  (c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() =>
+                        applyAvoidC(
+                          c,
+                        )
+                      }
+                      style={{
+                        ...menuButtonStyle,
+                        textAlign:
+                          'center',
+                      }}
+                    >
+                      <Math>
+                        {`c=${c}`}
+                      </Math>
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAvoidCTarget(
+                    null,
+                  )
+                }
+                style={{
+                  ...menuButtonStyle,
+                  marginTop:
+                    '4px',
+                  borderTop:
+                    '1px solid #e2e8f0',
+                  textAlign:
+                    'center',
+                }}
+              >
+                ← Back
+              </button>
+            </>
+          ) : orientationFinished ? (
             <div
               style={{
                 padding:
@@ -291,6 +529,30 @@ export default function ToolMenu({
                       <Math>
                         {'G'}
                       </Math>
+                    </button>
+                  )}
+
+                  {canAvoidCInG && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openAvoidCMenu(
+                          'G',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Avoid{' '}
+                      <Math>
+                        {'c'}
+                      </Math>{' '}
+                      in{' '}
+                      <Math>
+                        {'G'}
+                      </Math>{' '}
+                      →
                     </button>
                   )}
 
@@ -507,7 +769,7 @@ export default function ToolMenu({
                 </>
               )}
 
-              {!balancedL && (
+              {!leftInternallyOriented && (
                 <button
                   type="button"
                   onClick={() =>
@@ -526,7 +788,7 @@ export default function ToolMenu({
                 </button>
               )}
 
-              {!balancedR && (
+              {!rightInternallyOriented && (
                 <button
                   type="button"
                   onClick={() =>
@@ -542,6 +804,54 @@ export default function ToolMenu({
                   <Math>
                     {'R'}
                   </Math>
+                </button>
+              )}
+
+              {canAvoidCInL && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openAvoidCMenu(
+                      'L',
+                    )
+                  }
+                  style={
+                    menuButtonStyle
+                  }
+                >
+                  Avoid{' '}
+                  <Math>
+                    {'c'}
+                  </Math>{' '}
+                  in{' '}
+                  <Math>
+                    {'L'}
+                  </Math>{' '}
+                  →
+                </button>
+              )}
+
+              {canAvoidCInR && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openAvoidCMenu(
+                      'R',
+                    )
+                  }
+                  style={
+                    menuButtonStyle
+                  }
+                >
+                  Avoid{' '}
+                  <Math>
+                    {'c'}
+                  </Math>{' '}
+                  in{' '}
+                  <Math>
+                    {'R'}
+                  </Math>{' '}
+                  →
                 </button>
               )}
             </>

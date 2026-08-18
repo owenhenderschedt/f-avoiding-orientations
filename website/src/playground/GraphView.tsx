@@ -10,6 +10,9 @@ import type {
   BalancedTarget,
 } from '../tools/balancedOrientation'
 import type {
+  AvoidCTarget,
+} from '../tools/avoidC'
+import type {
   HasanvandParameters,
 } from '../tools/hasanvandCompression'
 import type {
@@ -31,6 +34,10 @@ type GraphViewProps = {
   balancedL: boolean
   balancedR: boolean
 
+  avoidCG: number | null
+  avoidCL: number | null
+  avoidCR: number | null
+
   hasanvandG:
     HasanvandParameters | null
 
@@ -41,6 +48,11 @@ type GraphViewProps = {
 
   onOpenBalancedReference: (
     target: BalancedTarget,
+  ) => void
+
+  onOpenAvoidCReference: (
+    target: AvoidCTarget,
+    c: number,
   ) => void
 
   onOpenTwoFactorReference: () => void
@@ -59,10 +71,14 @@ export default function GraphView({
   balancedG,
   balancedL,
   balancedR,
+  avoidCG,
+  avoidCL,
+  avoidCR,
   hasanvandG,
   outdegreeGuarantees,
   onOpenLovaszReference,
   onOpenBalancedReference,
+  onOpenAvoidCReference,
   onOpenTwoFactorReference,
   onOpenHasanvandReference,
 }: GraphViewProps) {
@@ -99,11 +115,17 @@ export default function GraphView({
         balancedG={
           balancedG
         }
+        avoidCG={
+          avoidCG
+        }
         hasanvandG={
           hasanvandG
         }
         onOpenBalancedReference={
           onOpenBalancedReference
+        }
+        onOpenAvoidCReference={
+          onOpenAvoidCReference
         }
         onOpenTwoFactorReference={
           onOpenTwoFactorReference
@@ -141,6 +163,12 @@ export default function GraphView({
       balancedR={
         balancedR
       }
+      avoidCL={
+        avoidCL
+      }
+      avoidCR={
+        avoidCR
+      }
       possibleOutdegreesL={
         possibleOutdegreesL
       }
@@ -152,6 +180,9 @@ export default function GraphView({
       }
       onOpenBalancedReference={
         onOpenBalancedReference
+      }
+      onOpenAvoidCReference={
+        onOpenAvoidCReference
       }
       onOpenTwoFactorReference={
         onOpenTwoFactorReference

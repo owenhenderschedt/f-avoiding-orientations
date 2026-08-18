@@ -24,6 +24,11 @@ import {
   HasanvandCompressionReference,
   hasanvandCompressionTool,
 } from '../tools/hasanvandCompression'
+import {
+  AvoidCReference,
+  avoidCTool,
+  type AvoidCTarget,
+} from '../tools/avoidC'
 
 type BlobLabProps = {
   degree: number
@@ -50,6 +55,11 @@ type ActiveReference =
       type:
         'hasanvand-compression'
     }
+  | {
+      type: 'avoid-c'
+      target: AvoidCTarget
+      c: number
+    }
   | null
 
 export default function BlobLab({
@@ -68,6 +78,18 @@ export default function BlobLab({
   const playground =
     usePlayground(degree)
 
+  const wholeGraphOriented =
+    playground.balancedG ||
+    playground.avoidCG !== null
+
+  const leftInternallyOriented =
+    playground.balancedL ||
+    playground.avoidCL !== null
+
+  const rightInternallyOriented =
+    playground.balancedR ||
+    playground.avoidCR !== null
+
   const orientationStatus =
     getOrientationStatus({
       forbiddenSet,
@@ -77,7 +99,7 @@ export default function BlobLab({
           .outdegreePossibilities,
 
       balancedG:
-        playground.balancedG,
+        wholeGraphOriented,
 
       hasanvandG:
         playground.hasanvandG !==
@@ -89,10 +111,10 @@ export default function BlobLab({
         null,
 
       balancedL:
-        playground.balancedL,
+        leftInternallyOriented,
 
       balancedR:
-        playground.balancedR,
+        rightInternallyOriented,
     })
 
   function undo() {
@@ -115,7 +137,10 @@ export default function BlobLab({
         : activeReference?.type ===
             'hasanvand-compression'
           ? hasanvandCompressionTool.name
-          : lovaszPartitionTool.name
+          : activeReference?.type ===
+              'avoid-c'
+            ? avoidCTool.name
+            : lovaszPartitionTool.name
 
   const forbiddenSetMath =
     `\\{${forbiddenSet.join(',')}\\}`
@@ -249,6 +274,15 @@ export default function BlobLab({
             balancedR={
               playground.balancedR
             }
+            avoidCG={
+              playground.avoidCG
+            }
+            avoidCL={
+              playground.avoidCL
+            }
+            avoidCR={
+              playground.avoidCR
+            }
             hasanvandG={
               playground.hasanvandG
             }
@@ -268,6 +302,16 @@ export default function BlobLab({
                 type:
                   'balanced-orientation',
                 target,
+              })
+            }
+            onOpenAvoidCReference={(
+              target,
+              c,
+            ) =>
+              setActiveReference({
+                type: 'avoid-c',
+                target,
+                c,
               })
             }
             onOpenTwoFactorReference={() =>
@@ -316,6 +360,15 @@ export default function BlobLab({
               balancedR={
                 playground.balancedR
               }
+              avoidCG={
+                playground.avoidCG
+              }
+              avoidCL={
+                playground.avoidCL
+              }
+              avoidCR={
+                playground.avoidCR
+              }
               hasanvandG={
                 playground.hasanvandG
               }
@@ -334,6 +387,14 @@ export default function BlobLab({
               onBalancePart={
                 playground
                   .balancePart
+              }
+              onAvoidCGraph={
+                playground
+                  .avoidCGraph
+              }
+              onAvoidCPart={
+                playground
+                  .avoidCPart
               }
               onTakeOrientedTwoFactor={
                 playground
@@ -451,6 +512,46 @@ export default function BlobLab({
 
                     if (
                       move.type ===
+                      'avoid-c-whole-graph'
+                    ) {
+                      return (
+                        <span
+                          key={index}
+                        >
+                          Avoid{' '}
+                          <Math>
+                            {`c=${move.c}`}
+                          </Math>{' '}
+                          in{' '}
+                          <Math>
+                            {'G'}
+                          </Math>
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
+                      'avoid-c-part'
+                    ) {
+                      return (
+                        <span
+                          key={index}
+                        >
+                          Avoid{' '}
+                          <Math>
+                            {`c=${move.c}`}
+                          </Math>{' '}
+                          in{' '}
+                          <Math>
+                            {move.part}
+                          </Math>
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
                       'oriented-two-factor'
                     ) {
                       return (
@@ -550,6 +651,25 @@ export default function BlobLab({
               }
             />
           )}
+
+        {activeReference?.type ===
+          'avoid-c' && (
+          <AvoidCReference
+            target={
+              activeReference.target
+            }
+            c={
+              activeReference.c
+            }
+            degree={
+              playground
+                .workingDegree
+            }
+            partition={
+              playground.partition
+            }
+          />
+        )}
       </ToolReferencePanel>
     </>
   )
