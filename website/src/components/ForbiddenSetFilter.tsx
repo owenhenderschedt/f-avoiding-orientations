@@ -9,6 +9,7 @@ export type ForbiddenSetFilterState = {
   mustInclude: readonly number[]
   mustExclude: readonly number[]
   matchMode: FilterMatchMode
+  hideMaLuCases: boolean
 }
 
 type ForbiddenSetFilterProps = {
@@ -27,6 +28,7 @@ export function emptyForbiddenSetFilter():
     mustInclude: [],
     mustExclude: [],
     matchMode: 'individual',
+    hideMaLuCases: false,
   }
 }
 
@@ -52,7 +54,8 @@ export default function ForbiddenSetFilter({
 
   const activeFilterCount =
     value.mustInclude.length +
-    value.mustExclude.length
+    value.mustExclude.length +
+    (value.hideMaLuCases ? 1 : 0)
 
   const hasFilters =
     activeFilterCount > 0
@@ -63,6 +66,14 @@ export default function ForbiddenSetFilter({
     onChange({
       ...value,
       matchMode,
+    })
+  }
+
+  function toggleMaLuFilter() {
+    onChange({
+      ...value,
+      hideMaLuCases:
+        !value.hideMaLuCases,
     })
   }
 
@@ -162,6 +173,7 @@ export default function ForbiddenSetFilter({
       mustExclude: [],
       matchMode:
         value.matchMode,
+      hideMaLuCases: false,
     })
   }
 
@@ -439,6 +451,85 @@ export default function ForbiddenSetFilter({
                     fontSize: '17px',
                   }}
                 >
+                  Known cases
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={
+                      toggleMaLuFilter
+                    }
+                    aria-pressed={
+                      value.hideMaLuCases
+                    }
+                    style={{
+                      font: 'inherit',
+                      fontSize: '16px',
+                      padding:
+                        '7px 12px',
+                      border:
+                        value.hideMaLuCases
+                          ? '1px solid #64748b'
+                          : '1px solid #cbd5e1',
+                      borderRadius:
+                        '8px',
+                      background:
+                        value.hideMaLuCases
+                          ? '#e2e8f0'
+                          : '#ffffff',
+                      color:
+                        value.hideMaLuCases
+                          ? '#1e293b'
+                          : '#475569',
+                      fontWeight:
+                        value.hideMaLuCases
+                          ? 600
+                          : 400,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Hide Ma–Lu cases
+                  </button>
+
+                  <span
+                    style={{
+                      color:
+                        '#94a3b8',
+                      fontSize:
+                        '15px',
+                    }}
+                  >
+                    no two consecutive
+                    values in{' '}
+                    <Math>{'F'}</Math>
+                  </span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    '145px 1fr',
+                  alignItems:
+                    'center',
+                  gap: '14px',
+                }}
+              >
+                <div
+                  style={{
+                    color: '#475569',
+                    fontSize: '17px',
+                  }}
+                >
                   Must be in{' '}
                   <Math>{'F'}</Math>
                 </div>
@@ -614,7 +705,10 @@ export default function ForbiddenSetFilter({
               card when either member
               matches. Entire reversal
               pair requires both members
-              to match.
+              to match. The Ma–Lu filter
+              removes lists with no two
+              consecutive forbidden
+              values.
             </div>
           </div>
         )}

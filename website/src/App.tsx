@@ -28,6 +28,25 @@ function forbiddenSetLatex(
   return `\\{${forbiddenSet.join(',')}\\}`
 }
 
+/*
+ * Returns true exactly when F contains
+ * two consecutive integers.
+ *
+ * Thus a list such as {2,6,8} returns
+ * false and is a Ma-Lu case, while
+ * {2,3,8} returns true.
+ */
+function hasConsecutiveValues(
+  forbiddenSet: readonly number[],
+) {
+  return forbiddenSet.some(
+    (value) =>
+      forbiddenSet.includes(
+        value + 1,
+      ),
+  )
+}
+
 function forbiddenSetMatchesFilter(
   forbiddenSet: readonly number[],
   filter: ForbiddenSetFilterState,
@@ -44,9 +63,16 @@ function forbiddenSetMatchesFilter(
         !forbiddenSet.includes(value),
     )
 
+  const passesMaLuFilter =
+    !filter.hideMaLuCases ||
+    hasConsecutiveValues(
+      forbiddenSet,
+    )
+
   return (
     includesEverything &&
-    excludesEverything
+    excludesEverything &&
+    passesMaLuFilter
   )
 }
 
@@ -80,10 +106,16 @@ function App() {
       emptyForbiddenSetFilter(),
     )
 
+  const [
+    reversalExplanationOpen,
+    setReversalExplanationOpen,
+  ] = useState(false)
+
   function goHome() {
     setScreen('home')
     setSelectedDegree(null)
     setSelectedCase(null)
+    setReversalExplanationOpen(false)
 
     setForbiddenSetFilter(
       emptyForbiddenSetFilter(),
@@ -95,6 +127,7 @@ function App() {
   ) {
     setSelectedDegree(degree)
     setSelectedCase(null)
+    setReversalExplanationOpen(false)
 
     setForbiddenSetFilter(
       emptyForbiddenSetFilter(),
@@ -189,7 +222,9 @@ function App() {
       forbiddenSetFilter
         .mustInclude.length > 0 ||
       forbiddenSetFilter
-        .mustExclude.length > 0
+        .mustExclude.length > 0 ||
+      forbiddenSetFilter
+        .hideMaLuCases
 
     return (
       <main
@@ -283,80 +318,115 @@ function App() {
               <Math>{'F'}</Math>
             </h1>
 
-            <div
+            <button
+              type="button"
+              aria-expanded={
+                reversalExplanationOpen
+              }
+              onClick={() =>
+                setReversalExplanationOpen(
+                  (current) =>
+                    !current,
+                )
+              }
               style={{
-                maxWidth: '720px',
-                margin: '0 auto',
-                color: '#64748b',
-                lineHeight: 1.6,
+                font: 'inherit',
                 fontSize: '19px',
+                color: '#475569',
+                background: '#ffffff',
+                border:
+                  '1px solid #cbd5e1',
+                borderRadius: '10px',
+                padding: '9px 15px',
+                cursor: 'pointer',
+                boxShadow:
+                  '0 3px 10px rgba(15, 23, 42, 0.04)',
               }}
             >
-              <p
-                style={{
-                  margin:
-                    '0 0 12px',
-                }}
-              >
-                Forbidden sets occur in
-                reversal pairs. If{' '}
-                <Math>{'O'}</Math> is an{' '}
-                <Math>
-                  {
-                    'F=\\{x_1,\\ldots,x_k\\}'
-                  }
-                </Math>
-                -avoiding orientation of a{' '}
-                <Math>{'d'}</Math>-regular
-                graph and every arc is
-                reversed, the resulting
-                orientation{' '}
-                <Math>{'O\''}</Math>{' '}
-                satisfies
-              </p>
+              Why do forbidden lists
+              come in pairs?{' '}
+              {reversalExplanationOpen
+                ? '▴'
+                : '▾'}
+            </button>
 
+            {reversalExplanationOpen && (
               <div
                 style={{
+                  maxWidth: '720px',
                   margin:
-                    '16px 0',
+                    '22px auto 0',
+                  color: '#64748b',
+                  lineHeight: 1.6,
+                  fontSize: '19px',
                 }}
               >
-                <Math display>
-                  {
-                    'd_{O\'}^+(v)'
-                    + '='
-                    + 'd-d_O^+(v).'
-                  }
-                </Math>
-              </div>
+                <p
+                  style={{
+                    margin:
+                      '0 0 12px',
+                  }}
+                >
+                  Forbidden sets occur in
+                  reversal pairs. If{' '}
+                  <Math>{'O'}</Math> is an{' '}
+                  <Math>
+                    {
+                      'F=\\{x_1,\\ldots,x_k\\}'
+                    }
+                  </Math>
+                  -avoiding orientation of a{' '}
+                  <Math>{'d'}</Math>-regular
+                  graph and every arc is
+                  reversed, the resulting
+                  orientation{' '}
+                  <Math>{'O\''}</Math>{' '}
+                  satisfies
+                </p>
 
-              <p
-                style={{
-                  margin: 0,
-                }}
-              >
-                Therefore{' '}
-                <Math>{'O\''}</Math> avoids
-                the reversed forbidden set
-              </p>
+                <div
+                  style={{
+                    margin:
+                      '16px 0',
+                  }}
+                >
+                  <Math display>
+                    {
+                      'd_{O\'}^+(v)'
+                      + '='
+                      + 'd-d_O^+(v).'
+                    }
+                  </Math>
+                </div>
 
-              <div
-                style={{
-                  margin:
-                    '16px 0 0',
-                }}
-              >
-                <Math display>
-                  {
-                    'd-F'
-                    + '='
-                    + '\\{'
-                    + 'd-x_1,\\ldots,d-x_k'
-                    + '\\}.'
-                  }
-                </Math>
+                <p
+                  style={{
+                    margin: 0,
+                  }}
+                >
+                  Therefore{' '}
+                  <Math>{'O\''}</Math> avoids
+                  the reversed forbidden set
+                </p>
+
+                <div
+                  style={{
+                    margin:
+                      '16px 0 0',
+                  }}
+                >
+                  <Math display>
+                    {
+                      'd-F'
+                      + '='
+                      + '\\{'
+                      + 'd-x_1,\\ldots,d-x_k'
+                      + '\\}.'
+                    }
+                  </Math>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <ForbiddenSetFilter
@@ -437,18 +507,6 @@ function App() {
                               forbiddenSetFilter,
                             )
 
-                          /*
-                           * In individual
-                           * mode, a card may
-                           * survive because
-                           * only one member
-                           * matches, so mute
-                           * its partner.
-                           *
-                           * In pair mode,
-                           * every visible
-                           * member matches.
-                           */
                           const muted =
                             forbiddenSetFilter
                               .matchMode ===
