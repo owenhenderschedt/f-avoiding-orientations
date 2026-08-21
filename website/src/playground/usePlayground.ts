@@ -13,6 +13,19 @@ import {
   getHasanvandValues,
   type HasanvandParameters,
 } from '../tools/hasanvandCompression'
+import {
+  createMaLuInternalApplication,
+  createMaLuTotalApplication,
+  type MaLuApplication,
+  type MaLuApplicationMode,
+} from '../tools/maLuApplication'
+import {
+  getMaLuPartSelectionCertificate,
+  getMaLuWholeSelectionCertificate,
+} from '../tools/maLuMath'
+import {
+  getMaLuTotalCertificate,
+} from '../tools/maLuTargeting'
 import deriveOutdegreePossibilities from './deriveOutdegreePossibilities'
 import {
   getResidualGraphState,
@@ -53,10 +66,21 @@ export type PlaygroundMove =
       part: GraphPart
       c: number
     }
+  | {
+      type: 'ma-lu-whole-graph'
+      application:
+        MaLuApplication
+    }
+  | {
+      type: 'ma-lu-part'
+      application:
+        MaLuApplication
+    }
 
 export type PlaygroundState = {
   partition: LovaszPair | null
-  acrossDirection: AcrossDirection | null
+  acrossDirection:
+    AcrossDirection | null
 
   balancedG: boolean
   balancedL: boolean
@@ -66,13 +90,21 @@ export type PlaygroundState = {
   avoidCL: number | null
   avoidCR: number | null
 
+  maLuG:
+    MaLuApplication | null
+  maLuL:
+    MaLuApplication | null
+  maLuR:
+    MaLuApplication | null
+
   orientedTwoFactorCount: number
 
   hasanvandG:
     HasanvandParameters | null
 }
 
-const initialState: PlaygroundState = {
+const initialState:
+  PlaygroundState = {
   partition: null,
   acrossDirection: null,
 
@@ -84,6 +116,10 @@ const initialState: PlaygroundState = {
   avoidCL: null,
   avoidCR: null,
 
+  maLuG: null,
+  maLuL: null,
+  maLuR: null,
+
   orientedTwoFactorCount: 0,
 
   hasanvandG: null,
@@ -92,7 +128,8 @@ const initialState: PlaygroundState = {
 function deriveState(
   moves: PlaygroundMove[],
 ): PlaygroundState {
-  const state: PlaygroundState = {
+  const state:
+    PlaygroundState = {
     ...initialState,
   }
 
@@ -101,7 +138,8 @@ function deriveState(
       move.type ===
       'lovasz-partition'
     ) {
-      state.partition = move.pair
+      state.partition =
+        move.pair
     }
 
     if (
@@ -116,12 +154,18 @@ function deriveState(
       move.type ===
       'balanced-orientation'
     ) {
-      if (move.part === 'L') {
-        state.balancedL = true
+      if (
+        move.part === 'L'
+      ) {
+        state.balancedL =
+          true
       }
 
-      if (move.part === 'R') {
-        state.balancedR = true
+      if (
+        move.part === 'R'
+      ) {
+        state.balancedR =
+          true
       }
     }
 
@@ -129,26 +173,63 @@ function deriveState(
       move.type ===
       'balanced-whole-graph'
     ) {
-      state.balancedG = true
+      state.balancedG =
+        true
     }
 
     if (
       move.type ===
       'avoid-c-whole-graph'
     ) {
-      state.avoidCG = move.c
+      state.avoidCG =
+        move.c
     }
 
     if (
       move.type ===
       'avoid-c-part'
     ) {
-      if (move.part === 'L') {
-        state.avoidCL = move.c
+      if (
+        move.part === 'L'
+      ) {
+        state.avoidCL =
+          move.c
       }
 
-      if (move.part === 'R') {
-        state.avoidCR = move.c
+      if (
+        move.part === 'R'
+      ) {
+        state.avoidCR =
+          move.c
+      }
+    }
+
+    if (
+      move.type ===
+      'ma-lu-whole-graph'
+    ) {
+      state.maLuG =
+        move.application
+    }
+
+    if (
+      move.type ===
+      'ma-lu-part'
+    ) {
+      if (
+        move.application
+          .target === 'L'
+      ) {
+        state.maLuL =
+          move.application
+      }
+
+      if (
+        move.application
+          .target === 'R'
+      ) {
+        state.maLuR =
+          move.application
       }
     }
 
@@ -156,7 +237,9 @@ function deriveState(
       move.type ===
       'oriented-two-factor'
     ) {
-      state.orientedTwoFactorCount += 1
+      state
+        .orientedTwoFactorCount +=
+        1
     }
 
     if (
@@ -177,7 +260,10 @@ export default function usePlayground(
   const [
     moves,
     setMoves,
-  ] = useState<PlaygroundMove[]>([])
+  ] =
+    useState<
+      PlaygroundMove[]
+    >([])
 
   const state =
     deriveState(moves)
@@ -185,58 +271,93 @@ export default function usePlayground(
   const residualGraph =
     getResidualGraphState(
       originalDegree,
-      state.orientedTwoFactorCount,
+      state
+        .orientedTwoFactorCount,
     )
+
+  const wholeGraphAlreadyOriented =
+    state.balancedG ||
+    state.avoidCG !== null ||
+    state.maLuG !== null ||
+    state.hasanvandG !== null
+
+  const leftAlreadyOriented =
+    state.balancedL ||
+    state.avoidCL !== null ||
+    state.maLuL !== null
+
+  const rightAlreadyOriented =
+    state.balancedR ||
+    state.avoidCR !== null ||
+    state.maLuR !== null
 
   let residualOutdegreePossibilities:
     PartOutdegreePossibilities
 
-  if (state.hasanvandG !== null) {
+  if (
+    state.hasanvandG !==
+    null
+  ) {
     const hasanvandValues =
       getHasanvandValues(
         state.hasanvandG.p,
         state.hasanvandG.q,
       )
 
-    residualOutdegreePossibilities = {
-      L: hasanvandValues,
-      R: hasanvandValues,
-    }
+    residualOutdegreePossibilities =
+      {
+        L: hasanvandValues,
+        R: hasanvandValues,
+      }
   } else {
     residualOutdegreePossibilities =
-      deriveOutdegreePossibilities({
-        degree:
-          residualGraph.workingDegree,
+      deriveOutdegreePossibilities(
+        {
+          degree:
+            residualGraph
+              .workingDegree,
 
-        partition:
-          state.partition,
+          partition:
+            state.partition,
 
-        acrossDirection:
-          state.acrossDirection,
+          acrossDirection:
+            state
+              .acrossDirection,
 
-        balancedG:
-          state.balancedG,
+          balancedG:
+            state.balancedG,
 
-        balancedL:
-          state.balancedL,
+          balancedL:
+            state.balancedL,
 
-        balancedR:
-          state.balancedR,
+          balancedR:
+            state.balancedR,
 
-        avoidCG:
-          state.avoidCG,
+          avoidCG:
+            state.avoidCG,
 
-        avoidCL:
-          state.avoidCL,
+          avoidCL:
+            state.avoidCL,
 
-        avoidCR:
-          state.avoidCR,
-      })
+          avoidCR:
+            state.avoidCR,
+
+          maLuG:
+            state.maLuG,
+
+          maLuL:
+            state.maLuL,
+
+          maLuR:
+            state.maLuR,
+        },
+      )
   }
 
   const outdegreePossibilities =
     shiftPartOutdegrees(
       residualOutdegreePossibilities,
+
       residualGraph
         .fixedOutdegreeContribution,
     )
@@ -244,106 +365,363 @@ export default function usePlayground(
   function applyLovaszPartition(
     pair: LovaszPair,
   ) {
-    setMoves((current) => [
-      ...current,
-      {
-        type:
-          'lovasz-partition',
-        pair,
-      },
-    ])
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'lovasz-partition',
+          pair,
+        },
+      ],
+    )
   }
 
   function orientAcross(
-    direction: AcrossDirection,
+    direction:
+      AcrossDirection,
   ) {
-    setMoves((current) => [
-      ...current,
-      {
-        type:
-          'orient-across',
-        direction,
-      },
-    ])
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'orient-across',
+          direction,
+        },
+      ],
+    )
   }
 
   function balancePart(
     part: GraphPart,
   ) {
-    setMoves((current) => [
-      ...current,
-      {
-        type:
-          'balanced-orientation',
-        part,
-      },
-    ])
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'balanced-orientation',
+          part,
+        },
+      ],
+    )
   }
 
   function balanceGraph() {
-    setMoves((current) => [
-      ...current,
-      {
-        type:
-          'balanced-whole-graph',
-      },
-    ])
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'balanced-whole-graph',
+        },
+      ],
+    )
   }
 
   function avoidCGraph(
     c: number,
   ) {
-    setMoves((current) => [
-      ...current,
-      {
-        type:
-          'avoid-c-whole-graph',
-        c,
-      },
-    ])
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'avoid-c-whole-graph',
+          c,
+        },
+      ],
+    )
   }
 
   function avoidCPart(
     part: GraphPart,
     c: number,
   ) {
-    setMoves((current) => [
-      ...current,
-      {
-        type:
-          'avoid-c-part',
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'avoid-c-part',
+          part,
+          c,
+        },
+      ],
+    )
+  }
+
+  function applyMaLuGraph(
+    mode:
+      MaLuApplicationMode,
+
+    selectedValues:
+      readonly number[],
+  ) {
+    if (
+      state.partition !== null ||
+      wholeGraphAlreadyOriented ||
+      selectedValues.length === 0
+    ) {
+      return
+    }
+
+    if (
+      mode === 'internal'
+    ) {
+      const certificate =
+        getMaLuWholeSelectionCertificate(
+          {
+            degree:
+              residualGraph
+                .workingDegree,
+
+            selectedForbiddenSet:
+              selectedValues,
+          },
+        )
+
+      if (
+        !certificate.applicable
+      ) {
+        return
+      }
+
+      const application =
+        createMaLuInternalApplication(
+          'G',
+          selectedValues,
+        )
+
+      setMoves(
+        (current) => [
+          ...current,
+          {
+            type:
+              'ma-lu-whole-graph',
+
+            application,
+          },
+        ],
+      )
+
+      return
+    }
+
+    const certificate =
+      getMaLuTotalCertificate(
+        {
+          target: 'G',
+
+          workingDegree:
+            residualGraph
+              .workingDegree,
+
+          fixedOutdegreeContribution:
+            residualGraph
+              .fixedOutdegreeContribution,
+
+          partition:
+            state.partition,
+
+          acrossDirection:
+            state
+              .acrossDirection,
+
+          selectedTotalOutdegrees:
+            selectedValues,
+        },
+      )
+
+    if (
+      !certificate.ready ||
+      !certificate.applicable
+    ) {
+      return
+    }
+
+    const application =
+      createMaLuTotalApplication(
+        'G',
+        selectedValues,
+        certificate.checks,
+      )
+
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'ma-lu-whole-graph',
+
+          application,
+        },
+      ],
+    )
+  }
+
+  function applyMaLuPart(
+    part: GraphPart,
+
+    mode:
+      MaLuApplicationMode,
+
+    selectedValues:
+      readonly number[],
+  ) {
+    if (
+      state.partition === null ||
+      selectedValues.length === 0
+    ) {
+      return
+    }
+
+    if (
+      part === 'L' &&
+      leftAlreadyOriented
+    ) {
+      return
+    }
+
+    if (
+      part === 'R' &&
+      rightAlreadyOriented
+    ) {
+      return
+    }
+
+    if (
+      mode === 'internal'
+    ) {
+      const certificate =
+        getMaLuPartSelectionCertificate(
+          {
+            target: part,
+
+            partition:
+              state.partition,
+
+            selectedForbiddenSet:
+              selectedValues,
+          },
+        )
+
+      if (
+        !certificate.applicable
+      ) {
+        return
+      }
+
+      const application =
+        createMaLuInternalApplication(
+          part,
+          selectedValues,
+        )
+
+      setMoves(
+        (current) => [
+          ...current,
+          {
+            type:
+              'ma-lu-part',
+
+            application,
+          },
+        ],
+      )
+
+      return
+    }
+
+    const certificate =
+      getMaLuTotalCertificate(
+        {
+          target: part,
+
+          workingDegree:
+            residualGraph
+              .workingDegree,
+
+          fixedOutdegreeContribution:
+            residualGraph
+              .fixedOutdegreeContribution,
+
+          partition:
+            state.partition,
+
+          acrossDirection:
+            state
+              .acrossDirection,
+
+          selectedTotalOutdegrees:
+            selectedValues,
+        },
+      )
+
+    if (
+      !certificate.ready ||
+      !certificate.applicable
+    ) {
+      return
+    }
+
+    const application =
+      createMaLuTotalApplication(
         part,
-        c,
-      },
-    ])
+        selectedValues,
+        certificate.checks,
+      )
+
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'ma-lu-part',
+
+          application,
+        },
+      ],
+    )
   }
 
   function takeOrientedTwoFactor() {
-    setMoves((current) => [
-      ...current,
-      {
-        type:
-          'oriented-two-factor',
-      },
-    ])
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'oriented-two-factor',
+        },
+      ],
+    )
   }
 
   function applyHasanvandCompression(
-    parameters: HasanvandParameters,
+    parameters:
+      HasanvandParameters,
   ) {
-    setMoves((current) => [
-      ...current,
-      {
-        type:
-          'hasanvand-compression',
-        parameters,
-      },
-    ])
+    setMoves(
+      (current) => [
+        ...current,
+        {
+          type:
+            'hasanvand-compression',
+
+          parameters,
+        },
+      ],
+    )
   }
 
   function undo() {
-    setMoves((current) =>
-      current.slice(0, -1),
+    setMoves(
+      (current) =>
+        current.slice(
+          0,
+          -1,
+        ),
     )
   }
 
@@ -358,14 +736,16 @@ export default function usePlayground(
     originalDegree,
 
     workingDegree:
-      residualGraph.workingDegree,
+      residualGraph
+        .workingDegree,
 
     fixedOutdegreeContribution:
       residualGraph
         .fixedOutdegreeContribution,
 
     orientedTwoFactorCount:
-      state.orientedTwoFactorCount,
+      state
+        .orientedTwoFactorCount,
 
     partition:
       state.partition,
@@ -391,6 +771,24 @@ export default function usePlayground(
     avoidCR:
       state.avoidCR,
 
+    maLuG:
+      state.maLuG !== null,
+
+    maLuL:
+      state.maLuL !== null,
+
+    maLuR:
+      state.maLuR !== null,
+
+    maLuApplicationG:
+      state.maLuG,
+
+    maLuApplicationL:
+      state.maLuL,
+
+    maLuApplicationR:
+      state.maLuR,
+
     hasanvandG:
       state.hasanvandG,
 
@@ -398,10 +796,6 @@ export default function usePlayground(
 
     outdegreePossibilities,
 
-    /*
-     * Kept for compatibility with
-     * existing GraphView code.
-     */
     outdegreeGuarantees:
       outdegreePossibilities,
 
@@ -411,6 +805,10 @@ export default function usePlayground(
     balanceGraph,
     avoidCGraph,
     avoidCPart,
+
+    applyMaLuGraph,
+    applyMaLuPart,
+
     takeOrientedTwoFactor,
     applyHasanvandCompression,
 

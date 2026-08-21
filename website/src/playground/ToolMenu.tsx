@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Math from '../components/Math'
+import MaLuSelector from '../components/MaLuSelector'
 import {
   getLovaszPairs,
   lovaszPartitionTool,
@@ -19,6 +20,13 @@ import type {
 import type {
   AvoidCTarget,
 } from '../tools/avoidC'
+import {
+  getMaLuSelectableValues,
+  type MaLuTarget,
+} from '../tools/maLuMath'
+import type {
+  MaLuApplicationMode,
+} from '../tools/maLuApplication'
 import type {
   GraphPart,
 } from './outdegreePossibilities'
@@ -26,8 +34,17 @@ import type {
 type ToolMenuProps = {
   workingDegree: number
 
-  partition: LovaszPair | null
-  acrossDirection: AcrossDirection | null
+  fixedOutdegreeContribution:
+    number
+
+  globalForbiddenSet:
+    readonly number[]
+
+  partition:
+    LovaszPair | null
+
+  acrossDirection:
+    AcrossDirection | null
 
   balancedG: boolean
   balancedL: boolean
@@ -37,6 +54,10 @@ type ToolMenuProps = {
   avoidCL: number | null
   avoidCR: number | null
 
+  maLuG: boolean
+  maLuL: boolean
+  maLuR: boolean
+
   hasanvandG:
     HasanvandParameters | null
 
@@ -44,7 +65,10 @@ type ToolMenuProps = {
     (pair: LovaszPair) => void
 
   onOrientAcross:
-    (direction: AcrossDirection) => void
+    (
+      direction:
+        AcrossDirection,
+    ) => void
 
   onBalanceGraph: () => void
 
@@ -60,19 +84,41 @@ type ToolMenuProps = {
       c: number,
     ) => void
 
+  onApplyMaLuGraph:
+    (
+      mode:
+        MaLuApplicationMode,
+
+      selectedValues:
+        readonly number[],
+    ) => void
+
+  onApplyMaLuPart:
+    (
+      part: GraphPart,
+
+      mode:
+        MaLuApplicationMode,
+
+      selectedValues:
+        readonly number[],
+    ) => void
+
   onTakeOrientedTwoFactor:
     () => void
 
   onApplyHasanvand:
     (
-      parameters: HasanvandParameters,
+      parameters:
+        HasanvandParameters,
     ) => void
 }
 
 function getAvoidCValues(
   maxDegree: number,
 ) {
-  const values: number[] = []
+  const values:
+    number[] = []
 
   for (
     let c = 2;
@@ -85,8 +131,102 @@ function getAvoidCValues(
   return values
 }
 
+/*
+ * Return EVERY total outdegree that is
+ * currently possible before orienting
+ * the target internally.
+ *
+ * These values are offered in Ma-Lu's
+ * "Target totals" mode whether or not
+ * they belong to the original
+ * forbidden set F.
+ *
+ * Membership in F affects only the
+ * visual red highlighting.
+ */
+function getCurrentTotalOutdegrees(
+  target: MaLuTarget,
+
+  workingDegree: number,
+
+  fixedOutdegreeContribution:
+    number,
+
+  partition:
+    LovaszPair | null,
+
+  acrossDirection:
+    AcrossDirection | null,
+) {
+  let minimumTotal =
+    fixedOutdegreeContribution
+
+  let maximumTotal =
+    fixedOutdegreeContribution +
+    workingDegree
+
+  if (
+    target !== 'G'
+  ) {
+    if (
+      partition === null ||
+      acrossDirection === null
+    ) {
+      return []
+    }
+
+    const maxInternalDegree =
+      target === 'L'
+        ? partition.s
+        : partition.t
+
+    const crossingPointsOut =
+      (
+        target === 'L' &&
+        acrossDirection ===
+          'L-to-R'
+      ) ||
+      (
+        target === 'R' &&
+        acrossDirection ===
+          'R-to-L'
+      )
+
+    if (crossingPointsOut) {
+      minimumTotal =
+        fixedOutdegreeContribution +
+        workingDegree -
+        maxInternalDegree
+
+      maximumTotal =
+        fixedOutdegreeContribution +
+        workingDegree
+    } else {
+      minimumTotal =
+        fixedOutdegreeContribution
+
+      maximumTotal =
+        fixedOutdegreeContribution +
+        maxInternalDegree
+    }
+  }
+
+  return Array.from(
+    {
+      length:
+        maximumTotal -
+        minimumTotal +
+        1,
+    },
+    (_, index) =>
+      minimumTotal + index,
+  )
+}
+
 export default function ToolMenu({
   workingDegree,
+  fixedOutdegreeContribution,
+  globalForbiddenSet,
   partition,
   acrossDirection,
   balancedG,
@@ -95,6 +235,9 @@ export default function ToolMenu({
   avoidCG,
   avoidCL,
   avoidCR,
+  maLuG,
+  maLuL,
+  maLuR,
   hasanvandG,
   onApplyLovasz,
   onOrientAcross,
@@ -102,31 +245,44 @@ export default function ToolMenu({
   onBalancePart,
   onAvoidCGraph,
   onAvoidCPart,
+  onApplyMaLuGraph,
+  onApplyMaLuPart,
   onTakeOrientedTwoFactor,
   onApplyHasanvand,
 }: ToolMenuProps) {
   const [
     toolsOpen,
     setToolsOpen,
-  ] = useState(false)
+  ] =
+    useState(false)
 
   const [
     lovaszOpen,
     setLovaszOpen,
-  ] = useState(false)
+  ] =
+    useState(false)
 
   const [
     hasanvandOpen,
     setHasanvandOpen,
-  ] = useState(false)
+  ] =
+    useState(false)
 
   const [
     avoidCTarget,
     setAvoidCTarget,
   ] =
-    useState<AvoidCTarget | null>(
-      null,
-    )
+    useState<
+      AvoidCTarget | null
+    >(null)
+
+  const [
+    maLuTarget,
+    setMaLuTarget,
+  ] =
+    useState<
+      MaLuTarget | null
+    >(null)
 
   const lovaszPairs =
     getLovaszPairs(
@@ -138,22 +294,11 @@ export default function ToolMenu({
       workingDegree,
     )
 
-  /*
-   * Avoid c is only useful for
-   * 2 <= c <= the relevant maximum
-   * degree.
-   *
-   * For the whole graph, that is the
-   * current working degree.
-   *
-   * After a Lovasz partition,
-   * Delta(G[L]) <= s and
-   * Delta(G[R]) <= t, so the useful
-   * ranges are 2,...,s and 2,...,t.
-   */
   let avoidCMaxDegree = 0
 
-  if (avoidCTarget === 'G') {
+  if (
+    avoidCTarget === 'G'
+  ) {
     avoidCMaxDegree =
       workingDegree
   }
@@ -179,15 +324,74 @@ export default function ToolMenu({
       avoidCMaxDegree,
     )
 
+  let maLuMaxDegree = 0
+
+  let maLuPossibleDegrees:
+    number[] = []
+
+  if (
+    maLuTarget === 'G'
+  ) {
+    maLuMaxDegree =
+      workingDegree
+
+    maLuPossibleDegrees = [
+      workingDegree,
+    ]
+  }
+
+  if (
+    maLuTarget === 'L' &&
+    partition !== null
+  ) {
+    maLuMaxDegree =
+      partition.s
+
+    maLuPossibleDegrees =
+      getMaLuSelectableValues(
+        partition.s,
+      )
+  }
+
+  if (
+    maLuTarget === 'R' &&
+    partition !== null
+  ) {
+    maLuMaxDegree =
+      partition.t
+
+    maLuPossibleDegrees =
+      getMaLuSelectableValues(
+        partition.t,
+      )
+  }
+
+  const maLuTotalCandidates =
+    maLuTarget === null
+      ? []
+      : getCurrentTotalOutdegrees(
+          maLuTarget,
+
+          workingDegree,
+
+          fixedOutdegreeContribution,
+
+          partition,
+
+          acrossDirection,
+        )
+
   function closeSubmenus() {
     setLovaszOpen(false)
     setHasanvandOpen(false)
     setAvoidCTarget(null)
+    setMaLuTarget(null)
   }
 
   function toggleTools() {
     setToolsOpen(
-      (current) => !current,
+      (current) =>
+        !current,
     )
 
     closeSubmenus()
@@ -197,18 +401,38 @@ export default function ToolMenu({
     setLovaszOpen(true)
     setHasanvandOpen(false)
     setAvoidCTarget(null)
+    setMaLuTarget(null)
   }
 
   function openHasanvandMenu() {
     setHasanvandOpen(true)
     setLovaszOpen(false)
     setAvoidCTarget(null)
+    setMaLuTarget(null)
   }
 
   function openAvoidCMenu(
-    target: AvoidCTarget,
+    target:
+      AvoidCTarget,
   ) {
-    setAvoidCTarget(target)
+    setAvoidCTarget(
+      target,
+    )
+
+    setMaLuTarget(null)
+    setLovaszOpen(false)
+    setHasanvandOpen(false)
+  }
+
+  function openMaLuMenu(
+    target:
+      MaLuTarget,
+  ) {
+    setMaLuTarget(
+      target,
+    )
+
+    setAvoidCTarget(null)
     setLovaszOpen(false)
     setHasanvandOpen(false)
   }
@@ -223,9 +447,12 @@ export default function ToolMenu({
   }
 
   function applyAcrossOrientation(
-    direction: AcrossDirection,
+    direction:
+      AcrossDirection,
   ) {
-    onOrientAcross(direction)
+    onOrientAcross(
+      direction,
+    )
 
     setToolsOpen(false)
     closeSubmenus()
@@ -250,7 +477,9 @@ export default function ToolMenu({
   function applyAvoidC(
     c: number,
   ) {
-    if (avoidCTarget === 'G') {
+    if (
+      avoidCTarget === 'G'
+    ) {
       onAvoidCGraph(c)
     }
 
@@ -261,6 +490,37 @@ export default function ToolMenu({
       onAvoidCPart(
         avoidCTarget,
         c,
+      )
+    }
+
+    setToolsOpen(false)
+    closeSubmenus()
+  }
+
+  function applyMaLu(
+    mode:
+      MaLuApplicationMode,
+
+    selectedValues:
+      readonly number[],
+  ) {
+    if (
+      maLuTarget === 'G'
+    ) {
+      onApplyMaLuGraph(
+        mode,
+        selectedValues,
+      )
+    }
+
+    if (
+      maLuTarget === 'L' ||
+      maLuTarget === 'R'
+    ) {
+      onApplyMaLuPart(
+        maLuTarget,
+        mode,
+        selectedValues,
       )
     }
 
@@ -289,7 +549,8 @@ export default function ToolMenu({
 
   const controlButtonStyle = {
     font: 'inherit',
-    padding: '10px 18px',
+    padding:
+      '10px 18px',
     border:
       '1px solid #64748b',
     borderRadius: '8px',
@@ -301,27 +562,33 @@ export default function ToolMenu({
   const menuButtonStyle = {
     font: 'inherit',
     width: '100%',
-    padding: '10px 14px',
+    padding:
+      '10px 14px',
     border: 'none',
     borderRadius: '6px',
-    background: 'transparent',
+    background:
+      'transparent',
     color: '#334155',
     cursor: 'pointer',
-    textAlign: 'left' as const,
+    textAlign:
+      'left' as const,
   }
 
   const orientationFinished =
     balancedG ||
     avoidCG !== null ||
+    maLuG ||
     hasanvandG !== null
 
   const leftInternallyOriented =
     balancedL ||
-    avoidCL !== null
+    avoidCL !== null ||
+    maLuL
 
   const rightInternallyOriented =
     balancedR ||
-    avoidCR !== null
+    avoidCR !== null ||
+    maLuR
 
   const canTakeTwoFactor =
     partition === null &&
@@ -349,6 +616,21 @@ export default function ToolMenu({
     partition !== null &&
     !rightInternallyOriented &&
     partition.t >= 2
+
+  const canUseMaLuInG =
+    partition === null &&
+    !orientationFinished &&
+    workingDegree > 0
+
+  const canUseMaLuInL =
+    partition !== null &&
+    !leftInternallyOriented &&
+    partition.s > 0
+
+  const canUseMaLuInR =
+    partition !== null &&
+    !rightInternallyOriented &&
+    partition.t > 0
 
   const hasAvailablePartitionTool =
     acrossDirection === null ||
@@ -383,8 +665,10 @@ export default function ToolMenu({
             padding: '6px',
             border:
               '1px solid #cbd5e1',
-            borderRadius: '10px',
-            background: '#ffffff',
+            borderRadius:
+              '10px',
+            background:
+              '#ffffff',
             boxShadow:
               '0 8px 24px rgba(0, 0, 0, 0.08)',
             textAlign: 'left',
@@ -405,7 +689,9 @@ export default function ToolMenu({
                 }}
               >
                 Avoid{' '}
-                <Math>{'c'}</Math>{' '}
+                <Math>
+                  {'c'}
+                </Math>{' '}
                 in{' '}
                 <Math>
                   {avoidCTarget}
@@ -423,7 +709,9 @@ export default function ToolMenu({
                 >
                   Choose{' '}
                   <Math>
-                    {`2\\leq c\\leq ${avoidCMaxDegree}`}
+                    {
+                      `2\\leq c\\leq ${avoidCMaxDegree}`
+                    }
                   </Math>
                 </div>
               </div>
@@ -480,12 +768,51 @@ export default function ToolMenu({
                 ← Back
               </button>
             </>
+          ) : maLuTarget !== null ? (
+            <MaLuSelector
+              target={
+                maLuTarget
+              }
+              maxSelectableDegree={
+                maLuMaxDegree
+              }
+              possibleDegrees={
+                maLuPossibleDegrees
+              }
+              globalForbiddenSet={
+                globalForbiddenSet
+              }
+              totalCandidateOutdegrees={
+                maLuTotalCandidates
+              }
+              workingDegree={
+                workingDegree
+              }
+              fixedOutdegreeContribution={
+                fixedOutdegreeContribution
+              }
+              partition={
+                partition
+              }
+              acrossDirection={
+                acrossDirection
+              }
+              onApply={
+                applyMaLu
+              }
+              onBack={() =>
+                setMaLuTarget(
+                  null,
+                )
+              }
+            />
           ) : orientationFinished ? (
             <div
               style={{
                 padding:
                   '10px 14px',
-                color: '#64748b',
+                color:
+                  '#64748b',
               }}
             >
               No additional tools yet.
@@ -549,6 +876,26 @@ export default function ToolMenu({
                         {'c'}
                       </Math>{' '}
                       in{' '}
+                      <Math>
+                        {'G'}
+                      </Math>{' '}
+                      →
+                    </button>
+                  )}
+
+                  {canUseMaLuInG && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openMaLuMenu(
+                          'G',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Ma–Lu on{' '}
                       <Math>
                         {'G'}
                       </Math>{' '}
@@ -628,7 +975,9 @@ export default function ToolMenu({
                         }}
                       >
                         <Math>
-                          {`(${pair.s},${pair.t})`}
+                          {
+                            `(${pair.s},${pair.t})`
+                          }
                         </Math>
                       </button>
                     ),
@@ -699,7 +1048,9 @@ export default function ToolMenu({
                           }}
                         >
                           <Math>
-                            {`(${pair.p},${pair.q})`}
+                            {
+                              `(${pair.p},${pair.q})`
+                            }
                           </Math>
                         </button>
                       ),
@@ -854,13 +1205,54 @@ export default function ToolMenu({
                   →
                 </button>
               )}
+
+              {canUseMaLuInL && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openMaLuMenu(
+                      'L',
+                    )
+                  }
+                  style={
+                    menuButtonStyle
+                  }
+                >
+                  Ma–Lu on{' '}
+                  <Math>
+                    {'L'}
+                  </Math>{' '}
+                  →
+                </button>
+              )}
+
+              {canUseMaLuInR && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    openMaLuMenu(
+                      'R',
+                    )
+                  }
+                  style={
+                    menuButtonStyle
+                  }
+                >
+                  Ma–Lu on{' '}
+                  <Math>
+                    {'R'}
+                  </Math>{' '}
+                  →
+                </button>
+              )}
             </>
           ) : (
             <div
               style={{
                 padding:
                   '10px 14px',
-                color: '#64748b',
+                color:
+                  '#64748b',
               }}
             >
               No additional tools yet.

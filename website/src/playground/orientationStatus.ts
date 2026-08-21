@@ -9,12 +9,18 @@ type OrientationStatusArgs = {
   outdegreePossibilities:
     PartOutdegreePossibilities
 
-  balancedG: boolean
-  hasanvandG: boolean
+  /*
+   * These names deliberately describe
+   * the mathematical state rather than
+   * the particular theorem/tool used
+   * to obtain the orientation.
+   */
+  wholeGraphOriented: boolean
 
   acrossOriented: boolean
-  balancedL: boolean
-  balancedR: boolean
+
+  leftInternallyOriented: boolean
+  rightInternallyOriented: boolean
 }
 
 export type OrientationStatus = {
@@ -38,19 +44,17 @@ function avoidsForbiddenSet(
 export default function getOrientationStatus({
   forbiddenSet,
   outdegreePossibilities,
-  balancedG,
-  hasanvandG,
+  wholeGraphOriented,
   acrossOriented,
-  balancedL,
-  balancedR,
+  leftInternallyOriented,
+  rightInternallyOriented,
 }: OrientationStatusArgs): OrientationStatus {
   const isComplete =
-    balancedG ||
-    hasanvandG ||
+    wholeGraphOriented ||
     (
       acrossOriented &&
-      balancedL &&
-      balancedR
+      leftInternallyOriented &&
+      rightInternallyOriented
     )
 
   if (!isComplete) {

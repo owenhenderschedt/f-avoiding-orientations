@@ -42,18 +42,14 @@ type ActiveReference =
       type: 'lovasz'
     }
   | {
-      type:
-        'balanced-orientation'
-      target:
-        BalancedTarget
+      type: 'balanced-orientation'
+      target: BalancedTarget
     }
   | {
-      type:
-        'oriented-two-factor'
+      type: 'oriented-two-factor'
     }
   | {
-      type:
-        'hasanvand-compression'
+      type: 'hasanvand-compression'
     }
   | {
       type: 'avoid-c'
@@ -61,6 +57,16 @@ type ActiveReference =
       c: number
     }
   | null
+
+function latexSet(
+  values: readonly number[],
+) {
+  return (
+    '\\{' +
+    values.join(',') +
+    '\\}'
+  )
+}
 
 export default function BlobLab({
   degree,
@@ -71,24 +77,35 @@ export default function BlobLab({
   const [
     activeReference,
     setActiveReference,
-  ] = useState<ActiveReference>(
-    null,
-  )
+  ] =
+    useState<ActiveReference>(
+      null,
+    )
 
   const playground =
-    usePlayground(degree)
+    usePlayground(
+      degree,
+    )
 
   const wholeGraphOriented =
     playground.balancedG ||
-    playground.avoidCG !== null
+    playground.avoidCG !==
+      null ||
+    playground.maLuG ||
+    playground.hasanvandG !==
+      null
 
   const leftInternallyOriented =
     playground.balancedL ||
-    playground.avoidCL !== null
+    playground.avoidCL !==
+      null ||
+    playground.maLuL
 
   const rightInternallyOriented =
     playground.balancedR ||
-    playground.avoidCR !== null
+    playground.avoidCR !==
+      null ||
+    playground.maLuR
 
   const orientationStatus =
     getOrientationStatus({
@@ -98,33 +115,32 @@ export default function BlobLab({
         playground
           .outdegreePossibilities,
 
-      balancedG:
-        wholeGraphOriented,
-
-      hasanvandG:
-        playground.hasanvandG !==
-        null,
+      wholeGraphOriented,
 
       acrossOriented:
         playground
           .acrossDirection !==
         null,
 
-      balancedL:
-        leftInternallyOriented,
+      leftInternallyOriented,
 
-      balancedR:
-        rightInternallyOriented,
+      rightInternallyOriented,
     })
 
   function undo() {
     playground.undo()
-    setActiveReference(null)
+
+    setActiveReference(
+      null,
+    )
   }
 
   function reset() {
     playground.reset()
-    setActiveReference(null)
+
+    setActiveReference(
+      null,
+    )
   }
 
   const referenceTitle =
@@ -143,7 +159,9 @@ export default function BlobLab({
             : lovaszPartitionTool.name
 
   const forbiddenSetMath =
-    `\\{${forbiddenSet.join(',')}\\}`
+    `\\{${forbiddenSet.join(
+      ',',
+    )}\\}`
 
   return (
     <>
@@ -151,17 +169,22 @@ export default function BlobLab({
         style={{
           padding:
             '42px 48px 60px',
-          maxWidth: '1000px',
-          margin: '0 auto',
+          maxWidth:
+            '1000px',
+          margin:
+            '0 auto',
         }}
       >
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
+            display:
+              'flex',
+            alignItems:
+              'center',
             justifyContent:
               'space-between',
-            marginBottom: '28px',
+            marginBottom:
+              '28px',
           }}
         >
           <button
@@ -170,12 +193,16 @@ export default function BlobLab({
               onBackToCases
             }
             style={{
-              font: 'inherit',
-              border: 'none',
+              font:
+                'inherit',
+              border:
+                'none',
               background:
                 'transparent',
-              color: '#64748b',
-              cursor: 'pointer',
+              color:
+                '#64748b',
+              cursor:
+                'pointer',
               padding: 0,
             }}
           >
@@ -184,14 +211,20 @@ export default function BlobLab({
 
           <button
             type="button"
-            onClick={onHome}
+            onClick={
+              onHome
+            }
             style={{
-              font: 'inherit',
-              border: 'none',
+              font:
+                'inherit',
+              border:
+                'none',
               background:
                 'transparent',
-              color: '#64748b',
-              cursor: 'pointer',
+              color:
+                '#64748b',
+              cursor:
+                'pointer',
               padding: 0,
             }}
           >
@@ -201,28 +234,37 @@ export default function BlobLab({
 
         <h1
           style={{
-            marginBottom: '10px',
+            marginBottom:
+              '10px',
           }}
         >
-          <Math>{`${degree}`}</Math>
+          <Math>
+            {`${degree}`}
+          </Math>
           -Regular Playground
         </h1>
 
         <p
           style={{
             marginTop: 0,
-            marginBottom: '34px',
-            color: '#64748b',
+            marginBottom:
+              '34px',
+            color:
+              '#64748b',
           }}
         >
           Forbidden set{' '}
           <Math>
-            {`F=${forbiddenSetMath}`}
+            {
+              `F=${forbiddenSetMath}`
+            }
           </Math>
         </p>
 
         <CaseStatus
-          degree={degree}
+          degree={
+            degree
+          }
           forbiddenSet={
             forbiddenSet
           }
@@ -238,11 +280,14 @@ export default function BlobLab({
 
         <div
           style={{
-            textAlign: 'center',
+            textAlign:
+              'center',
           }}
         >
           <GraphView
-            degree={degree}
+            degree={
+              degree
+            }
             workingDegree={
               playground
                 .workingDegree
@@ -259,79 +304,101 @@ export default function BlobLab({
               forbiddenSet
             }
             partition={
-              playground.partition
+              playground
+                .partition
             }
             acrossDirection={
               playground
                 .acrossDirection
             }
             balancedG={
-              playground.balancedG
+              playground
+                .balancedG
             }
             balancedL={
-              playground.balancedL
+              playground
+                .balancedL
             }
             balancedR={
-              playground.balancedR
+              playground
+                .balancedR
             }
             avoidCG={
-              playground.avoidCG
+              playground
+                .avoidCG
             }
             avoidCL={
-              playground.avoidCL
+              playground
+                .avoidCL
             }
             avoidCR={
-              playground.avoidCR
+              playground
+                .avoidCR
             }
             hasanvandG={
-              playground.hasanvandG
+              playground
+                .hasanvandG
             }
             outdegreeGuarantees={
               playground
                 .outdegreePossibilities
             }
             onOpenLovaszReference={() =>
-              setActiveReference({
-                type: 'lovasz',
-              })
+              setActiveReference(
+                {
+                  type:
+                    'lovasz',
+                },
+              )
             }
             onOpenBalancedReference={(
               target,
             ) =>
-              setActiveReference({
-                type:
-                  'balanced-orientation',
-                target,
-              })
+              setActiveReference(
+                {
+                  type:
+                    'balanced-orientation',
+                  target,
+                },
+              )
             }
             onOpenAvoidCReference={(
               target,
               c,
             ) =>
-              setActiveReference({
-                type: 'avoid-c',
-                target,
-                c,
-              })
+              setActiveReference(
+                {
+                  type:
+                    'avoid-c',
+                  target,
+                  c,
+                },
+              )
             }
             onOpenTwoFactorReference={() =>
-              setActiveReference({
-                type:
-                  'oriented-two-factor',
-              })
+              setActiveReference(
+                {
+                  type:
+                    'oriented-two-factor',
+                },
+              )
             }
             onOpenHasanvandReference={() =>
-              setActiveReference({
-                type:
-                  'hasanvand-compression',
-              })
+              setActiveReference(
+                {
+                  type:
+                    'hasanvand-compression',
+                },
+              )
             }
           />
 
           <div
             style={{
-              marginTop: '28px',
-              display: 'flex',
+              marginTop:
+                '28px',
+              display:
+                'flex',
               justifyContent:
                 'center',
               gap: '14px',
@@ -344,33 +411,60 @@ export default function BlobLab({
                 playground
                   .workingDegree
               }
+              fixedOutdegreeContribution={
+                playground
+                  .fixedOutdegreeContribution
+              }
+              globalForbiddenSet={
+                forbiddenSet
+              }
               partition={
-                playground.partition
+                playground
+                  .partition
               }
               acrossDirection={
                 playground
                   .acrossDirection
               }
               balancedG={
-                playground.balancedG
+                playground
+                  .balancedG
               }
               balancedL={
-                playground.balancedL
+                playground
+                  .balancedL
               }
               balancedR={
-                playground.balancedR
+                playground
+                  .balancedR
               }
               avoidCG={
-                playground.avoidCG
+                playground
+                  .avoidCG
               }
               avoidCL={
-                playground.avoidCL
+                playground
+                  .avoidCL
               }
               avoidCR={
-                playground.avoidCR
+                playground
+                  .avoidCR
+              }
+              maLuG={
+                playground
+                  .maLuG
+              }
+              maLuL={
+                playground
+                  .maLuL
+              }
+              maLuR={
+                playground
+                  .maLuR
               }
               hasanvandG={
-                playground.hasanvandG
+                playground
+                  .hasanvandG
               }
               onApplyLovasz={
                 playground
@@ -396,6 +490,14 @@ export default function BlobLab({
                 playground
                   .avoidCPart
               }
+              onApplyMaLuGraph={
+                playground
+                  .applyMaLuGraph
+              }
+              onApplyMaLuPart={
+                playground
+                  .applyMaLuPart
+              }
               onTakeOrientedTwoFactor={
                 playground
                   .takeOrientedTwoFactor
@@ -409,9 +511,12 @@ export default function BlobLab({
             {playground.canUndo && (
               <button
                 type="button"
-                onClick={reset}
+                onClick={
+                  reset
+                }
                 style={{
-                  font: 'inherit',
+                  font:
+                    'inherit',
                   padding:
                     '10px 18px',
                   border:
@@ -433,7 +538,8 @@ export default function BlobLab({
 
           <div
             style={{
-              marginTop: '24px',
+              marginTop:
+                '24px',
             }}
           >
             <ProofHistory
@@ -449,11 +555,15 @@ export default function BlobLab({
                     ) {
                       return (
                         <span
-                          key={index}
+                          key={
+                            index
+                          }
                         >
                           Lovász{' '}
                           <Math>
-                            {`(${move.pair.s},${move.pair.t})`}
+                            {
+                              `(${move.pair.s},${move.pair.t})`
+                            }
                           </Math>
                         </span>
                       )
@@ -465,14 +575,18 @@ export default function BlobLab({
                     ) {
                       return (
                         <span
-                          key={index}
+                          key={
+                            index
+                          }
                         >
                           Orient{' '}
                           <Math>
-                            {move.direction ===
-                            'L-to-R'
-                              ? 'L\\to R'
-                              : 'R\\to L'}
+                            {
+                              move.direction ===
+                              'L-to-R'
+                                ? 'L\\to R'
+                                : 'R\\to L'
+                            }
                           </Math>
                         </span>
                       )
@@ -484,11 +598,15 @@ export default function BlobLab({
                     ) {
                       return (
                         <span
-                          key={index}
+                          key={
+                            index
+                          }
                         >
                           Balance{' '}
                           <Math>
-                            {move.part}
+                            {
+                              move.part
+                            }
                           </Math>
                         </span>
                       )
@@ -500,7 +618,9 @@ export default function BlobLab({
                     ) {
                       return (
                         <span
-                          key={index}
+                          key={
+                            index
+                          }
                         >
                           Balance{' '}
                           <Math>
@@ -516,11 +636,15 @@ export default function BlobLab({
                     ) {
                       return (
                         <span
-                          key={index}
+                          key={
+                            index
+                          }
                         >
                           Avoid{' '}
                           <Math>
-                            {`c=${move.c}`}
+                            {
+                              `c=${move.c}`
+                            }
                           </Math>{' '}
                           in{' '}
                           <Math>
@@ -536,16 +660,125 @@ export default function BlobLab({
                     ) {
                       return (
                         <span
-                          key={index}
+                          key={
+                            index
+                          }
                         >
                           Avoid{' '}
                           <Math>
-                            {`c=${move.c}`}
+                            {
+                              `c=${move.c}`
+                            }
                           </Math>{' '}
                           in{' '}
                           <Math>
-                            {move.part}
+                            {
+                              move.part
+                            }
                           </Math>
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
+                      'ma-lu-whole-graph'
+                    ) {
+                      return (
+                        <span
+                          key={
+                            index
+                          }
+                        >
+                          Ma–Lu on{' '}
+                          <Math>
+                            {'G'}
+                          </Math>
+                          {move
+                            .application
+                            .mode ===
+                          'total' ? (
+                            <>
+                              , eliminate
+                              total{' '}
+                              <Math>
+                                {
+                                  latexSet(
+                                    move
+                                      .application
+                                      .selectedValues,
+                                  )
+                                }
+                              </Math>
+                            </>
+                          ) : (
+                            <>
+                              , avoid{' '}
+                              <Math>
+                                {
+                                  latexSet(
+                                    move
+                                      .application
+                                      .selectedValues,
+                                  )
+                                }
+                              </Math>
+                            </>
+                          )}
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
+                      'ma-lu-part'
+                    ) {
+                      return (
+                        <span
+                          key={
+                            index
+                          }
+                        >
+                          Ma–Lu on{' '}
+                          <Math>
+                            {
+                              move
+                                .application
+                                .target
+                            }
+                          </Math>
+                          {move
+                            .application
+                            .mode ===
+                          'total' ? (
+                            <>
+                              , eliminate
+                              total{' '}
+                              <Math>
+                                {
+                                  latexSet(
+                                    move
+                                      .application
+                                      .selectedValues,
+                                  )
+                                }
+                              </Math>
+                            </>
+                          ) : (
+                            <>
+                              , avoid{' '}
+                              <Math>
+                                {
+                                  latexSet(
+                                    move
+                                      .application
+                                      .selectedValues,
+                                  )
+                                }
+                              </Math>{' '}
+                              internally
+                            </>
+                          )}
                         </span>
                       )
                     }
@@ -556,7 +789,9 @@ export default function BlobLab({
                     ) {
                       return (
                         <span
-                          key={index}
+                          key={
+                            index
+                          }
                         >
                           Orient a
                           2-factor
@@ -570,11 +805,15 @@ export default function BlobLab({
                     ) {
                       return (
                         <span
-                          key={index}
+                          key={
+                            index
+                          }
                         >
                           Hasanvand{' '}
                           <Math>
-                            {`(${move.parameters.p},${move.parameters.q})`}
+                            {
+                              `(${move.parameters.p},${move.parameters.q})`
+                            }
                           </Math>
                         </span>
                       )
@@ -585,9 +824,12 @@ export default function BlobLab({
                 )
               }
               canUndo={
-                playground.canUndo
+                playground
+                  .canUndo
               }
-              onUndo={undo}
+              onUndo={
+                undo
+              }
             />
           </div>
         </div>
@@ -595,20 +837,24 @@ export default function BlobLab({
 
       <ToolReferencePanel
         open={
-          activeReference !== null
+          activeReference !==
+          null
         }
         title={
           referenceTitle
         }
         onClose={() =>
-          setActiveReference(null)
+          setActiveReference(
+            null,
+          )
         }
       >
         {activeReference?.type ===
           'lovasz' && (
           <LovaszPartitionReference
             partition={
-              playground.partition
+              playground
+                .partition
             }
           />
         )}
@@ -617,14 +863,16 @@ export default function BlobLab({
           'balanced-orientation' && (
           <BalancedOrientationReference
             target={
-              activeReference.target
+              activeReference
+                .target
             }
             degree={
               playground
                 .workingDegree
             }
             partition={
-              playground.partition
+              playground
+                .partition
             }
           />
         )}
@@ -634,7 +882,8 @@ export default function BlobLab({
           <OrientedTwoFactorReference
             degree={
               playground
-                .workingDegree + 2
+                .workingDegree +
+              2
             }
           />
         )}
@@ -656,7 +905,8 @@ export default function BlobLab({
           'avoid-c' && (
           <AvoidCReference
             target={
-              activeReference.target
+              activeReference
+                .target
             }
             c={
               activeReference.c
@@ -666,7 +916,8 @@ export default function BlobLab({
                 .workingDegree
             }
             partition={
-              playground.partition
+              playground
+                .partition
             }
           />
         )}

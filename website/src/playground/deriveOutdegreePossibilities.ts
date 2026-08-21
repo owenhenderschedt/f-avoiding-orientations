@@ -7,6 +7,13 @@ import type {
 import {
   getAvoidCChoices,
 } from '../tools/avoidC'
+import type {
+  MaLuApplication,
+} from '../tools/maLuApplication'
+import {
+  getMaLuPartOutdegreePossibilities,
+  getMaLuWholeGraphChoices,
+} from '../tools/maLuOutdegrees'
 import {
   allOutdegrees,
   uniqueSorted,
@@ -17,27 +24,34 @@ import {
 
 type DeriveOutdegreePossibilitiesArgs = {
   degree: number
-  partition: LovaszPair | null
-  acrossDirection: AcrossDirection | null
+
+  partition:
+    LovaszPair | null
+
+  acrossDirection:
+    AcrossDirection | null
 
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
 
-  /*
-   * These are optional for now so that
-   * the existing playground continues
-   * to behave exactly as before until
-   * Avoid c is wired into the state.
-   */
-  avoidCG?: number | null
-  avoidCL?: number | null
-  avoidCR?: number | null
+  avoidCG: number | null
+  avoidCL: number | null
+  avoidCR: number | null
+
+  maLuG:
+    MaLuApplication | null
+
+  maLuL:
+    MaLuApplication | null
+
+  maLuR:
+    MaLuApplication | null
 }
 
 function balancedInternalChoices(
   internalDegree: number,
-): number[] {
+): OutdegreeSet {
   return uniqueSorted([
     Math.floor(
       internalDegree / 2,
@@ -52,8 +66,12 @@ function balancedWholeGraphChoices(
   degree: number,
 ): OutdegreeSet {
   return uniqueSorted([
-    Math.floor(degree / 2),
-    Math.ceil(degree / 2),
+    Math.floor(
+      degree / 2,
+    ),
+    Math.ceil(
+      degree / 2,
+    ),
   ])
 }
 
@@ -77,20 +95,62 @@ function avoidCInternalChoices(
 
 function possibilitiesForPart(
   degree: number,
-  maxInternalDegree: number,
+
+  maxInternalDegree:
+    number,
+
   part: GraphPart,
-  acrossDirection: AcrossDirection | null,
+
+  acrossDirection:
+    AcrossDirection | null,
+
   balanced: boolean,
-  avoidC: number | null,
+
+  avoidC:
+    number | null,
+
+  maLuApplication:
+    MaLuApplication | null,
 ): OutdegreeSet {
   /*
-   * An orientation only inside the part
-   * does not yet restrict the total
-   * outdegree while the crossing edges
+   * Ma-Lu has its own helper because
+   * the application remembers the
+   * exact internal set S selected by
+   * the user.
+   */
+  if (
+    maLuApplication !==
+    null
+  ) {
+    return getMaLuPartOutdegreePossibilities(
+      {
+        degree,
+
+        maxInternalDegree,
+
+        part,
+
+        acrossDirection,
+
+        application:
+          maLuApplication,
+      },
+    )
+  }
+
+  /*
+   * An orientation only inside the
+   * part does not yet restrict total
+   * outdegree while crossing edges
    * remain unoriented.
    */
-  if (acrossDirection === null) {
-    return allOutdegrees(degree)
+  if (
+    acrossDirection ===
+    null
+  ) {
+    return allOutdegrees(
+      degree,
+    )
   }
 
   const crossingEdgesPointOut =
@@ -105,12 +165,15 @@ function possibilitiesForPart(
         'R-to-L'
     )
 
-  const values: number[] = []
+  const values:
+    number[] = []
 
   for (
     let internalDegree = 0;
+
     internalDegree <=
-    maxInternalDegree;
+      maxInternalDegree;
+
     internalDegree += 1
   ) {
     let internalChoices:
@@ -121,7 +184,9 @@ function possibilitiesForPart(
         balancedInternalChoices(
           internalDegree,
         )
-    } else if (avoidC !== null) {
+    } else if (
+      avoidC !== null
+    ) {
       internalChoices =
         avoidCInternalChoices(
           internalDegree,
@@ -151,7 +216,9 @@ function possibilitiesForPart(
     }
   }
 
-  return uniqueSorted(values)
+  return uniqueSorted(
+    values,
+  )
 }
 
 export default function deriveOutdegreePossibilities({
@@ -161,16 +228,14 @@ export default function deriveOutdegreePossibilities({
   balancedG,
   balancedL,
   balancedR,
-  avoidCG = null,
-  avoidCL = null,
-  avoidCR = null,
+  avoidCG,
+  avoidCL,
+  avoidCR,
+  maLuG,
+  maLuL,
+  maLuR,
 }: DeriveOutdegreePossibilitiesArgs):
   PartOutdegreePossibilities {
-  /*
-   * A balanced orientation of the whole
-   * graph completely determines the
-   * possible total outdegrees.
-   */
   if (balancedG) {
     const values =
       balancedWholeGraphChoices(
@@ -183,12 +248,9 @@ export default function deriveOutdegreePossibilities({
     }
   }
 
-  /*
-   * Avoid c on the whole graph removes
-   * c from the set of possible total
-   * outdegrees.
-   */
-  if (avoidCG !== null) {
+  if (
+    avoidCG !== null
+  ) {
     const values =
       getAvoidCChoices(
         degree,
@@ -201,9 +263,33 @@ export default function deriveOutdegreePossibilities({
     }
   }
 
-  if (partition === null) {
+  /*
+   * A whole-graph Ma-Lu application
+   * removes exactly the residual
+   * outdegrees selected by the user.
+   */
+  if (
+    maLuG !== null
+  ) {
+    const values =
+      getMaLuWholeGraphChoices(
+        degree,
+        maLuG,
+      )
+
+    return {
+      L: values,
+      R: values,
+    }
+  }
+
+  if (
+    partition === null
+  ) {
     const all =
-      allOutdegrees(degree)
+      allOutdegrees(
+        degree,
+      )
 
     return {
       L: all,
@@ -219,6 +305,7 @@ export default function deriveOutdegreePossibilities({
       acrossDirection,
       balancedL,
       avoidCL,
+      maLuL,
     ),
 
     R: possibilitiesForPart(
@@ -228,6 +315,7 @@ export default function deriveOutdegreePossibilities({
       acrossDirection,
       balancedR,
       avoidCR,
+      maLuR,
     ),
   }
 }
