@@ -5,16 +5,20 @@ import type {
 import type {
   AcrossDirection,
 } from './orientAcrossPartition'
+import type {
+  MaLuApplication,
+} from './maLuApplication'
 import {
-  getMaLuCertificate,
+  getMaLuSelectionCertificate,
+  getMaLuSelectableValues,
+  getMaLuSelectionDegreeCheck,
   maLuCrossingEdgesPointOut,
   type MaLuTarget,
 } from './maLuMath'
 
 /*
- * Re-export the mathematical API so
- * existing playground files do not
- * need to change during this refactor.
+ * Keep these re-exports for compatibility
+ * with any existing playground code.
  */
 export {
   getMaLuCertificate,
@@ -55,6 +59,16 @@ function latexSet(
   )
 }
 
+function targetGraphLatex(
+  target: MaLuTarget,
+) {
+  if (target === 'G') {
+    return 'G'
+  }
+
+  return `G[${target}]`
+}
+
 type MaLuReferenceProps = {
   target: MaLuTarget
 
@@ -66,17 +80,25 @@ type MaLuReferenceProps = {
 
   /*
    * Contribution already supplied by
-   * removed oriented 2-factors.
+   * previously oriented 2-factors.
    */
   fixedOutdegreeContribution: number
-
-  forbiddenSet:
-    readonly number[]
 
   partition: LovaszPair | null
 
   acrossDirection:
     AcrossDirection | null
+
+  /*
+   * Null when the user opens the
+   * theorem from the selector before
+   * applying Ma-Lu.
+   *
+   * Non-null when the user clicks an
+   * applied Ma-Lu badge in the graph.
+   */
+  application:
+    MaLuApplication | null
 }
 
 function CertificateStatus({
@@ -98,38 +120,92 @@ function CertificateStatus({
   )
 }
 
+function DegreeCheckRow({
+  degree,
+  forbiddenSet,
+}: {
+  degree: number
+  forbiddenSet:
+    readonly number[]
+}) {
+  const check =
+    getMaLuSelectionDegreeCheck(
+      degree,
+      forbiddenSet,
+    )
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns:
+          '54px 1fr 32px',
+        gap: '10px',
+        alignItems: 'center',
+        padding: '10px 12px',
+        borderBottom:
+          '1px solid #e2e8f0',
+      }}
+    >
+      <div>
+        <Math>
+          {`r=${degree}`}
+        </Math>
+      </div>
+
+      <div>
+        <Math>
+          {
+            `F_r=${latexSet(
+              check
+                .relevantForbiddenSet,
+            )}`
+          }
+        </Math>
+
+        <div
+          style={{
+            marginTop: '4px',
+            color: '#64748b',
+            fontSize: '15px',
+          }}
+        >
+          {degree === 0
+            ? check
+                .isolatedVertexSafe
+              ? 'isolated vertex is safe'
+              : '0 is forbidden'
+            : !check
+                .hasNoConsecutiveValues
+              ? 'contains consecutive forbidden values'
+              : check
+                    .sizeBoundHolds
+                ? `no consecutive values; 2|F_r|=${2 * check.relevantForbiddenSet.length} ≤ ${degree - 1}`
+                : `size bound fails: 2|F_r|=${2 * check.relevantForbiddenSet.length} > ${degree - 1}`}
+        </div>
+      </div>
+
+      <CertificateStatus
+        passes={
+          check.passes
+        }
+      />
+    </div>
+  )
+}
+
 export function MaLuReference({
   target,
   degree,
   fixedOutdegreeContribution,
-  forbiddenSet,
   partition,
   acrossDirection,
+  application,
 }: MaLuReferenceProps) {
-  const certificate =
-    getMaLuCertificate({
-      target,
-
-      degree,
-
-      fixedOutdegreeContribution,
-
-      forbiddenSet,
-
-      partition,
-
-      acrossDirection,
-    })
-
   const subgraph =
-    target === 'G'
-      ? 'G'
-      : target === 'L'
-        ? 'G[L]'
-        : 'G[R]'
-
-  const isWholeGraph =
-    target === 'G'
+    targetGraphLatex(
+      target,
+    )
 
   const partPointsOut =
     target !== 'G' &&
@@ -139,8 +215,58 @@ export function MaLuReference({
       acrossDirection,
     )
 
+  /*
+   * For an applied internal-mode move,
+   * reconstruct the degree-by-degree
+   * certificate from the current
+   * structural information.
+   */
+  let internalPossibleDegrees:
+    number[] = []
+
+  if (
+    application !== null &&
+    application.mode ===
+      'internal'
+  ) {
+    if (target === 'G') {
+      internalPossibleDegrees = [
+        degree,
+      ]
+    } else if (
+      partition !== null
+    ) {
+      const maxDegree =
+        target === 'L'
+          ? partition.s
+          : partition.t
+
+      internalPossibleDegrees =
+        getMaLuSelectableValues(
+          maxDegree,
+        )
+    }
+  }
+
+  const internalCertificate =
+    application !== null &&
+    application.mode ===
+      'internal'
+      ? getMaLuSelectionCertificate({
+          target,
+
+          selectedForbiddenSet:
+            application
+              .selectedValues,
+
+          possibleDegrees:
+            internalPossibleDegrees,
+        })
+      : null
+
   return (
     <>
+      {/* THEOREM */}
       <section
         style={{
           marginBottom: '32px',
@@ -156,13 +282,15 @@ export function MaLuReference({
 
         <p>
           Let <Math>{'H'}</Math>{' '}
-          be a connected graph and let{' '}
+          be a graph and let{' '}
           <Math>
             {
               'F_H:V(H)\\to 2^{\\mathbb N}'
             }
-          </Math>
-          . Suppose that for every{' '}
+          </Math>{' '}
+          be a forbidden
+          outdegree-list assignment.
+          Suppose that for every{' '}
           <Math>
             {'v\\in V(H)'}
           </Math>
@@ -202,259 +330,361 @@ export function MaLuReference({
             fontSize: '16px',
           }}
         >
-          For a disconnected graph we
-          apply the theorem separately
-          to each nontrivial connected
-          component. An isolated vertex
-          is handled directly: its only
-          possible outdegree is{' '}
-          <Math>{'0'}</Math>.
-        </p>
-      </section>
-
-      <section
-        style={{
-          marginBottom: '32px',
-        }}
-      >
-        <h3>
-          Why these hypotheses?
-        </h3>
-
-        <p>
-          Ma and Lu formulate their
-          result using the allowed sets
-        </p>
-
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '18px 0',
-          }}
-        >
-          <Math display>
-            {
-              'H(v)'
-              + '='
-              + '[0,d_H(v)]'
-              + '\\setminus F_H(v).'
-            }
-          </Math>
-        </div>
-
-        <p>
-          Their dense condition says
-          that whenever an integer is
-          forbidden, the next integer is
-          allowed. In the language of
-          forbidden lists, this is
-          exactly the condition that{' '}
+          The playground uses the
+          equivalent integer test{' '}
           <Math>
-            {'F_H(v)'}
-          </Math>{' '}
-          contains no two consecutive
-          integers.
-        </p>
-
-        <p>
-          Corollary 3.1 then applies
-          under the additional bound
-        </p>
-
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '18px 0',
-          }}
-        >
-          <Math display>
             {
-              '2|F_H(v)|'
-              + '\\leq'
-              + 'd_H(v)-1.'
+              '2|F_H(v)|\\leq d_H(v)-1'
             }
-          </Math>
-        </div>
-
-        <p>
-          The playground checks this
-          integer inequality directly
-          at every relevant vertex
-          degree.
+          </Math>{' '}
+          at every positive vertex
+          degree. Isolated vertices are
+          handled directly.
         </p>
       </section>
 
+      {/* APPLICATION */}
       <section
         style={{
           marginBottom: '32px',
         }}
       >
         <h3>
-          Application here
+          Application
         </h3>
 
-        {isWholeGraph ? (
+        {application === null ? (
           <>
             <p>
-              The current residual graph
-              is{' '}
+              Ma–Lu will be applied to
+              the internal graph{' '}
               <Math>
-                {`${degree}`}
+                {subgraph}
               </Math>
-              -regular. The already
-              oriented part of the
-              construction contributes{' '}
-              <Math>
-                {
-                  fixedOutdegreeContribution ===
-                  0
-                    ? '0'
-                    : `+${fixedOutdegreeContribution}`
-                }
-              </Math>{' '}
-              to every final outdegree.
+              .
             </p>
 
-            {certificate.checks.map(
-              (check) => (
-                <div
-                  key={
-                    check.internalDegree
-                  }
-                  style={{
-                    margin:
-                      '18px 0',
-                    padding:
-                      '14px 16px',
-                    border:
-                      '1px solid #e2e8f0',
-                    borderRadius:
-                      '10px',
-                    background:
-                      '#f8fafc',
-                  }}
-                >
-                  <div
-                    style={{
-                      marginBottom:
-                        '10px',
-                    }}
-                  >
-                    The forbidden list
-                    on the residual graph
-                    is
-                  </div>
+            {target === 'G' ? (
+              <>
+                <p>
+                  The current residual
+                  graph is{' '}
+                  <Math>
+                    {`${degree}`}
+                  </Math>
+                  -regular.
+                </p>
 
+                {fixedOutdegreeContribution >
+                  0 && (
+                  <p>
+                    Previously oriented
+                    2-factors already
+                    contribute{' '}
+                    <Math>
+                      {
+                        `+${fixedOutdegreeContribution}`
+                      }
+                    </Math>{' '}
+                    to every final
+                    outdegree.
+                  </p>
+                )}
+
+                <p>
+                  In{' '}
+                  <strong>
+                    Target totals
+                  </strong>{' '}
+                  mode, the selected
+                  final outdegrees are
+                  translated to the
+                  corresponding
+                  outdegrees in this
+                  residual graph.
+                </p>
+
+                <p>
+                  In{' '}
+                  <strong>
+                    Internal
+                  </strong>{' '}
+                  mode, the selected
+                  values are directly
+                  forbidden as
+                  outdegrees in{' '}
+                  <Math>
+                    {subgraph}
+                  </Math>
+                  .
+                </p>
+              </>
+            ) : (
+              <>
+                {partition !== null && (
+                  <p>
+                    The Lovász
+                    partition gives
+                  </p>
+                )}
+
+                {partition !== null && (
                   <div
                     style={{
                       textAlign:
                         'center',
-                      marginBottom:
-                        '12px',
+                      margin:
+                        '18px 0',
                     }}
                   >
                     <Math display>
                       {
-                        `F'_G=${latexSet(
-                          check
-                            .localForbiddenSet,
-                        )}.`
+                        target ===
+                        'L'
+                          ? `\\Delta(G[L])\\leq ${partition.s}.`
+                          : `\\Delta(G[R])\\leq ${partition.t}.`
                       }
                     </Math>
                   </div>
+                )}
 
-                  {check.internalDegree ===
-                  0 ? (
-                    <div>
-                      <CertificateStatus
-                        passes={
-                          check.passes
-                        }
-                      />{' '}
-                      isolated vertex:{' '}
-                      <Math>
-                        {
-                          `0${
-                            check
-                              .isolatedVertexSafe
-                              ? '\\notin'
-                              : '\\in'
-                          }F'_G`
-                        }
-                      </Math>
-                    </div>
-                  ) : (
-                    <>
+                <p>
+                  In{' '}
+                  <strong>
+                    Internal
+                  </strong>{' '}
+                  mode, the user
+                  directly chooses
+                  outdegrees to avoid
+                  inside{' '}
+                  <Math>
+                    {subgraph}
+                  </Math>
+                  . The Ma–Lu
+                  hypothesis is checked
+                  for every internal
+                  degree currently
+                  allowed by the
+                  structural
+                  information.
+                </p>
+
+                {acrossDirection ===
+                null ? (
+                  <p>
+                    The crossing edges
+                    have not yet been
+                    oriented, so{' '}
+                    <strong>
+                      Target totals
+                    </strong>{' '}
+                    mode is not yet
+                    available. Ma–Lu can
+                    still be applied in
+                    Internal mode.
+                  </p>
+                ) : (
+                  <>
+                    <p>
+                      Since the crossing
+                      direction is
+                      known, the
+                      playground can
+                      also translate a
+                      desired final
+                      outdegree into a
+                      degree-dependent
+                      internal forbidden
+                      list.
+                    </p>
+
+                    {partPointsOut ? (
                       <div
                         style={{
-                          marginBottom:
-                            '7px',
+                          textAlign:
+                            'center',
+                          margin:
+                            '18px 0',
                         }}
                       >
-                        <CertificateStatus
-                          passes={
-                            check
-                              .hasNoConsecutiveValues
-                          }
-                        />{' '}
-                        no two
-                        consecutive
-                        forbidden values
-                      </div>
-
-                      <div>
-                        <CertificateStatus
-                          passes={
-                            check
-                              .sizeBoundHolds ===
-                            true
-                          }
-                        />{' '}
-                        <Math>
+                        <Math display>
                           {
-                            `2|F'_G|`
-                            + `=${2 * check.localForbiddenSet.length}`
-                            + `\\leq ${check.internalDegree - 1}`
+                            'd_G^+(v)'
+                            + '='
+                            + `${fixedOutdegreeContribution}`
+                            + '+(d-r)'
+                            + `+d_{${subgraph}}^+(v),`
+                            + `\\qquad d=${degree}.`
                           }
                         </Math>
                       </div>
-                    </>
-                  )}
-                </div>
-              ),
+                    ) : (
+                      <div
+                        style={{
+                          textAlign:
+                            'center',
+                          margin:
+                            '18px 0',
+                        }}
+                      >
+                        <Math display>
+                          {
+                            'd_G^+(v)'
+                            + '='
+                            + `${fixedOutdegreeContribution}`
+                            + `+d_{${subgraph}}^+(v).`
+                          }
+                        </Math>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
             )}
+          </>
+        ) : application.mode ===
+          'internal' ? (
+          <>
+            <p>
+              Ma–Lu was applied to{' '}
+              <Math>
+                {subgraph}
+              </Math>{' '}
+              with the internal
+              forbidden set
+            </p>
+
+            <div
+              style={{
+                textAlign: 'center',
+                margin: '18px 0',
+              }}
+            >
+              <Math display>
+                {
+                  `S=${latexSet(
+                    application
+                      .selectedValues,
+                  )}.`
+                }
+              </Math>
+            </div>
 
             <p>
-              Thus the Ma–Lu certificate
-              for the current graph{' '}
-              <strong>
-                {certificate.applicable
-                  ? 'passes'
-                  : 'fails'}
-              </strong>
-              .
+              Thus the chosen
+              orientation satisfies
             </p>
+
+            <div
+              style={{
+                textAlign: 'center',
+                margin: '18px 0',
+              }}
+            >
+              <Math display>
+                {
+                  `d^+_{${subgraph}}(v)`
+                  + `\\notin ${latexSet(
+                    application
+                      .selectedValues,
+                  )}.`
+                }
+              </Math>
+            </div>
+
+            {target !== 'G' && (
+              <p>
+                Because the Lovász
+                partition supplies only
+                a maximum-degree bound,
+                the theorem is checked
+                separately at every
+                possible internal
+                degree.
+              </p>
+            )}
+
+            <div
+              style={{
+                marginTop: '18px',
+                border:
+                  '1px solid #e2e8f0',
+                borderRadius: '10px',
+                overflow: 'hidden',
+              }}
+            >
+              {internalPossibleDegrees.map(
+                (r) => (
+                  <DegreeCheckRow
+                    key={r}
+                    degree={r}
+                    forbiddenSet={
+                      application
+                        .selectedValues
+                    }
+                  />
+                ),
+              )}
+            </div>
+
+            {internalCertificate !==
+              null && (
+              <p
+                style={{
+                  marginTop:
+                    '18px',
+                }}
+              >
+                Every relevant degree
+                check{' '}
+                <strong>
+                  {internalCertificate
+                    .applicable
+                    ? 'passes'
+                    : 'fails'}
+                </strong>
+                .
+              </p>
+            )}
           </>
-        ) : !certificate.ready ? (
-          <p>
-            The local forbidden lists
-            are not determined yet.
-            Orient the edges between{' '}
-            <Math>{'L'}</Math> and{' '}
-            <Math>{'R'}</Math> first.
-            Then the playground can
-            translate the original
-            forbidden set into the
-            correct lists on{' '}
-            <Math>{subgraph}</Math>.
-          </p>
         ) : (
           <>
             <p>
-              We apply Ma–Lu to the
-              internal graph{' '}
-              <Math>{subgraph}</Math>.
-              Write
+              Ma–Lu was used to
+              eliminate the final total
+              outdegree
+              {application
+                .selectedValues
+                .length > 1
+                ? 's'
+                : ''}{' '}
+              <Math>
+                {
+                  latexSet(
+                    application
+                      .selectedValues,
+                  )
+                }
+              </Math>{' '}
+              on{' '}
+              <Math>
+                {subgraph}
+              </Math>
+              .
+            </p>
+
+            <p>
+              For a vertex whose
+              internal degree is{' '}
+              <Math>{'r'}</Math>, the
+              already forced edges
+              contribute some amount{' '}
+              <Math>{'a_r'}</Math>{' '}
+              to its final outdegree.
+              A targeted total value{' '}
+              <Math>{'q'}</Math>{' '}
+              therefore corresponds to
+              the internal value
             </p>
 
             <div
@@ -465,161 +695,15 @@ export function MaLuReference({
             >
               <Math display>
                 {
-                  `r=d_{${subgraph}}(v).`
-                }
-              </Math>
-            </div>
-
-            {partPointsOut ? (
-              <>
-                <p>
-                  The crossing edges
-                  point out of{' '}
-                  <Math>{target}</Math>,
-                  so a vertex of internal
-                  degree{' '}
-                  <Math>{'r'}</Math>{' '}
-                  already has{' '}
-                  <Math>{'d-r'}</Math>{' '}
-                  outgoing crossing
-                  edges. Including the
-                  previously fixed
-                  contribution, its final
-                  outdegree is
-                </p>
-
-                <div
-                  style={{
-                    textAlign:
-                      'center',
-                    margin:
-                      '18px 0',
-                  }}
-                >
-                  <Math display>
-                    {
-                      'd^+(v)'
-                      + '='
-                      + `${fixedOutdegreeContribution}`
-                      + '+(d-r)'
-                      + `+d_{${subgraph}}^+(v),`
-                      + `\\qquad d=${degree}.`
-                    }
-                  </Math>
-                </div>
-
-                <p>
-                  Hence the local
-                  forbidden list for a
-                  vertex of internal
-                  degree{' '}
-                  <Math>{'r'}</Math>{' '}
-                  is
-                </p>
-
-                <div
-                  style={{
-                    textAlign:
-                      'center',
-                    margin:
-                      '18px 0',
-                  }}
-                >
-                  <Math display>
-                    {
-                      `F_{${target},r}`
-                      + '='
-                      + '\\{'
-                      + `f-${fixedOutdegreeContribution}-(d-r)`
-                      + ':f\\in F'
-                      + '\\}'
-                      + '\\cap[0,r].'
-                    }
-                  </Math>
-                </div>
-              </>
-            ) : (
-              <>
-                <p>
-                  The crossing edges
-                  point into{' '}
-                  <Math>{target}</Math>,
-                  so they contribute
-                  nothing to the
-                  outdegree. Thus
-                </p>
-
-                <div
-                  style={{
-                    textAlign:
-                      'center',
-                    margin:
-                      '18px 0',
-                  }}
-                >
-                  <Math display>
-                    {
-                      'd^+(v)'
-                      + '='
-                      + `${fixedOutdegreeContribution}`
-                      + `+d_{${subgraph}}^+(v).`
-                    }
-                  </Math>
-                </div>
-
-                <p>
-                  Therefore the local
-                  forbidden list is
-                </p>
-
-                <div
-                  style={{
-                    textAlign:
-                      'center',
-                    margin:
-                      '18px 0',
-                  }}
-                >
-                  <Math display>
-                    {
-                      `F_{${target},r}`
-                      + '='
-                      + '\\{'
-                      + `f-${fixedOutdegreeContribution}`
-                      + ':f\\in F'
-                      + '\\}'
-                      + '\\cap[0,r].'
-                    }
-                  </Math>
-                </div>
-              </>
-            )}
-
-            <p>
-              The Lovász partition only
-              tells us
-            </p>
-
-            <div
-              style={{
-                textAlign: 'center',
-                margin: '18px 0',
-              }}
-            >
-              <Math display>
-                {
-                  `0\\leq r\\leq ${certificate.maxInternalDegree}.`
+                  'q-a_r.'
                 }
               </Math>
             </div>
 
             <p>
-              So the website checks
-              every possible value of{' '}
-              <Math>{'r'}</Math>, rather
-              than incorrectly replacing
-              every vertex degree by the
-              maximum-degree bound.
+              The degree-dependent
+              lists certified in this
+              application are:
             </p>
 
             <div
@@ -631,96 +715,106 @@ export function MaLuReference({
                 overflow: 'hidden',
               }}
             >
-              {certificate.checks.map(
-                (check) => (
-                  <div
-                    key={
-                      check.internalDegree
-                    }
-                    style={{
-                      display: 'grid',
+              {application.degreeRules?.map(
+                (
+                  rule,
+                  index,
+                ) => {
+                  const check =
+                    getMaLuSelectionDegreeCheck(
+                      rule.degree,
+                      rule
+                        .localForbiddenSet,
+                    )
 
-                      gridTemplateColumns:
-                        '42px 1fr 32px',
+                  const isLast =
+                    index ===
+                    (
+                      application
+                        .degreeRules
+                        ?.length ??
+                      0
+                    ) -
+                      1
 
-                      gap: '10px',
+                  return (
+                    <div
+                      key={
+                        rule.degree
+                      }
+                      style={{
+                        display:
+                          'grid',
+                        gridTemplateColumns:
+                          '48px 72px 1fr 28px',
+                        gap: '8px',
+                        alignItems:
+                          'center',
+                        padding:
+                          '10px 12px',
+                        borderBottom:
+                          isLast
+                            ? 'none'
+                            : '1px solid #e2e8f0',
+                      }}
+                    >
+                      <div>
+                        <Math>
+                          {
+                            `r=${rule.degree}`
+                          }
+                        </Math>
+                      </div>
 
-                      alignItems:
-                        'center',
+                      <div>
+                        <Math>
+                          {
+                            `a_r=${rule.outsideContribution}`
+                          }
+                        </Math>
+                      </div>
 
-                      padding:
-                        '10px 12px',
+                      <div>
+                        <Math>
+                          {
+                            `F_r=${latexSet(
+                              rule
+                                .localForbiddenSet,
+                            )}`
+                          }
+                        </Math>
 
-                      borderBottom:
-                        check.internalDegree ===
-                        certificate
-                          .checks
-                          .length -
-                          1
-                          ? 'none'
-                          : '1px solid #e2e8f0',
-
-                      background:
-                        '#ffffff',
-                    }}
-                  >
-                    <div>
-                      <Math>
-                        {
-                          `r=${check.internalDegree}`
-                        }
-                      </Math>
-                    </div>
-
-                    <div>
-                      <Math>
-                        {
-                          `F_{${target},${check.internalDegree}}`
-                          + '='
-                          + latexSet(
-                            check
-                              .localForbiddenSet,
-                          )
-                        }
-                      </Math>
-
-                      <div
-                        style={{
-                          marginTop:
-                            '4px',
-
-                          color:
-                            '#64748b',
-
-                          fontSize:
-                            '15px',
-                        }}
-                      >
-                        {check.internalDegree ===
-                        0
-                          ? check
-                              .isolatedVertexSafe
-                            ? 'isolated vertex is safe'
-                            : '0 is forbidden'
-                          : check
-                                .hasNoConsecutiveValues &&
-                              check
-                                .sizeBoundHolds
-                            ? `no consecutive values; 2|F|=${2 * check.localForbiddenSet.length} ≤ ${check.internalDegree - 1}`
+                        <div
+                          style={{
+                            marginTop:
+                              '4px',
+                            color:
+                              '#64748b',
+                            fontSize:
+                              '15px',
+                          }}
+                        >
+                          {rule.degree ===
+                          0
+                            ? check
+                                .passes
+                              ? 'isolated vertex is safe'
+                              : '0 cannot be avoided'
                             : !check
                                 .hasNoConsecutiveValues
                               ? 'contains consecutive forbidden values'
-                              : `size bound fails: 2|F|=${2 * check.localForbiddenSet.length} > ${check.internalDegree - 1}`}
+                              : `2|F_r|=${2 * rule.localForbiddenSet.length} ≤ ${rule.degree - 1}`}
+                        </div>
                       </div>
-                    </div>
 
-                    <CertificateStatus
-                      passes={
-                        check.passes
-                      }
-                    />
-                  </div>
-                ),
+                      <CertificateStatus
+                        passes={
+                          check.passes
+                        }
+                      />
+                    </div>
+                  )
+                },
               )}
             </div>
 
@@ -729,22 +823,36 @@ export function MaLuReference({
                 marginTop: '18px',
               }}
             >
-              Therefore the Ma–Lu
-              certificate for{' '}
-              <Math>{subgraph}</Math>{' '}
-              <strong>
-                {certificate.applicable
-                  ? 'passes'
-                  : 'fails'}
-              </strong>
+              Every row satisfies the
+              Ma–Lu hypotheses, so the
+              resulting internal
+              orientation eliminates
+              the selected total
+              outdegree
+              {application
+                .selectedValues
+                .length > 1
+                ? 's'
+                : ''}{' '}
+              <Math>
+                {
+                  latexSet(
+                    application
+                      .selectedValues,
+                  )
+                }
+              </Math>
               .
             </p>
           </>
         )}
       </section>
 
+      {/* REFERENCE */}
       <section>
-        <h3>Reference</h3>
+        <h3>
+          Reference
+        </h3>
 
         <p>
           Xinxin Ma and Hongliang Lu,
@@ -779,19 +887,16 @@ export function MaLuReference({
             fontSize: '16px',
           }}
         >
-          This tool intentionally
-          implements Corollary 3.1 as
-          stated in the body of the
-          paper. In particular, the
-          playground checks{' '}
+          This playground implements
+          Corollary 3.1 as stated in the
+          body of the paper. In
+          particular, it checks{' '}
           <Math>
             {
-              '2|F(v)|\\leq d(v)-1'
+              '2|F_H(v)|\\leq d_H(v)-1'
             }
           </Math>
-          . It does not use the broader
-          bound appearing in the
-          abstract.
+          .
         </p>
       </section>
     </>

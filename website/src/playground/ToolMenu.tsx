@@ -104,6 +104,15 @@ type ToolMenuProps = {
         readonly number[],
     ) => void
 
+  /*
+   * Optional during the plumbing
+   * stage. BlobLab will supply the
+   * real callback in the next step.
+   */
+  onOpenMaLuReference?: (
+    target: MaLuTarget,
+  ) => void
+
   onTakeOrientedTwoFactor:
     () => void
 
@@ -131,19 +140,6 @@ function getAvoidCValues(
   return values
 }
 
-/*
- * Return EVERY total outdegree that is
- * currently possible before orienting
- * the target internally.
- *
- * These values are offered in Ma-Lu's
- * "Target totals" mode whether or not
- * they belong to the original
- * forbidden set F.
- *
- * Membership in F affects only the
- * visual red highlighting.
- */
 function getCurrentTotalOutdegrees(
   target: MaLuTarget,
 
@@ -192,7 +188,9 @@ function getCurrentTotalOutdegrees(
           'R-to-L'
       )
 
-    if (crossingPointsOut) {
+    if (
+      crossingPointsOut
+    ) {
       minimumTotal =
         fixedOutdegreeContribution +
         workingDegree -
@@ -247,6 +245,7 @@ export default function ToolMenu({
   onAvoidCPart,
   onApplyMaLuGraph,
   onApplyMaLuPart,
+  onOpenMaLuReference,
   onTakeOrientedTwoFactor,
   onApplyHasanvand,
 }: ToolMenuProps) {
@@ -435,6 +434,18 @@ export default function ToolMenu({
     setAvoidCTarget(null)
     setLovaszOpen(false)
     setHasanvandOpen(false)
+  }
+
+  function openMaLuReference() {
+    if (
+      maLuTarget === null
+    ) {
+      return
+    }
+
+    onOpenMaLuReference?.(
+      maLuTarget,
+    )
   }
 
   function applyLovasz(
@@ -640,16 +651,21 @@ export default function ToolMenu({
   return (
     <div
       style={{
-        position: 'relative',
-        width: '300px',
+        position:
+          'relative',
+        width:
+          '300px',
       }}
     >
       <button
         type="button"
-        onClick={toggleTools}
+        onClick={
+          toggleTools
+        }
         style={{
           ...controlButtonStyle,
-          width: '100%',
+          width:
+            '100%',
         }}
       >
         Tools{' '}
@@ -661,8 +677,10 @@ export default function ToolMenu({
       {toolsOpen && (
         <div
           style={{
-            marginTop: '8px',
-            padding: '6px',
+            marginTop:
+              '8px',
+            padding:
+              '6px',
             border:
               '1px solid #cbd5e1',
             borderRadius:
@@ -671,10 +689,12 @@ export default function ToolMenu({
               '#ffffff',
             boxShadow:
               '0 8px 24px rgba(0, 0, 0, 0.08)',
-            textAlign: 'left',
+            textAlign:
+              'left',
           }}
         >
-          {avoidCTarget !== null ? (
+          {avoidCTarget !==
+          null ? (
             <>
               <div
                 style={{
@@ -694,7 +714,9 @@ export default function ToolMenu({
                 </Math>{' '}
                 in{' '}
                 <Math>
-                  {avoidCTarget}
+                  {
+                    avoidCTarget
+                  }
                 </Math>
 
                 <div
@@ -727,7 +749,9 @@ export default function ToolMenu({
                 {avoidCValues.map(
                   (c) => (
                     <button
-                      key={c}
+                      key={
+                        c
+                      }
                       type="button"
                       onClick={() =>
                         applyAvoidC(
@@ -741,7 +765,9 @@ export default function ToolMenu({
                       }}
                     >
                       <Math>
-                        {`c=${c}`}
+                        {
+                          `c=${c}`
+                        }
                       </Math>
                     </button>
                   ),
@@ -768,7 +794,8 @@ export default function ToolMenu({
                 ← Back
               </button>
             </>
-          ) : maLuTarget !== null ? (
+          ) : maLuTarget !==
+            null ? (
             <MaLuSelector
               target={
                 maLuTarget
@@ -800,6 +827,9 @@ export default function ToolMenu({
               onApply={
                 applyMaLu
               }
+              onOpenReference={
+                openMaLuReference
+              }
               onBack={() =>
                 setMaLuTarget(
                   null,
@@ -815,9 +845,11 @@ export default function ToolMenu({
                   '#64748b',
               }}
             >
-              No additional tools yet.
+              No additional
+              tools yet.
             </div>
-          ) : partition === null ? (
+          ) : partition ===
+            null ? (
             <>
               {!lovaszOpen &&
               !hasanvandOpen ? (
@@ -952,7 +984,9 @@ export default function ToolMenu({
                   >
                     Choose{' '}
                     <Math>
-                      {'(s,t)'}
+                      {
+                        '(s,t)'
+                      }
                     </Math>
                   </div>
 
@@ -1017,7 +1051,9 @@ export default function ToolMenu({
                   >
                     Choose{' '}
                     <Math>
-                      {'(p,q)'}
+                      {
+                        '(p,q)'
+                      }
                     </Math>
                   </div>
 
@@ -1097,7 +1133,9 @@ export default function ToolMenu({
                   >
                     Orient{' '}
                     <Math>
-                      {'L\\to R'}
+                      {
+                        'L\\to R'
+                      }
                     </Math>
                   </button>
 
@@ -1114,7 +1152,9 @@ export default function ToolMenu({
                   >
                     Orient{' '}
                     <Math>
-                      {'R\\to L'}
+                      {
+                        'R\\to L'
+                      }
                     </Math>
                   </button>
                 </>
@@ -1255,7 +1295,8 @@ export default function ToolMenu({
                   '#64748b',
               }}
             >
-              No additional tools yet.
+              No additional
+              tools yet.
             </div>
           )}
         </div>

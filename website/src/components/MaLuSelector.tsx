@@ -61,6 +61,13 @@ type MaLuSelectorProps = {
         readonly number[],
     ) => void
 
+  /*
+   * Opens the Ma-Lu theorem/reference
+   * panel without changing the current
+   * selector state.
+   */
+  onOpenReference: () => void
+
   onBack: () => void
 }
 
@@ -161,16 +168,9 @@ export default function MaLuSelector({
   partition,
   acrossDirection,
   onApply,
+  onOpenReference,
   onBack,
 }: MaLuSelectorProps) {
-  /*
-   * Total targeting is available:
-   *
-   * - on the whole graph immediately;
-   *
-   * - on a Lovasz part once the
-   *   crossing direction is known.
-   */
   const totalModeAvailable =
     target === 'G' ||
     (
@@ -364,19 +364,33 @@ export default function MaLuSelector({
             'center',
         }}
       >
-        <div
+        <button
+          type="button"
+          onClick={
+            onOpenReference
+          }
           style={{
+            font: 'inherit',
             color:
               '#334155',
             fontWeight:
               600,
+            background:
+              'transparent',
+            border: 'none',
+            borderBottom:
+              '1px solid #64748b',
+            padding:
+              '0 1px 2px',
+            cursor:
+              'pointer',
           }}
         >
           Ma–Lu on{' '}
           <Math>
             {targetGraph}
           </Math>
-        </div>
+        </button>
       </div>
 
       <div

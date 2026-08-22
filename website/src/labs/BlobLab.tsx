@@ -29,6 +29,16 @@ import {
   avoidCTool,
   type AvoidCTarget,
 } from '../tools/avoidC'
+import {
+  MaLuReference,
+  maLuTool,
+} from '../tools/maLu'
+import type {
+  MaLuApplication,
+} from '../tools/maLuApplication'
+import type {
+  MaLuTarget,
+} from '../tools/maLuMath'
 
 type BlobLabProps = {
   degree: number
@@ -55,6 +65,12 @@ type ActiveReference =
       type: 'avoid-c'
       target: AvoidCTarget
       c: number
+    }
+  | {
+      type: 'ma-lu'
+      target: MaLuTarget
+      application:
+        MaLuApplication | null
     }
   | null
 
@@ -143,6 +159,28 @@ export default function BlobLab({
     )
   }
 
+  function openMaLuSelectorReference(
+    target: MaLuTarget,
+  ) {
+    setActiveReference({
+      type: 'ma-lu',
+      target,
+      application: null,
+    })
+  }
+
+  function openAppliedMaLuReference(
+    application:
+      MaLuApplication,
+  ) {
+    setActiveReference({
+      type: 'ma-lu',
+      target:
+        application.target,
+      application,
+    })
+  }
+
   const referenceTitle =
     activeReference?.type ===
     'balanced-orientation'
@@ -156,7 +194,10 @@ export default function BlobLab({
           : activeReference?.type ===
               'avoid-c'
             ? avoidCTool.name
-            : lovaszPartitionTool.name
+            : activeReference?.type ===
+                'ma-lu'
+              ? maLuTool.name
+              : lovaszPartitionTool.name
 
   const forbiddenSetMath =
     `\\{${forbiddenSet.join(
@@ -335,6 +376,18 @@ export default function BlobLab({
               playground
                 .avoidCR
             }
+            maLuApplicationG={
+              playground
+                .maLuApplicationG
+            }
+            maLuApplicationL={
+              playground
+                .maLuApplicationL
+            }
+            maLuApplicationR={
+              playground
+                .maLuApplicationR
+            }
             hasanvandG={
               playground
                 .hasanvandG
@@ -374,6 +427,9 @@ export default function BlobLab({
                   c,
                 },
               )
+            }
+            onOpenMaLuReference={
+              openAppliedMaLuReference
             }
             onOpenTwoFactorReference={() =>
               setActiveReference(
@@ -497,6 +553,9 @@ export default function BlobLab({
               onApplyMaLuPart={
                 playground
                   .applyMaLuPart
+              }
+              onOpenMaLuReference={
+                openMaLuSelectorReference
               }
               onTakeOrientedTwoFactor={
                 playground
@@ -918,6 +977,36 @@ export default function BlobLab({
             partition={
               playground
                 .partition
+            }
+          />
+        )}
+
+        {activeReference?.type ===
+          'ma-lu' && (
+          <MaLuReference
+            target={
+              activeReference
+                .target
+            }
+            degree={
+              playground
+                .workingDegree
+            }
+            fixedOutdegreeContribution={
+              playground
+                .fixedOutdegreeContribution
+            }
+            partition={
+              playground
+                .partition
+            }
+            acrossDirection={
+              playground
+                .acrossDirection
+            }
+            application={
+              activeReference
+                .application
             }
           />
         )}

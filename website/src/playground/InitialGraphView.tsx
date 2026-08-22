@@ -1,6 +1,7 @@
 import Math from '../components/Math'
 import BalancedBadge from '../components/BalancedBadge'
 import AvoidCBadge from '../components/AvoidCBadge'
+import MaLuBadge from '../components/MaLuBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
 import type {
   BalancedTarget,
@@ -11,6 +12,9 @@ import type {
 import type {
   HasanvandParameters,
 } from '../tools/hasanvandCompression'
+import type {
+  MaLuApplication,
+} from '../tools/maLuApplication'
 import type {
   OutdegreeSet,
 } from './outdegreePossibilities'
@@ -27,6 +31,9 @@ type InitialGraphViewProps = {
   balancedG: boolean
   avoidCG: number | null
 
+  maLuApplicationG:
+    MaLuApplication | null
+
   hasanvandG:
     HasanvandParameters | null
 
@@ -37,6 +44,10 @@ type InitialGraphViewProps = {
   onOpenAvoidCReference: (
     target: AvoidCTarget,
     c: number,
+  ) => void
+
+  onOpenMaLuReference: (
+    application: MaLuApplication,
   ) => void
 
   onOpenTwoFactorReference: () => void
@@ -161,9 +172,11 @@ export default function InitialGraphView({
   possibleOutdegrees,
   balancedG,
   avoidCG,
+  maLuApplicationG,
   hasanvandG,
   onOpenBalancedReference,
   onOpenAvoidCReference,
+  onOpenMaLuReference,
   onOpenTwoFactorReference,
   onOpenHasanvandReference,
 }: InitialGraphViewProps) {
@@ -293,6 +306,19 @@ export default function InitialGraphView({
             y={320}
             onOpen={
               onOpenAvoidCReference
+            }
+          />
+        )}
+
+        {maLuApplicationG !== null && (
+          <MaLuBadge
+            application={
+              maLuApplicationG
+            }
+            x={210}
+            y={320}
+            onOpen={
+              onOpenMaLuReference
             }
           />
         )}

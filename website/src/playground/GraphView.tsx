@@ -16,6 +16,9 @@ import type {
   HasanvandParameters,
 } from '../tools/hasanvandCompression'
 import type {
+  MaLuApplication,
+} from '../tools/maLuApplication'
+import type {
   AcrossDirection,
   AcrossOutdegreeGuarantees,
 } from '../tools/orientAcrossPartition'
@@ -38,6 +41,20 @@ type GraphViewProps = {
   avoidCL: number | null
   avoidCR: number | null
 
+  /*
+   * Optional only during this one
+   * plumbing step. BlobLab will supply
+   * these in the next step.
+   */
+  maLuApplicationG?:
+    MaLuApplication | null
+
+  maLuApplicationL?:
+    MaLuApplication | null
+
+  maLuApplicationR?:
+    MaLuApplication | null
+
   hasanvandG:
     HasanvandParameters | null
 
@@ -53,6 +70,10 @@ type GraphViewProps = {
   onOpenAvoidCReference: (
     target: AvoidCTarget,
     c: number,
+  ) => void
+
+  onOpenMaLuReference?: (
+    application: MaLuApplication,
   ) => void
 
   onOpenTwoFactorReference: () => void
@@ -74,11 +95,15 @@ export default function GraphView({
   avoidCG,
   avoidCL,
   avoidCR,
+  maLuApplicationG = null,
+  maLuApplicationL = null,
+  maLuApplicationR = null,
   hasanvandG,
   outdegreeGuarantees,
   onOpenLovaszReference,
   onOpenBalancedReference,
   onOpenAvoidCReference,
+  onOpenMaLuReference,
   onOpenTwoFactorReference,
   onOpenHasanvandReference,
 }: GraphViewProps) {
@@ -92,6 +117,15 @@ export default function GraphView({
   const possibleOutdegreesR =
     outdegreeGuarantees?.R ??
     allPossible
+
+  /*
+   * Temporary safe fallback until
+   * BlobLab wires the real right-panel
+   * callback in the next step.
+   */
+  const openMaLuReference =
+    onOpenMaLuReference ??
+    (() => {})
 
   if (partition === null) {
     return (
@@ -118,6 +152,9 @@ export default function GraphView({
         avoidCG={
           avoidCG
         }
+        maLuApplicationG={
+          maLuApplicationG
+        }
         hasanvandG={
           hasanvandG
         }
@@ -126,6 +163,9 @@ export default function GraphView({
         }
         onOpenAvoidCReference={
           onOpenAvoidCReference
+        }
+        onOpenMaLuReference={
+          openMaLuReference
         }
         onOpenTwoFactorReference={
           onOpenTwoFactorReference
@@ -169,6 +209,12 @@ export default function GraphView({
       avoidCR={
         avoidCR
       }
+      maLuApplicationL={
+        maLuApplicationL
+      }
+      maLuApplicationR={
+        maLuApplicationR
+      }
       possibleOutdegreesL={
         possibleOutdegreesL
       }
@@ -183,6 +229,9 @@ export default function GraphView({
       }
       onOpenAvoidCReference={
         onOpenAvoidCReference
+      }
+      onOpenMaLuReference={
+        openMaLuReference
       }
       onOpenTwoFactorReference={
         onOpenTwoFactorReference

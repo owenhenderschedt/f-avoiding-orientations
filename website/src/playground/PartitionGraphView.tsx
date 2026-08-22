@@ -1,6 +1,7 @@
 import Math from '../components/Math'
 import BalancedBadge from '../components/BalancedBadge'
 import AvoidCBadge from '../components/AvoidCBadge'
+import MaLuBadge from '../components/MaLuBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
 import {
   lovaszPartitionTool,
@@ -12,6 +13,9 @@ import type {
 import type {
   AvoidCTarget,
 } from '../tools/avoidC'
+import type {
+  MaLuApplication,
+} from '../tools/maLuApplication'
 import type {
   AcrossDirection,
 } from '../tools/orientAcrossPartition'
@@ -34,6 +38,12 @@ type PartitionGraphViewProps = {
   avoidCL: number | null
   avoidCR: number | null
 
+  maLuApplicationL:
+    MaLuApplication | null
+
+  maLuApplicationR:
+    MaLuApplication | null
+
   possibleOutdegreesL: OutdegreeSet
   possibleOutdegreesR: OutdegreeSet
 
@@ -46,6 +56,10 @@ type PartitionGraphViewProps = {
   onOpenAvoidCReference: (
     target: AvoidCTarget,
     c: number,
+  ) => void
+
+  onOpenMaLuReference: (
+    application: MaLuApplication,
   ) => void
 
   onOpenTwoFactorReference: () => void
@@ -139,11 +153,14 @@ export default function PartitionGraphView({
   balancedR,
   avoidCL,
   avoidCR,
+  maLuApplicationL,
+  maLuApplicationR,
   possibleOutdegreesL,
   possibleOutdegreesR,
   onOpenLovaszReference,
   onOpenBalancedReference,
   onOpenAvoidCReference,
+  onOpenMaLuReference,
   onOpenTwoFactorReference,
 }: PartitionGraphViewProps) {
   const hasResidualGraph =
@@ -320,6 +337,19 @@ export default function PartitionGraphView({
           />
         )}
 
+        {maLuApplicationL !== null && (
+          <MaLuBadge
+            application={
+              maLuApplicationL
+            }
+            x={140}
+            y={250}
+            onOpen={
+              onOpenMaLuReference
+            }
+          />
+        )}
+
         {balancedR && (
           <BalancedBadge
             target="R"
@@ -339,6 +369,19 @@ export default function PartitionGraphView({
             y={250}
             onOpen={
               onOpenAvoidCReference
+            }
+          />
+        )}
+
+        {maLuApplicationR !== null && (
+          <MaLuBadge
+            application={
+              maLuApplicationR
+            }
+            x={480}
+            y={250}
+            onOpen={
+              onOpenMaLuReference
             }
           />
         )}
