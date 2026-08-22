@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Math from '../components/Math'
 import ProofHistory from '../components/ProofHistory'
 import ToolReferencePanel from '../components/ToolReferencePanel'
+import DirectedMengerWorkspace from '../components/DirectedMengerWorkspace'
 import CaseStatus from '../playground/CaseStatus'
 import GraphView from '../playground/GraphView'
 import ToolMenu from '../playground/ToolMenu'
@@ -39,6 +40,18 @@ import type {
 import type {
   MaLuTarget,
 } from '../tools/maLuMath'
+import {
+  DirectedMengerRepairReference,
+  directedMengerRepairTool,
+} from '../tools/directedMengerRepair'
+import {
+  createDirectedMengerApplication,
+  type DirectedMengerApplication,
+} from '../tools/directedMengerApplication'
+import type {
+  MengerCapacityRule,
+  MengerDemandRule,
+} from '../tools/directedMengerMath'
 
 type BlobLabProps = {
   degree: number
@@ -72,6 +85,12 @@ type ActiveReference =
       application:
         MaLuApplication | null
     }
+  | {
+      type:
+        'directed-menger'
+      application:
+        DirectedMengerApplication | null
+    }
   | null
 
 function latexSet(
@@ -82,6 +101,47 @@ function latexSet(
     values.join(',') +
     '\\}'
   )
+}
+
+function uniqueSorted(
+  values: readonly number[],
+) {
+  return Array.from(
+    new Set(values),
+  ).sort(
+    (a, b) =>
+      a - b,
+  )
+}
+
+function getCombinedOutdegrees({
+  L,
+  R,
+}: {
+  L: readonly number[]
+  R: readonly number[]
+}) {
+  return uniqueSorted([
+    ...L,
+    ...R,
+  ])
+}
+
+function getMengerRepairLatex(
+  demandRules:
+    readonly MengerDemandRule[],
+) {
+  return demandRules
+    .map(
+      (rule) =>
+        `${rule.outdegree}`
+        + '\\to'
+        + `${
+          rule.outdegree +
+          rule.demand
+        }`,
+    )
+    .join(',\\ ')
 }
 
 export default function BlobLab({
@@ -97,6 +157,12 @@ export default function BlobLab({
     useState<ActiveReference>(
       null,
     )
+
+  const [
+    directedMengerWorkspaceOpen,
+    setDirectedMengerWorkspaceOpen,
+  ] =
+    useState(false)
 
   const playground =
     usePlayground(
@@ -143,11 +209,21 @@ export default function BlobLab({
       rightInternallyOriented,
     })
 
+  const preRepairTotalOutdegrees =
+    getCombinedOutdegrees(
+      playground
+        .preRepairOutdegreePossibilities,
+    )
+
   function undo() {
     playground.undo()
 
     setActiveReference(
       null,
+    )
+
+    setDirectedMengerWorkspaceOpen(
+      false,
     )
   }
 
@@ -157,6 +233,10 @@ export default function BlobLab({
     setActiveReference(
       null,
     )
+
+    setDirectedMengerWorkspaceOpen(
+      false,
+    )
   }
 
   function openMaLuSelectorReference(
@@ -164,8 +244,11 @@ export default function BlobLab({
   ) {
     setActiveReference({
       type: 'ma-lu',
+
       target,
-      application: null,
+
+      application:
+        null,
     })
   }
 
@@ -175,10 +258,87 @@ export default function BlobLab({
   ) {
     setActiveReference({
       type: 'ma-lu',
+
       target:
         application.target,
+
       application,
     })
+  }
+
+  function openDirectedMengerTheorem() {
+    setActiveReference({
+      type:
+        'directed-menger',
+
+      application:
+        null,
+    })
+  }
+
+  function openAppliedDirectedMengerReference(
+    application:
+      DirectedMengerApplication,
+  ) {
+    setActiveReference({
+      type:
+        'directed-menger',
+
+      application,
+    })
+  }
+
+  function openDirectedMengerWorkspace() {
+    setActiveReference(
+      null,
+    )
+
+    setDirectedMengerWorkspaceOpen(
+      true,
+    )
+  }
+
+  function closeDirectedMengerWorkspace() {
+    setDirectedMengerWorkspaceOpen(
+      false,
+    )
+  }
+
+  function applyDirectedMengerRepair(
+    demandRules:
+      readonly MengerDemandRule[],
+
+    capacityRules:
+      readonly MengerCapacityRule[],
+  ) {
+    const application =
+      createDirectedMengerApplication({
+        degree,
+
+        forbiddenSet,
+
+        currentOutdegrees:
+          preRepairTotalOutdegrees,
+
+        demandRules,
+
+        capacityRules,
+      })
+
+    if (
+      application === null
+    ) {
+      return
+    }
+
+    playground
+      .applyDirectedMengerRepair(
+        application,
+      )
+
+    setDirectedMengerWorkspaceOpen(
+      false,
+    )
   }
 
   const referenceTitle =
@@ -197,7 +357,10 @@ export default function BlobLab({
             : activeReference?.type ===
                 'ma-lu'
               ? maLuTool.name
-              : lovaszPartitionTool.name
+              : activeReference?.type ===
+                  'directed-menger'
+                ? directedMengerRepairTool.name
+                : lovaszPartitionTool.name
 
   const forbiddenSetMath =
     `\\{${forbiddenSet.join(
@@ -210,8 +373,10 @@ export default function BlobLab({
         style={{
           padding:
             '42px 48px 60px',
+
           maxWidth:
             '1000px',
+
           margin:
             '0 auto',
         }}
@@ -220,10 +385,13 @@ export default function BlobLab({
           style={{
             display:
               'flex',
+
             alignItems:
               'center',
+
             justifyContent:
               'space-between',
+
             marginBottom:
               '28px',
           }}
@@ -236,14 +404,19 @@ export default function BlobLab({
             style={{
               font:
                 'inherit',
+
               border:
                 'none',
+
               background:
                 'transparent',
+
               color:
                 '#64748b',
+
               cursor:
                 'pointer',
+
               padding: 0,
             }}
           >
@@ -258,14 +431,19 @@ export default function BlobLab({
             style={{
               font:
                 'inherit',
+
               border:
                 'none',
+
               background:
                 'transparent',
+
               color:
                 '#64748b',
+
               cursor:
                 'pointer',
+
               padding: 0,
             }}
           >
@@ -288,8 +466,10 @@ export default function BlobLab({
         <p
           style={{
             marginTop: 0,
+
             marginBottom:
               '34px',
+
             color:
               '#64748b',
           }}
@@ -392,60 +572,60 @@ export default function BlobLab({
               playground
                 .hasanvandG
             }
+            directedMengerApplication={
+              playground
+                .directedMengerApplication
+            }
             outdegreeGuarantees={
               playground
                 .outdegreePossibilities
             }
             onOpenLovaszReference={() =>
-              setActiveReference(
-                {
-                  type:
-                    'lovasz',
-                },
-              )
+              setActiveReference({
+                type:
+                  'lovasz',
+              })
             }
             onOpenBalancedReference={(
               target,
             ) =>
-              setActiveReference(
-                {
-                  type:
-                    'balanced-orientation',
-                  target,
-                },
-              )
+              setActiveReference({
+                type:
+                  'balanced-orientation',
+
+                target,
+              })
             }
             onOpenAvoidCReference={(
               target,
               c,
             ) =>
-              setActiveReference(
-                {
-                  type:
-                    'avoid-c',
-                  target,
-                  c,
-                },
-              )
+              setActiveReference({
+                type:
+                  'avoid-c',
+
+                target,
+
+                c,
+              })
             }
             onOpenMaLuReference={
               openAppliedMaLuReference
             }
+            onOpenDirectedMengerReference={
+              openAppliedDirectedMengerReference
+            }
             onOpenTwoFactorReference={() =>
-              setActiveReference(
-                {
-                  type:
-                    'oriented-two-factor',
-                },
-              )
+              setActiveReference({
+                type:
+                  'oriented-two-factor',
+              })
             }
             onOpenHasanvandReference={() =>
-              setActiveReference(
-                {
-                  type:
-                    'hasanvand-compression',
-                },
-              )
+              setActiveReference({
+                type:
+                  'hasanvand-compression',
+              })
             }
           />
 
@@ -453,11 +633,16 @@ export default function BlobLab({
             style={{
               marginTop:
                 '28px',
+
               display:
                 'flex',
+
               justifyContent:
                 'center',
-              gap: '14px',
+
+              gap:
+                '14px',
+
               alignItems:
                 'flex-start',
             }}
@@ -522,6 +707,13 @@ export default function BlobLab({
                 playground
                   .hasanvandG
               }
+              directedMengerApplied={
+                playground
+                  .directedMengerApplied
+              }
+              onOpenDirectedMengerWorkspace={
+                openDirectedMengerWorkspace
+              }
               onApplyLovasz={
                 playground
                   .applyLovaszPartition
@@ -576,16 +768,22 @@ export default function BlobLab({
                 style={{
                   font:
                     'inherit',
+
                   padding:
                     '10px 18px',
+
                   border:
                     '1px solid #64748b',
+
                   borderRadius:
                     '8px',
+
                   background:
                     '#f8fafc',
+
                   color:
                     '#334155',
+
                   cursor:
                     'pointer',
                 }}
@@ -594,6 +792,31 @@ export default function BlobLab({
               </button>
             )}
           </div>
+
+          {directedMengerWorkspaceOpen &&
+            playground
+              .canApplyDirectedMengerRepair && (
+              <DirectedMengerWorkspace
+                degree={
+                  degree
+                }
+                forbiddenSet={
+                  forbiddenSet
+                }
+                possibleOutdegrees={
+                  preRepairTotalOutdegrees
+                }
+                onOpenReference={
+                  openDirectedMengerTheorem
+                }
+                onApply={
+                  applyDirectedMengerRepair
+                }
+                onBack={
+                  closeDirectedMengerWorkspace
+                }
+              />
+            )}
 
           <div
             style={{
@@ -753,6 +976,7 @@ export default function BlobLab({
                           <Math>
                             {'G'}
                           </Math>
+
                           {move
                             .application
                             .mode ===
@@ -806,6 +1030,7 @@ export default function BlobLab({
                                 .target
                             }
                           </Math>
+
                           {move
                             .application
                             .mode ===
@@ -872,6 +1097,32 @@ export default function BlobLab({
                           <Math>
                             {
                               `(${move.parameters.p},${move.parameters.q})`
+                            }
+                          </Math>
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
+                      'directed-menger-repair'
+                    ) {
+                      return (
+                        <span
+                          key={
+                            index
+                          }
+                        >
+                          Directed
+                          Menger repair{' '}
+
+                          <Math>
+                            {
+                              getMengerRepairLatex(
+                                move
+                                  .application
+                                  .demandRules,
+                              )
                             }
                           </Math>
                         </span>
@@ -1003,6 +1254,22 @@ export default function BlobLab({
             acrossDirection={
               playground
                 .acrossDirection
+            }
+            application={
+              activeReference
+                .application
+            }
+          />
+        )}
+
+        {activeReference?.type ===
+          'directed-menger' && (
+          <DirectedMengerRepairReference
+            degree={
+              degree
+            }
+            forbiddenSet={
+              forbiddenSet
             }
             application={
               activeReference

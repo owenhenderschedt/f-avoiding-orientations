@@ -17,6 +17,9 @@ import type {
   MaLuApplication,
 } from '../tools/maLuApplication'
 import type {
+  DirectedMengerApplication,
+} from '../tools/directedMengerApplication'
+import type {
   AcrossDirection,
 } from '../tools/orientAcrossPartition'
 import type {
@@ -44,6 +47,9 @@ type PartitionGraphViewProps = {
   maLuApplicationR:
     MaLuApplication | null
 
+  directedMengerApplication:
+    DirectedMengerApplication | null
+
   possibleOutdegreesL: OutdegreeSet
   possibleOutdegreesR: OutdegreeSet
 
@@ -60,6 +66,11 @@ type PartitionGraphViewProps = {
 
   onOpenMaLuReference: (
     application: MaLuApplication,
+  ) => void
+
+  onOpenDirectedMengerReference: (
+    application:
+      DirectedMengerApplication,
   ) => void
 
   onOpenTwoFactorReference: () => void
@@ -79,6 +90,24 @@ function sameValues(
   )
 }
 
+function getMengerRepairLatex(
+  application:
+    DirectedMengerApplication,
+) {
+  return application
+    .demandRules
+    .map(
+      (rule) =>
+        `${rule.outdegree}`
+        + '\\to'
+        + `${
+          rule.outdegree +
+          rule.demand
+        }`,
+    )
+    .join(',\\ ')
+}
+
 function TwoFactorNote({
   count,
   onOpen,
@@ -89,10 +118,14 @@ function TwoFactorNote({
   return (
     <div
       style={{
-        margin: '4px auto 20px',
-        textAlign: 'center',
-        color: '#64748b',
-        fontSize: '20px',
+        margin:
+          '4px auto 20px',
+        textAlign:
+          'center',
+        color:
+          '#64748b',
+        fontSize:
+          '20px',
       }}
     >
       {count === 1 ? (
@@ -102,18 +135,27 @@ function TwoFactorNote({
             type="button"
             onClick={onOpen}
             style={{
-              font: 'inherit',
-              color: '#475569',
-              background: 'transparent',
-              border: 'none',
+              font:
+                'inherit',
+              color:
+                '#475569',
+              background:
+                'transparent',
+              border:
+                'none',
               borderBottom:
                 '1px solid #64748b',
-              padding: '0 1px 2px',
-              cursor: 'pointer',
+              padding:
+                '0 1px 2px',
+              cursor:
+                'pointer',
             }}
           >
-            oriented 2-factor{' '}
-            <Math>{'C'}</Math>
+            oriented
+            2-factor{' '}
+            <Math>
+              {'C'}
+            </Math>
           </button>
         </>
       ) : (
@@ -123,18 +165,27 @@ function TwoFactorNote({
             type="button"
             onClick={onOpen}
             style={{
-              font: 'inherit',
-              color: '#475569',
-              background: 'transparent',
-              border: 'none',
+              font:
+                'inherit',
+              color:
+                '#475569',
+              background:
+                'transparent',
+              border:
+                'none',
               borderBottom:
                 '1px solid #64748b',
-              padding: '0 1px 2px',
-              cursor: 'pointer',
+              padding:
+                '0 1px 2px',
+              cursor:
+                'pointer',
             }}
           >
-            <Math>{`${count}`}</Math>{' '}
-            oriented 2-factors
+            <Math>
+              {`${count}`}
+            </Math>{' '}
+            oriented
+            2-factors
           </button>
         </>
       )}
@@ -155,12 +206,14 @@ export default function PartitionGraphView({
   avoidCR,
   maLuApplicationL,
   maLuApplicationR,
+  directedMengerApplication,
   possibleOutdegreesL,
   possibleOutdegreesR,
   onOpenLovaszReference,
   onOpenBalancedReference,
   onOpenAvoidCReference,
   onOpenMaLuReference,
+  onOpenDirectedMengerReference,
   onOpenTwoFactorReference,
 }: PartitionGraphViewProps) {
   const hasResidualGraph =
@@ -171,6 +224,10 @@ export default function PartitionGraphView({
       possibleOutdegreesL,
       possibleOutdegreesR,
     )
+
+  const hasMengerRepair =
+    directedMengerApplication !==
+    null
 
   return (
     <>
@@ -187,13 +244,19 @@ export default function PartitionGraphView({
 
       <div
         style={{
-          fontSize: '1.15rem',
-          marginBottom: '20px',
+          fontSize:
+            '1.15rem',
+          marginBottom:
+            hasMengerRepair
+              ? '6px'
+              : '20px',
         }}
       >
         an{' '}
         <Math>
-          {`(${partition.s},${partition.t})`}
+          {
+            `(${partition.s},${partition.t})`
+          }
         </Math>
         -
         <button
@@ -202,14 +265,19 @@ export default function PartitionGraphView({
             onOpenLovaszReference
           }
           style={{
-            font: 'inherit',
-            color: '#334155',
-            background: 'transparent',
-            border: 'none',
+            font:
+              'inherit',
+            color:
+              '#334155',
+            background:
+              'transparent',
+            border:
+              'none',
             borderBottom:
               '1px solid #64748b',
             padding: 0,
-            cursor: 'pointer',
+            cursor:
+              'pointer',
           }}
         >
           {
@@ -219,19 +287,71 @@ export default function PartitionGraphView({
         </button>{' '}
         of the{' '}
         <Math>
-          {`${workingDegree}`}
+          {
+            `${workingDegree}`
+          }
         </Math>
-        -regular residual graph
+        -regular residual
+        graph
       </div>
+
+      {directedMengerApplication !==
+        null && (
+        <div
+          style={{
+            fontSize:
+              '1.05rem',
+            marginBottom:
+              '20px',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() =>
+              onOpenDirectedMengerReference(
+                directedMengerApplication,
+              )
+            }
+            style={{
+              font:
+                'inherit',
+              color:
+                '#2f6f4e',
+              background:
+                'transparent',
+              border:
+                'none',
+              borderBottom:
+                '1px solid #4f7f65',
+              padding:
+                '0 1px 2px',
+              cursor:
+                'pointer',
+            }}
+          >
+            Directed Menger{' '}
+            <Math>
+              {
+                getMengerRepairLatex(
+                  directedMengerApplication,
+                )
+              }
+            </Math>
+          </button>
+        </div>
+      )}
 
       <svg
         viewBox="0 0 800 500"
         width="100%"
         role="img"
         style={{
-          display: 'block',
-          maxWidth: '620px',
-          margin: '0 auto',
+          display:
+            'block',
+          maxWidth:
+            '620px',
+          margin:
+            '0 auto',
         }}
       >
         <defs>
@@ -264,6 +384,22 @@ export default function PartitionGraphView({
             <path
               d="M 0 0 L 10 5 L 0 10 z"
               fill="#475569"
+            />
+          </marker>
+
+          <marker
+            id="menger-arrowhead"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="7"
+            markerHeight="7"
+            orient="auto"
+            markerUnits="strokeWidth"
+          >
+            <path
+              d="M 0 0 L 10 5 L 0 10 z"
+              fill="#3f7d5a"
             />
           </marker>
         </defs>
@@ -337,7 +473,8 @@ export default function PartitionGraphView({
           />
         )}
 
-        {maLuApplicationL !== null && (
+        {maLuApplicationL !==
+          null && (
           <MaLuBadge
             application={
               maLuApplicationL
@@ -373,7 +510,8 @@ export default function PartitionGraphView({
           />
         )}
 
-        {maLuApplicationR !== null && (
+        {maLuApplicationR !==
+          null && (
           <MaLuBadge
             application={
               maLuApplicationR
@@ -386,35 +524,72 @@ export default function PartitionGraphView({
           />
         )}
 
-        {acrossDirection !== null && (
+        {acrossDirection !==
+          null && (
           <g
             stroke="#475569"
             strokeWidth="3"
             strokeLinecap="round"
             fill="none"
           >
-            {[175, 205, 235, 265].map(
+            {[
+              175,
+              205,
+              235,
+              265,
+            ].map(
               (y) => (
                 <line
-                  key={y}
+                  key={
+                    y
+                  }
                   x1={
                     acrossDirection ===
                     'L-to-R'
                       ? 360
                       : 440
                   }
-                  y1={y}
+                  y1={
+                    y
+                  }
                   x2={
                     acrossDirection ===
                     'L-to-R'
                       ? 440
                       : 360
                   }
-                  y2={y}
+                  y2={
+                    y
+                  }
                   markerEnd="url(#filled-arrowhead)"
                 />
               ),
             )}
+          </g>
+        )}
+
+        {hasMengerRepair && (
+          <g
+            stroke="#3f7d5a"
+            strokeWidth="4"
+            strokeLinecap="round"
+            fill="none"
+            opacity="0.92"
+          >
+            <path
+              d="M 350 158 Q 400 116 450 158"
+              markerEnd="url(#menger-arrowhead)"
+            />
+
+            <path
+              d="M 350 220 Q 400 182 450 220"
+              markerEnd="url(#menger-arrowhead)"
+            />
+
+            <path
+              d="M 350 282 Q 400 324 450 282"
+              markerEnd="url(#menger-arrowhead)"
+            />
           </g>
         )}
 
@@ -426,14 +601,20 @@ export default function PartitionGraphView({
         >
           <div
             style={{
-              width: '100%',
-              textAlign: 'center',
-              fontSize: '24px',
-              color: '#334155',
+              width:
+                '100%',
+              textAlign:
+                'center',
+              fontSize:
+                '24px',
+              color:
+                '#334155',
             }}
           >
             <Math>
-              {`\\Delta(G[L])\\leq ${partition.s}`}
+              {
+                `\\Delta(G[L])\\leq ${partition.s}`
+              }
             </Math>
           </div>
         </foreignObject>
@@ -446,14 +627,20 @@ export default function PartitionGraphView({
         >
           <div
             style={{
-              width: '100%',
-              textAlign: 'center',
-              fontSize: '24px',
-              color: '#334155',
+              width:
+                '100%',
+              textAlign:
+                'center',
+              fontSize:
+                '24px',
+              color:
+                '#334155',
             }}
           >
             <Math>
-              {`\\Delta(G[R])\\leq ${partition.t}`}
+              {
+                `\\Delta(G[R])\\leq ${partition.t}`
+              }
             </Math>
           </div>
         </foreignObject>
@@ -462,25 +649,35 @@ export default function PartitionGraphView({
       {hasResidualGraph && (
         <div
           style={{
-            maxWidth: '620px',
-            margin: '0 auto 18px',
-            color: '#64748b',
-            fontSize: '19px',
+            maxWidth:
+              '620px',
+            margin:
+              '0 auto 18px',
+            color:
+              '#64748b',
+            fontSize:
+              '19px',
           }}
         >
-          fixed contribution:{' '}
+          fixed
+          contribution:{' '}
           <Math>
-            {`+${fixedOutdegreeContribution}`}
+            {
+              `+${fixedOutdegreeContribution}`
+            }
           </Math>{' '}
-          to every outdegree
+          to every
+          outdegree
         </div>
       )}
 
       {sharedPossibilities ? (
         <div
           style={{
-            maxWidth: '620px',
-            margin: '8px auto 0',
+            maxWidth:
+              '620px',
+            margin:
+              '8px auto 0',
           }}
         >
           <PossibleOutdegrees
@@ -495,12 +692,16 @@ export default function PartitionGraphView({
       ) : (
         <div
           style={{
-            maxWidth: '620px',
-            margin: '8px auto 0',
-            display: 'grid',
+            maxWidth:
+              '620px',
+            margin:
+              '8px auto 0',
+            display:
+              'grid',
             gridTemplateColumns:
               '1fr 1fr',
-            gap: '30px',
+            gap:
+              '30px',
           }}
         >
           <PossibleOutdegrees

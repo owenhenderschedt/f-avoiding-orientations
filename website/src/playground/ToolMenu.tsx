@@ -61,6 +61,18 @@ type ToolMenuProps = {
   hasanvandG:
     HasanvandParameters | null
 
+  /*
+   * These are optional during this
+   * plumbing step.
+   *
+   * BlobLab will supply them in the
+   * next step.
+   */
+  directedMengerApplied?: boolean
+
+  onOpenDirectedMengerWorkspace?:
+    () => void
+
   onApplyLovasz:
     (pair: LovaszPair) => void
 
@@ -104,11 +116,6 @@ type ToolMenuProps = {
         readonly number[],
     ) => void
 
-  /*
-   * Optional during the plumbing
-   * stage. BlobLab will supply the
-   * real callback in the next step.
-   */
   onOpenMaLuReference?: (
     target: MaLuTarget,
   ) => void
@@ -221,6 +228,45 @@ function getCurrentTotalOutdegrees(
   )
 }
 
+function MenuSectionLabel({
+  label,
+  separated = false,
+}: {
+  label: string
+  separated?: boolean
+}) {
+  return (
+    <div
+      style={{
+        marginTop:
+          separated
+            ? '8px'
+            : '2px',
+        padding:
+          separated
+            ? '12px 10px 5px'
+            : '5px 10px',
+        borderTop:
+          separated
+            ? '1px solid #e2e8f0'
+            : 'none',
+        color:
+          '#94a3b8',
+        fontSize:
+          '12px',
+        fontWeight:
+          600,
+        letterSpacing:
+          '0.08em',
+        textTransform:
+          'uppercase',
+      }}
+    >
+      {label}
+    </div>
+  )
+}
+
 export default function ToolMenu({
   workingDegree,
   fixedOutdegreeContribution,
@@ -237,6 +283,8 @@ export default function ToolMenu({
   maLuL,
   maLuR,
   hasanvandG,
+  directedMengerApplied = false,
+  onOpenDirectedMengerWorkspace,
   onApplyLovasz,
   onOrientAcross,
   onBalanceGraph,
@@ -448,6 +496,20 @@ export default function ToolMenu({
     )
   }
 
+  function openDirectedMengerWorkspace() {
+    if (
+      onOpenDirectedMengerWorkspace ===
+      undefined
+    ) {
+      return
+    }
+
+    onOpenDirectedMengerWorkspace()
+
+    setToolsOpen(false)
+    closeSubmenus()
+  }
+
   function applyLovasz(
     pair: LovaszPair,
   ) {
@@ -585,7 +647,18 @@ export default function ToolMenu({
       'left' as const,
   }
 
-  const orientationFinished =
+  const mutedMessageStyle = {
+    padding:
+      '8px 14px 10px',
+    color:
+      '#94a3b8',
+    fontSize:
+      '14px',
+    lineHeight:
+      1.35,
+  }
+
+  const wholeGraphOriented =
     balancedG ||
     avoidCG !== null ||
     maLuG ||
@@ -601,52 +674,96 @@ export default function ToolMenu({
     avoidCR !== null ||
     maLuR
 
+  /*
+   * A Menger fixer needs an actual
+   * starting orientation.
+   *
+   * Either the whole graph was
+   * oriented directly, or in the
+   * partition case we have:
+   *
+   *   - crossing direction,
+   *   - orientation of L,
+   *   - orientation of R.
+   */
+  const startingOrientationComplete =
+    wholeGraphOriented ||
+    (
+      partition !== null &&
+      acrossDirection !== null &&
+      leftInternallyOriented &&
+      rightInternallyOriented
+    )
+
+  const constructorsLocked =
+    directedMengerApplied
+
   const canTakeTwoFactor =
+    !constructorsLocked &&
     partition === null &&
-    !orientationFinished &&
+    !wholeGraphOriented &&
     workingDegree >= 2 &&
     workingDegree % 2 === 0
 
   const canApplyHasanvand =
+    !constructorsLocked &&
     partition === null &&
-    !orientationFinished &&
+    !wholeGraphOriented &&
     workingDegree > 0 &&
     hasanvandPairs.length > 0
 
   const canAvoidCInG =
+    !constructorsLocked &&
     partition === null &&
-    !orientationFinished &&
+    !wholeGraphOriented &&
     workingDegree >= 2
 
   const canAvoidCInL =
+    !constructorsLocked &&
     partition !== null &&
     !leftInternallyOriented &&
     partition.s >= 2
 
   const canAvoidCInR =
+    !constructorsLocked &&
     partition !== null &&
     !rightInternallyOriented &&
     partition.t >= 2
 
   const canUseMaLuInG =
+    !constructorsLocked &&
     partition === null &&
-    !orientationFinished &&
+    !wholeGraphOriented &&
     workingDegree > 0
 
   const canUseMaLuInL =
+    !constructorsLocked &&
     partition !== null &&
     !leftInternallyOriented &&
     partition.s > 0
 
   const canUseMaLuInR =
+    !constructorsLocked &&
     partition !== null &&
     !rightInternallyOriented &&
     partition.t > 0
 
-  const hasAvailablePartitionTool =
-    acrossDirection === null ||
-    !leftInternallyOriented ||
-    !rightInternallyOriented
+  const hasAvailablePartitionConstructor =
+    !constructorsLocked &&
+    (
+      acrossDirection === null ||
+      !leftInternallyOriented ||
+      !rightInternallyOriented
+    )
+
+  const canOpenDirectedMenger =
+    startingOrientationComplete &&
+    !directedMengerApplied
+
+  const directedMengerButtonEnabled =
+    canOpenDirectedMenger &&
+    onOpenDirectedMengerWorkspace !==
+      undefined
 
   return (
     <div
@@ -836,49 +953,351 @@ export default function ToolMenu({
                 )
               }
             />
-          ) : orientationFinished ? (
-            <div
-              style={{
-                padding:
-                  '10px 14px',
-                color:
-                  '#64748b',
-              }}
-            >
-              No additional
-              tools yet.
-            </div>
-          ) : partition ===
-            null ? (
+          ) : lovaszOpen ? (
             <>
-              {!lovaszOpen &&
-              !hasanvandOpen ? (
-                <>
-                  {workingDegree >
-                    0 && (
-                    <button
-                      type="button"
-                      onClick={
-                        openLovaszMenu
+              <div
+                style={{
+                  padding:
+                    '8px 10px 10px',
+                  borderBottom:
+                    '1px solid #e2e8f0',
+                  marginBottom:
+                    '4px',
+                }}
+              >
+                Choose{' '}
+                <Math>
+                  {
+                    '(s,t)'
+                  }
+                </Math>
+              </div>
+
+              {lovaszPairs.map(
+                (pair) => (
+                  <button
+                    key={
+                      `${pair.s}-${pair.t}`
+                    }
+                    type="button"
+                    onClick={() =>
+                      applyLovasz(
+                        pair,
+                      )
+                    }
+                    style={{
+                      ...menuButtonStyle,
+                      textAlign:
+                        'center',
+                    }}
+                  >
+                    <Math>
+                      {
+                        `(${pair.s},${pair.t})`
                       }
+                    </Math>
+                  </button>
+                ),
+              )}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setLovaszOpen(
+                    false,
+                  )
+                }
+                style={{
+                  ...menuButtonStyle,
+                  marginTop:
+                    '4px',
+                  borderTop:
+                    '1px solid #e2e8f0',
+                  textAlign:
+                    'center',
+                }}
+              >
+                ← Back
+              </button>
+            </>
+          ) : hasanvandOpen ? (
+            <>
+              <div
+                style={{
+                  padding:
+                    '8px 10px 10px',
+                  borderBottom:
+                    '1px solid #e2e8f0',
+                  marginBottom:
+                    '4px',
+                }}
+              >
+                Choose{' '}
+                <Math>
+                  {
+                    '(p,q)'
+                  }
+                </Math>
+              </div>
+
+              <div
+                style={{
+                  maxHeight:
+                    '300px',
+                  overflowY:
+                    'auto',
+                }}
+              >
+                {hasanvandPairs.map(
+                  (pair) => (
+                    <button
+                      key={
+                        `${pair.p}-${pair.q}`
+                      }
+                      type="button"
+                      onClick={() =>
+                        applyHasanvand(
+                          pair,
+                        )
+                      }
+                      style={{
+                        ...menuButtonStyle,
+                        textAlign:
+                          'center',
+                      }}
+                    >
+                      <Math>
+                        {
+                          `(${pair.p},${pair.q})`
+                        }
+                      </Math>
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setHasanvandOpen(
+                    false,
+                  )
+                }
+                style={{
+                  ...menuButtonStyle,
+                  marginTop:
+                    '4px',
+                  borderTop:
+                    '1px solid #e2e8f0',
+                  textAlign:
+                    'center',
+                }}
+              >
+                ← Back
+              </button>
+            </>
+          ) : (
+            <>
+              <MenuSectionLabel
+                label="Constructors"
+              />
+
+              {directedMengerApplied ? (
+                <div
+                  style={
+                    mutedMessageStyle
+                  }
+                >
+                  The starting
+                  orientation has
+                  already been
+                  repaired.
+                </div>
+              ) : partition ===
+                null ? (
+                <>
+                  {!wholeGraphOriented ? (
+                    <>
+                      {workingDegree >
+                        0 && (
+                        <button
+                          type="button"
+                          onClick={
+                            openLovaszMenu
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          {
+                            lovaszPartitionTool
+                              .menuLabel
+                          }{' '}
+                          →
+                        </button>
+                      )}
+
+                      {workingDegree >
+                        0 && (
+                        <button
+                          type="button"
+                          onClick={
+                            applyBalanceGraph
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          Balance{' '}
+                          <Math>
+                            {'G'}
+                          </Math>
+                        </button>
+                      )}
+
+                      {canAvoidCInG && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openAvoidCMenu(
+                              'G',
+                            )
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          Avoid{' '}
+                          <Math>
+                            {'c'}
+                          </Math>{' '}
+                          in{' '}
+                          <Math>
+                            {'G'}
+                          </Math>{' '}
+                          →
+                        </button>
+                      )}
+
+                      {canUseMaLuInG && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openMaLuMenu(
+                              'G',
+                            )
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          Ma–Lu on{' '}
+                          <Math>
+                            {'G'}
+                          </Math>{' '}
+                          →
+                        </button>
+                      )}
+
+                      {canTakeTwoFactor && (
+                        <button
+                          type="button"
+                          onClick={
+                            takeOrientedTwoFactor
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          {
+                            orientedTwoFactorTool
+                              .menuLabel
+                          }
+                        </button>
+                      )}
+
+                      {canApplyHasanvand && (
+                        <button
+                          type="button"
+                          onClick={
+                            openHasanvandMenu
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          {
+                            hasanvandCompressionTool
+                              .menuLabel
+                          }{' '}
+                          →
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div
                       style={
-                        menuButtonStyle
+                        mutedMessageStyle
                       }
                     >
-                      {
-                        lovaszPartitionTool
-                          .menuLabel
-                      }{' '}
-                      →
-                    </button>
+                      Starting
+                      orientation
+                      complete.
+                    </div>
+                  )}
+                </>
+              ) : hasAvailablePartitionConstructor ? (
+                <>
+                  {acrossDirection ===
+                    null && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          applyAcrossOrientation(
+                            'L-to-R',
+                          )
+                        }
+                        style={
+                          menuButtonStyle
+                        }
+                      >
+                        Orient{' '}
+                        <Math>
+                          {
+                            'L\\to R'
+                          }
+                        </Math>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          applyAcrossOrientation(
+                            'R-to-L',
+                          )
+                        }
+                        style={
+                          menuButtonStyle
+                        }
+                      >
+                        Orient{' '}
+                        <Math>
+                          {
+                            'R\\to L'
+                          }
+                        </Math>
+                      </button>
+                    </>
                   )}
 
-                  {workingDegree >
-                    0 && (
+                  {!leftInternallyOriented && (
                     <button
                       type="button"
-                      onClick={
-                        applyBalanceGraph
+                      onClick={() =>
+                        applyBalancedOrientation(
+                          'L',
+                        )
                       }
                       style={
                         menuButtonStyle
@@ -886,17 +1305,36 @@ export default function ToolMenu({
                     >
                       Balance{' '}
                       <Math>
-                        {'G'}
+                        {'L'}
                       </Math>
                     </button>
                   )}
 
-                  {canAvoidCInG && (
+                  {!rightInternallyOriented && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        applyBalancedOrientation(
+                          'R',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Balance{' '}
+                      <Math>
+                        {'R'}
+                      </Math>
+                    </button>
+                  )}
+
+                  {canAvoidCInL && (
                     <button
                       type="button"
                       onClick={() =>
                         openAvoidCMenu(
-                          'G',
+                          'L',
                         )
                       }
                       style={
@@ -909,18 +1347,42 @@ export default function ToolMenu({
                       </Math>{' '}
                       in{' '}
                       <Math>
-                        {'G'}
+                        {'L'}
                       </Math>{' '}
                       →
                     </button>
                   )}
 
-                  {canUseMaLuInG && (
+                  {canAvoidCInR && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openAvoidCMenu(
+                          'R',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Avoid{' '}
+                      <Math>
+                        {'c'}
+                      </Math>{' '}
+                      in{' '}
+                      <Math>
+                        {'R'}
+                      </Math>{' '}
+                      →
+                    </button>
+                  )}
+
+                  {canUseMaLuInL && (
                     <button
                       type="button"
                       onClick={() =>
                         openMaLuMenu(
-                          'G',
+                          'L',
                         )
                       }
                       style={
@@ -929,375 +1391,97 @@ export default function ToolMenu({
                     >
                       Ma–Lu on{' '}
                       <Math>
-                        {'G'}
+                        {'L'}
                       </Math>{' '}
                       →
                     </button>
                   )}
 
-                  {canTakeTwoFactor && (
+                  {canUseMaLuInR && (
                     <button
                       type="button"
-                      onClick={
-                        takeOrientedTwoFactor
+                      onClick={() =>
+                        openMaLuMenu(
+                          'R',
+                        )
                       }
                       style={
                         menuButtonStyle
                       }
                     >
-                      {
-                        orientedTwoFactorTool
-                          .menuLabel
-                      }
-                    </button>
-                  )}
-
-                  {canApplyHasanvand && (
-                    <button
-                      type="button"
-                      onClick={
-                        openHasanvandMenu
-                      }
-                      style={
-                        menuButtonStyle
-                      }
-                    >
-                      {
-                        hasanvandCompressionTool
-                          .menuLabel
-                      }{' '}
+                      Ma–Lu on{' '}
+                      <Math>
+                        {'R'}
+                      </Math>{' '}
                       →
                     </button>
                   )}
                 </>
-              ) : lovaszOpen ? (
-                <>
-                  <div
-                    style={{
-                      padding:
-                        '8px 10px 10px',
-                      borderBottom:
-                        '1px solid #e2e8f0',
-                      marginBottom:
-                        '4px',
-                    }}
-                  >
-                    Choose{' '}
-                    <Math>
-                      {
-                        '(s,t)'
-                      }
-                    </Math>
-                  </div>
-
-                  {lovaszPairs.map(
-                    (pair) => (
-                      <button
-                        key={
-                          `${pair.s}-${pair.t}`
-                        }
-                        type="button"
-                        onClick={() =>
-                          applyLovasz(
-                            pair,
-                          )
-                        }
-                        style={{
-                          ...menuButtonStyle,
-                          textAlign:
-                            'center',
-                        }}
-                      >
-                        <Math>
-                          {
-                            `(${pair.s},${pair.t})`
-                          }
-                        </Math>
-                      </button>
-                    ),
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLovaszOpen(
-                        false,
-                      )
-                    }
-                    style={{
-                      ...menuButtonStyle,
-                      marginTop:
-                        '4px',
-                      borderTop:
-                        '1px solid #e2e8f0',
-                      textAlign:
-                        'center',
-                    }}
-                  >
-                    ← Back
-                  </button>
-                </>
               ) : (
-                <>
-                  <div
-                    style={{
-                      padding:
-                        '8px 10px 10px',
-                      borderBottom:
-                        '1px solid #e2e8f0',
-                      marginBottom:
-                        '4px',
-                    }}
-                  >
-                    Choose{' '}
-                    <Math>
-                      {
-                        '(p,q)'
-                      }
-                    </Math>
-                  </div>
+                <div
+                  style={
+                    mutedMessageStyle
+                  }
+                >
+                  Starting
+                  orientation
+                  complete.
+                </div>
+              )}
 
-                  <div
-                    style={{
-                      maxHeight:
-                        '300px',
-                      overflowY:
-                        'auto',
-                    }}
-                  >
-                    {hasanvandPairs.map(
-                      (pair) => (
-                        <button
-                          key={
-                            `${pair.p}-${pair.q}`
-                          }
-                          type="button"
-                          onClick={() =>
-                            applyHasanvand(
-                              pair,
-                            )
-                          }
-                          style={{
-                            ...menuButtonStyle,
-                            textAlign:
-                              'center',
-                          }}
-                        >
-                          <Math>
-                            {
-                              `(${pair.p},${pair.q})`
-                            }
-                          </Math>
-                        </button>
-                      ),
-                    )}
-                  </div>
+              <MenuSectionLabel
+                label="Fixers"
+                separated
+              />
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setHasanvandOpen(
-                        false,
-                      )
-                    }
-                    style={{
-                      ...menuButtonStyle,
-                      marginTop:
-                        '4px',
-                      borderTop:
-                        '1px solid #e2e8f0',
-                      textAlign:
-                        'center',
-                    }}
-                  >
-                    ← Back
-                  </button>
-                </>
+              {directedMengerApplied ? (
+                <div
+                  style={
+                    mutedMessageStyle
+                  }
+                >
+                  Directed Menger
+                  repair applied.
+                </div>
+              ) : canOpenDirectedMenger ? (
+                <button
+                  type="button"
+                  onClick={
+                    openDirectedMengerWorkspace
+                  }
+                  disabled={
+                    !directedMengerButtonEnabled
+                  }
+                  style={{
+                    ...menuButtonStyle,
+
+                    color:
+                      directedMengerButtonEnabled
+                        ? '#334155'
+                        : '#94a3b8',
+
+                    cursor:
+                      directedMengerButtonEnabled
+                        ? 'pointer'
+                        : 'default',
+                  }}
+                >
+                  Directed Menger
+                  repair{' '}
+                  →
+                </button>
+              ) : (
+                <div
+                  style={
+                    mutedMessageStyle
+                  }
+                >
+                  Complete a
+                  starting
+                  orientation first.
+                </div>
               )}
             </>
-          ) : hasAvailablePartitionTool ? (
-            <>
-              {acrossDirection ===
-                null && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyAcrossOrientation(
-                        'L-to-R',
-                      )
-                    }
-                    style={
-                      menuButtonStyle
-                    }
-                  >
-                    Orient{' '}
-                    <Math>
-                      {
-                        'L\\to R'
-                      }
-                    </Math>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyAcrossOrientation(
-                        'R-to-L',
-                      )
-                    }
-                    style={
-                      menuButtonStyle
-                    }
-                  >
-                    Orient{' '}
-                    <Math>
-                      {
-                        'R\\to L'
-                      }
-                    </Math>
-                  </button>
-                </>
-              )}
-
-              {!leftInternallyOriented && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    applyBalancedOrientation(
-                      'L',
-                    )
-                  }
-                  style={
-                    menuButtonStyle
-                  }
-                >
-                  Balance{' '}
-                  <Math>
-                    {'L'}
-                  </Math>
-                </button>
-              )}
-
-              {!rightInternallyOriented && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    applyBalancedOrientation(
-                      'R',
-                    )
-                  }
-                  style={
-                    menuButtonStyle
-                  }
-                >
-                  Balance{' '}
-                  <Math>
-                    {'R'}
-                  </Math>
-                </button>
-              )}
-
-              {canAvoidCInL && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    openAvoidCMenu(
-                      'L',
-                    )
-                  }
-                  style={
-                    menuButtonStyle
-                  }
-                >
-                  Avoid{' '}
-                  <Math>
-                    {'c'}
-                  </Math>{' '}
-                  in{' '}
-                  <Math>
-                    {'L'}
-                  </Math>{' '}
-                  →
-                </button>
-              )}
-
-              {canAvoidCInR && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    openAvoidCMenu(
-                      'R',
-                    )
-                  }
-                  style={
-                    menuButtonStyle
-                  }
-                >
-                  Avoid{' '}
-                  <Math>
-                    {'c'}
-                  </Math>{' '}
-                  in{' '}
-                  <Math>
-                    {'R'}
-                  </Math>{' '}
-                  →
-                </button>
-              )}
-
-              {canUseMaLuInL && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    openMaLuMenu(
-                      'L',
-                    )
-                  }
-                  style={
-                    menuButtonStyle
-                  }
-                >
-                  Ma–Lu on{' '}
-                  <Math>
-                    {'L'}
-                  </Math>{' '}
-                  →
-                </button>
-              )}
-
-              {canUseMaLuInR && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    openMaLuMenu(
-                      'R',
-                    )
-                  }
-                  style={
-                    menuButtonStyle
-                  }
-                >
-                  Ma–Lu on{' '}
-                  <Math>
-                    {'R'}
-                  </Math>{' '}
-                  →
-                </button>
-              )}
-            </>
-          ) : (
-            <div
-              style={{
-                padding:
-                  '10px 14px',
-                color:
-                  '#64748b',
-              }}
-            >
-              No additional
-              tools yet.
-            </div>
           )}
         </div>
       )}

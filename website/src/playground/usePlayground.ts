@@ -26,6 +26,12 @@ import {
 import {
   getMaLuTotalCertificate,
 } from '../tools/maLuTargeting'
+import type {
+  DirectedMengerApplication,
+} from '../tools/directedMengerApplication'
+import {
+  getDirectedMengerRepairedPartOutdegrees,
+} from './directedMengerOutdegrees'
 import deriveOutdegreePossibilities from './deriveOutdegreePossibilities'
 import {
   getResidualGraphState,
@@ -76,9 +82,16 @@ export type PlaygroundMove =
       application:
         MaLuApplication
     }
+  | {
+      type:
+        'directed-menger-repair'
+      application:
+        DirectedMengerApplication
+    }
 
 export type PlaygroundState = {
   partition: LovaszPair | null
+
   acrossDirection:
     AcrossDirection | null
 
@@ -92,8 +105,10 @@ export type PlaygroundState = {
 
   maLuG:
     MaLuApplication | null
+
   maLuL:
     MaLuApplication | null
+
   maLuR:
     MaLuApplication | null
 
@@ -101,11 +116,15 @@ export type PlaygroundState = {
 
   hasanvandG:
     HasanvandParameters | null
+
+  directedMenger:
+    DirectedMengerApplication | null
 }
 
 const initialState:
   PlaygroundState = {
   partition: null,
+
   acrossDirection: null,
 
   balancedG: false,
@@ -123,6 +142,8 @@ const initialState:
   orientedTwoFactorCount: 0,
 
   hasanvandG: null,
+
+  directedMenger: null,
 }
 
 function deriveState(
@@ -249,9 +270,218 @@ function deriveState(
       state.hasanvandG =
         move.parameters
     }
+
+    if (
+      move.type ===
+      'directed-menger-repair'
+    ) {
+      state.directedMenger =
+        move.application
+    }
   }
 
   return state
+}
+
+function getCurrentOutdegreeClasses(
+  possibilities:
+    PartOutdegreePossibilities,
+) {
+  return Array.from(
+    new Set([
+      ...possibilities.L,
+      ...possibilities.R,
+    ]),
+  ).sort(
+    (a, b) =>
+      a - b,
+  )
+}
+
+/*
+ * This is a defensive state check.
+ *
+ * The application itself will already
+ * have been certified before reaching
+ * usePlayground, but the playground
+ * also verifies that its roles refer
+ * to outdegree classes that actually
+ * occur in the current starting
+ * orientation.
+ *
+ * Moreover, every currently possible
+ * high-outdegree class must appear in
+ * the capacity data. A missing class
+ * would amount to silently ignoring a
+ * negative-imbalance vertex class in
+ * the alpha certificate.
+ */
+function directedMengerApplicationFits(
+  application:
+    DirectedMengerApplication,
+
+  possibilities:
+    PartOutdegreePossibilities,
+
+  degree: number,
+) {
+  if (
+    application.degree !==
+    degree
+  ) {
+    return false
+  }
+
+  const currentClasses =
+    getCurrentOutdegreeClasses(
+      possibilities,
+    )
+
+  const currentClassSet =
+    new Set(
+      currentClasses,
+    )
+
+  const demandClasses =
+    application
+      .demandRules
+      .map(
+        (rule) =>
+          rule.outdegree,
+      )
+
+  const capacityClasses =
+    application
+      .capacityRules
+      .map(
+        (rule) =>
+          rule.outdegree,
+      )
+
+  const demandClassSet =
+    new Set(
+      demandClasses,
+    )
+
+  const capacityClassSet =
+    new Set(
+      capacityClasses,
+    )
+
+  if (
+    demandClassSet.size !==
+    demandClasses.length
+  ) {
+    return false
+  }
+
+  if (
+    capacityClassSet.size !==
+    capacityClasses.length
+  ) {
+    return false
+  }
+
+  const allDemandClassesCurrent =
+    demandClasses.every(
+      (outdegree) =>
+        currentClassSet.has(
+          outdegree,
+        ),
+    )
+
+  if (
+    !allDemandClassesCurrent
+  ) {
+    return false
+  }
+
+  const allCapacityClassesCurrent =
+    capacityClasses.every(
+      (outdegree) =>
+        currentClassSet.has(
+          outdegree,
+        ),
+    )
+
+  if (
+    !allCapacityClassesCurrent
+  ) {
+    return false
+  }
+
+  const rolesAreDisjoint =
+    demandClasses.every(
+      (outdegree) =>
+        !capacityClassSet.has(
+          outdegree,
+        ),
+    )
+
+  if (
+    !rolesAreDisjoint
+  ) {
+    return false
+  }
+
+  const demandClassesAreLow =
+    application
+      .demandRules
+      .every(
+        (rule) =>
+          2 * rule.outdegree <
+          degree,
+      )
+
+  if (
+    !demandClassesAreLow
+  ) {
+    return false
+  }
+
+  const capacityClassesAreHigh =
+    application
+      .capacityRules
+      .every(
+        (rule) =>
+          2 * rule.outdegree >
+          degree,
+      )
+
+  if (
+    !capacityClassesAreHigh
+  ) {
+    return false
+  }
+
+  /*
+   * Every currently possible class
+   * above d/2 participates in the
+   * upper-bound side of the alpha
+   * certificate.
+   */
+  const currentHighClasses =
+    currentClasses.filter(
+      (outdegree) =>
+        2 * outdegree >
+        degree,
+    )
+
+  const everyHighClassRepresented =
+    currentHighClasses.every(
+      (outdegree) =>
+        capacityClassSet.has(
+          outdegree,
+        ),
+    )
+
+  if (
+    !everyHighClassRepresented
+  ) {
+    return false
+  }
+
+  return true
 }
 
 export default function usePlayground(
@@ -266,30 +496,56 @@ export default function usePlayground(
     >([])
 
   const state =
-    deriveState(moves)
+    deriveState(
+      moves,
+    )
 
   const residualGraph =
     getResidualGraphState(
       originalDegree,
+
       state
         .orientedTwoFactorCount,
     )
 
   const wholeGraphAlreadyOriented =
     state.balancedG ||
-    state.avoidCG !== null ||
-    state.maLuG !== null ||
-    state.hasanvandG !== null
+    state.avoidCG !==
+      null ||
+    state.maLuG !==
+      null ||
+    state.hasanvandG !==
+      null
 
   const leftAlreadyOriented =
     state.balancedL ||
-    state.avoidCL !== null ||
-    state.maLuL !== null
+    state.avoidCL !==
+      null ||
+    state.maLuL !==
+      null
 
   const rightAlreadyOriented =
     state.balancedR ||
-    state.avoidCR !== null ||
-    state.maLuR !== null
+    state.avoidCR !==
+      null ||
+    state.maLuR !==
+      null
+
+  /*
+   * The Menger fixer acts only after
+   * we have a genuine starting
+   * orientation.
+   */
+  const startingOrientationComplete =
+    wholeGraphAlreadyOriented ||
+    (
+      state.partition !==
+        null &&
+      state.acrossDirection !==
+        null &&
+      leftAlreadyOriented &&
+      rightAlreadyOriented
+    )
 
   let residualOutdegreePossibilities:
     PartOutdegreePossibilities
@@ -307,6 +563,7 @@ export default function usePlayground(
     residualOutdegreePossibilities =
       {
         L: hasanvandValues,
+
         R: hasanvandValues,
       }
   } else {
@@ -354,7 +611,19 @@ export default function usePlayground(
       )
   }
 
-  const outdegreePossibilities =
+  /*
+   * Constructors first determine
+   * residual outdegrees.
+   *
+   * Removed oriented 2-factors then
+   * contribute their fixed amount.
+   *
+   * Directed Menger is a fixer of the
+   * resulting TOTAL outdegrees, so it
+   * must be applied only after this
+   * shift.
+   */
+  const preRepairOutdegreePossibilities =
     shiftPartOutdegrees(
       residualOutdegreePossibilities,
 
@@ -362,15 +631,44 @@ export default function usePlayground(
         .fixedOutdegreeContribution,
     )
 
+  const outdegreePossibilities =
+    state.directedMenger ===
+    null
+      ? preRepairOutdegreePossibilities
+      : getDirectedMengerRepairedPartOutdegrees(
+          {
+            L:
+              preRepairOutdegreePossibilities
+                .L,
+
+            R:
+              preRepairOutdegreePossibilities
+                .R,
+
+            application:
+              state
+                .directedMenger,
+          },
+        )
+
   function applyLovaszPartition(
     pair: LovaszPair,
   ) {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'lovasz-partition',
+
           pair,
         },
       ],
@@ -381,12 +679,21 @@ export default function usePlayground(
     direction:
       AcrossDirection,
   ) {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'orient-across',
+
           direction,
         },
       ],
@@ -396,12 +703,21 @@ export default function usePlayground(
   function balancePart(
     part: GraphPart,
   ) {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'balanced-orientation',
+
           part,
         },
       ],
@@ -409,9 +725,17 @@ export default function usePlayground(
   }
 
   function balanceGraph() {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'balanced-whole-graph',
@@ -423,12 +747,21 @@ export default function usePlayground(
   function avoidCGraph(
     c: number,
   ) {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'avoid-c-whole-graph',
+
           c,
         },
       ],
@@ -439,13 +772,23 @@ export default function usePlayground(
     part: GraphPart,
     c: number,
   ) {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'avoid-c-part',
+
           part,
+
           c,
         },
       ],
@@ -460,9 +803,13 @@ export default function usePlayground(
       readonly number[],
   ) {
     if (
-      state.partition !== null ||
+      state.directedMenger !==
+        null ||
+      state.partition !==
+        null ||
       wholeGraphAlreadyOriented ||
-      selectedValues.length === 0
+      selectedValues.length ===
+        0
     ) {
       return
     }
@@ -491,12 +838,14 @@ export default function usePlayground(
       const application =
         createMaLuInternalApplication(
           'G',
+
           selectedValues,
         )
 
       setMoves(
         (current) => [
           ...current,
+
           {
             type:
               'ma-lu-whole-graph',
@@ -544,13 +893,16 @@ export default function usePlayground(
     const application =
       createMaLuTotalApplication(
         'G',
+
         selectedValues,
+
         certificate.checks,
       )
 
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'ma-lu-whole-graph',
@@ -571,8 +923,12 @@ export default function usePlayground(
       readonly number[],
   ) {
     if (
-      state.partition === null ||
-      selectedValues.length === 0
+      state.directedMenger !==
+        null ||
+      state.partition ===
+        null ||
+      selectedValues.length ===
+        0
     ) {
       return
     }
@@ -616,12 +972,14 @@ export default function usePlayground(
       const application =
         createMaLuInternalApplication(
           part,
+
           selectedValues,
         )
 
       setMoves(
         (current) => [
           ...current,
+
           {
             type:
               'ma-lu-part',
@@ -669,13 +1027,16 @@ export default function usePlayground(
     const application =
       createMaLuTotalApplication(
         part,
+
         selectedValues,
+
         certificate.checks,
       )
 
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'ma-lu-part',
@@ -687,9 +1048,17 @@ export default function usePlayground(
   }
 
   function takeOrientedTwoFactor() {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'oriented-two-factor',
@@ -702,14 +1071,70 @@ export default function usePlayground(
     parameters:
       HasanvandParameters,
   ) {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
     setMoves(
       (current) => [
         ...current,
+
         {
           type:
             'hasanvand-compression',
 
           parameters,
+        },
+      ],
+    )
+  }
+
+  /*
+   * The workspace creates and
+   * certifies the application before
+   * passing it here.
+   *
+   * usePlayground then verifies that
+   * the application is compatible
+   * with the actual starting
+   * orientation currently displayed.
+   */
+  function applyDirectedMengerRepair(
+    application:
+      DirectedMengerApplication,
+  ) {
+    if (
+      state.directedMenger !==
+        null ||
+      !startingOrientationComplete
+    ) {
+      return
+    }
+
+    if (
+      !directedMengerApplicationFits(
+        application,
+
+        preRepairOutdegreePossibilities,
+
+        originalDegree,
+      )
+    ) {
+      return
+    }
+
+    setMoves(
+      (current) => [
+        ...current,
+
+        {
+          type:
+            'directed-menger-repair',
+
+          application,
         },
       ],
     )
@@ -731,6 +1156,7 @@ export default function usePlayground(
 
   return {
     moves,
+
     state,
 
     originalDegree,
@@ -772,13 +1198,16 @@ export default function usePlayground(
       state.avoidCR,
 
     maLuG:
-      state.maLuG !== null,
+      state.maLuG !==
+      null,
 
     maLuL:
-      state.maLuL !== null,
+      state.maLuL !==
+      null,
 
     maLuR:
-      state.maLuR !== null,
+      state.maLuR !==
+      null,
 
     maLuApplicationG:
       state.maLuG,
@@ -792,27 +1221,69 @@ export default function usePlayground(
     hasanvandG:
       state.hasanvandG,
 
+    directedMengerApplied:
+      state.directedMenger !==
+      null,
+
+    directedMengerApplication:
+      state.directedMenger,
+
+    /*
+     * This is the orientation the
+     * fixer sees when it opens.
+     *
+     * In our running d=10 example:
+     *
+     *   L = {0,1,2,3}
+     *   R = {8,9,10}.
+     */
+    preRepairOutdegreePossibilities,
+
     residualOutdegreePossibilities,
 
+    /*
+     * This is what the graph displays.
+     * After our running repair:
+     *
+     *   L = {0,2,3}
+     *   R = {7,8,9,10}.
+     */
     outdegreePossibilities,
 
     outdegreeGuarantees:
       outdegreePossibilities,
 
+    startingOrientationComplete,
+
+    canApplyDirectedMengerRepair:
+      startingOrientationComplete &&
+      state.directedMenger ===
+        null,
+
     applyLovaszPartition,
+
     orientAcross,
+
     balancePart,
+
     balanceGraph,
+
     avoidCGraph,
+
     avoidCPart,
 
     applyMaLuGraph,
+
     applyMaLuPart,
 
     takeOrientedTwoFactor,
+
     applyHasanvandCompression,
 
+    applyDirectedMengerRepair,
+
     undo,
+
     reset,
 
     canUndo:

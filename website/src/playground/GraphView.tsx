@@ -19,6 +19,9 @@ import type {
   MaLuApplication,
 } from '../tools/maLuApplication'
 import type {
+  DirectedMengerApplication,
+} from '../tools/directedMengerApplication'
+import type {
   AcrossDirection,
   AcrossOutdegreeGuarantees,
 } from '../tools/orientAcrossPartition'
@@ -41,11 +44,6 @@ type GraphViewProps = {
   avoidCL: number | null
   avoidCR: number | null
 
-  /*
-   * Optional only during this one
-   * plumbing step. BlobLab will supply
-   * these in the next step.
-   */
   maLuApplicationG?:
     MaLuApplication | null
 
@@ -57,6 +55,9 @@ type GraphViewProps = {
 
   hasanvandG:
     HasanvandParameters | null
+
+  directedMengerApplication?:
+    DirectedMengerApplication | null
 
   outdegreeGuarantees:
     AcrossOutdegreeGuarantees | null
@@ -74,6 +75,11 @@ type GraphViewProps = {
 
   onOpenMaLuReference?: (
     application: MaLuApplication,
+  ) => void
+
+  onOpenDirectedMengerReference?: (
+    application:
+      DirectedMengerApplication,
   ) => void
 
   onOpenTwoFactorReference: () => void
@@ -99,11 +105,13 @@ export default function GraphView({
   maLuApplicationL = null,
   maLuApplicationR = null,
   hasanvandG,
+  directedMengerApplication = null,
   outdegreeGuarantees,
   onOpenLovaszReference,
   onOpenBalancedReference,
   onOpenAvoidCReference,
   onOpenMaLuReference,
+  onOpenDirectedMengerReference,
   onOpenTwoFactorReference,
   onOpenHasanvandReference,
 }: GraphViewProps) {
@@ -118,13 +126,12 @@ export default function GraphView({
     outdegreeGuarantees?.R ??
     allPossible
 
-  /*
-   * Temporary safe fallback until
-   * BlobLab wires the real right-panel
-   * callback in the next step.
-   */
   const openMaLuReference =
     onOpenMaLuReference ??
+    (() => {})
+
+  const openDirectedMengerReference =
+    onOpenDirectedMengerReference ??
     (() => {})
 
   if (partition === null) {
@@ -215,6 +222,9 @@ export default function GraphView({
       maLuApplicationR={
         maLuApplicationR
       }
+      directedMengerApplication={
+        directedMengerApplication
+      }
       possibleOutdegreesL={
         possibleOutdegreesL
       }
@@ -232,6 +242,9 @@ export default function GraphView({
       }
       onOpenMaLuReference={
         openMaLuReference
+      }
+      onOpenDirectedMengerReference={
+        openDirectedMengerReference
       }
       onOpenTwoFactorReference={
         onOpenTwoFactorReference
