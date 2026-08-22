@@ -1,8 +1,10 @@
 import {
+  getDemandFinalOutdegree,
   getDirectedMengerRepairCertificate,
   type DirectedMengerRepairCertificate,
   type MengerCapacityRule,
   type MengerDemandRule,
+  type MengerRepairDirection,
 } from './directedMengerMath'
 
 export type DirectedMengerApplication = {
@@ -11,6 +13,21 @@ export type DirectedMengerApplication = {
    * orientation is being repaired.
    */
   degree: number
+
+  /*
+   * Which one-sided repair is being
+   * performed.
+   *
+   * increase:
+   *
+   *   bad class q -> q+r
+   *
+   * decrease:
+   *
+   *   bad class q -> q-r
+   */
+  direction:
+    MengerRepairDirection
 
   /*
    * Total outdegree classes that were
@@ -26,18 +43,31 @@ export type DirectedMengerApplication = {
   startingOutdegrees: number[]
 
   /*
-   * A receiver of current outdegree q
-   * with demand r finishes at q+r.
+   * Each bad class receives an exact
+   * repair amount.
+   *
+   * increase:
+   *
+   *   q -> q + demand
+   *
+   * decrease:
+   *
+   *   q -> q - demand
    */
   demandRules:
     MengerDemandRule[]
 
   /*
-   * A donor of current outdegree q
-   * with capacity c may finish at any
-   * value
+   * Each buffer class may be used at
+   * most capacity times.
    *
-   *   q, q-1, ..., q-c.
+   * increase:
+   *
+   *   q, q-1, ..., q-capacity
+   *
+   * decrease:
+   *
+   *   q, q+1, ..., q+capacity
    *
    * Classes omitted here have capacity
    * zero.
@@ -102,6 +132,7 @@ export function createDirectedMengerApplication({
   currentOutdegrees,
   demandRules,
   capacityRules,
+  direction = 'increase',
 }: {
   degree: number
 
@@ -116,6 +147,15 @@ export function createDirectedMengerApplication({
 
   capacityRules:
     readonly MengerCapacityRule[]
+
+  /*
+   * Optional for this plumbing stage
+   * so the existing V1 callers keep
+   * behaving as upward repairs until
+   * the workspace is upgraded.
+   */
+  direction?:
+    MengerRepairDirection
 }):
   | DirectedMengerApplication
   | null {
@@ -130,6 +170,8 @@ export function createDirectedMengerApplication({
       demandRules,
 
       capacityRules,
+
+      direction,
     })
 
   if (
@@ -140,6 +182,13 @@ export function createDirectedMengerApplication({
 
   return {
     degree,
+
+    /*
+     * Store the direction actually
+     * certified by the math engine.
+     */
+    direction:
+      certificate.direction,
 
     startingOutdegrees:
       uniqueSorted(
@@ -196,6 +245,9 @@ export function getDirectedMengerApplicationCertificate({
       capacityRules:
         application
           .capacityRules,
+
+      direction:
+        application.direction,
     })
   )
 }
@@ -208,11 +260,25 @@ export function getDirectedMengerApplicationLabel(
     application
       .demandRules
       .map(
-        (rule) =>
-          `${rule.outdegree}→${
-            rule.outdegree +
-            rule.demand
-          }`,
+        (rule) => {
+          const finalOutdegree =
+            getDemandFinalOutdegree({
+              outdegree:
+                rule.outdegree,
+
+              demand:
+                rule.demand,
+
+              direction:
+                application.direction,
+            })
+
+          return (
+            `${rule.outdegree}`
+            + '→'
+            + `${finalOutdegree}`
+          )
+        },
       )
 
   if (

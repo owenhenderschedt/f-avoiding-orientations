@@ -16,6 +16,9 @@ import type {
 import type {
   MaLuApplication,
 } from '../tools/maLuApplication'
+import {
+  getDemandFinalOutdegree,
+} from '../tools/directedMengerMath'
 import type {
   DirectedMengerApplication,
 } from '../tools/directedMengerApplication'
@@ -97,15 +100,66 @@ function getMengerRepairLatex(
   return application
     .demandRules
     .map(
-      (rule) =>
-        `${rule.outdegree}`
-        + '\\to'
-        + `${
-          rule.outdegree +
-          rule.demand
-        }`,
+      (rule) => {
+        const finalOutdegree =
+          getDemandFinalOutdegree({
+            outdegree:
+              rule.outdegree,
+
+            demand:
+              rule.demand,
+
+            direction:
+              application.direction,
+          })
+
+        return (
+          `${rule.outdegree}`
+          + '\\to'
+          + `${finalOutdegree}`
+        )
+      },
     )
     .join(',\\ ')
+}
+
+/*
+ * The green curves depict the
+ * orientation AFTER a repair path has
+ * been reversed.
+ *
+ * Therefore, when we have a displayed
+ * crossing orientation, the schematic
+ * repair arrows point in the opposite
+ * direction.
+ *
+ * This is intentionally not determined
+ * merely by "increase" versus
+ * "decrease": both repair modes reverse
+ * directed paths, and either mode may
+ * produce the same left/right direction
+ * depending on where the bad endpoint
+ * lies.
+ */
+function getMengerReversedAcrossDirection(
+  acrossDirection:
+    AcrossDirection | null,
+) {
+  if (
+    acrossDirection ===
+    'L-to-R'
+  ) {
+    return 'R-to-L'
+  }
+
+  if (
+    acrossDirection ===
+    'R-to-L'
+  ) {
+    return 'L-to-R'
+  }
+
+  return null
 }
 
 function TwoFactorNote({
@@ -228,6 +282,17 @@ export default function PartitionGraphView({
   const hasMengerRepair =
     directedMengerApplication !==
     null
+
+  const mengerAcrossDirection =
+    hasMengerRepair
+      ? getMengerReversedAcrossDirection(
+          acrossDirection,
+        )
+      : null
+
+  const mengerRightToLeft =
+    mengerAcrossDirection ===
+    'R-to-L'
 
   return (
     <>
@@ -577,18 +642,45 @@ export default function PartitionGraphView({
             opacity="0.92"
           >
             <path
-              d="M 350 158 Q 400 116 450 158"
-              markerEnd="url(#menger-arrowhead)"
+              d={
+                mengerRightToLeft
+                  ? 'M 450 158 Q 400 116 350 158'
+                  : 'M 350 158 Q 400 116 450 158'
+              }
+              markerEnd={
+                mengerAcrossDirection ===
+                null
+                  ? undefined
+                  : 'url(#menger-arrowhead)'
+              }
             />
 
             <path
-              d="M 350 220 Q 400 182 450 220"
-              markerEnd="url(#menger-arrowhead)"
+              d={
+                mengerRightToLeft
+                  ? 'M 450 220 Q 400 182 350 220'
+                  : 'M 350 220 Q 400 182 450 220'
+              }
+              markerEnd={
+                mengerAcrossDirection ===
+                null
+                  ? undefined
+                  : 'url(#menger-arrowhead)'
+              }
             />
 
             <path
-              d="M 350 282 Q 400 324 450 282"
-              markerEnd="url(#menger-arrowhead)"
+              d={
+                mengerRightToLeft
+                  ? 'M 450 282 Q 400 324 350 282'
+                  : 'M 350 282 Q 400 324 450 282'
+              }
+              markerEnd={
+                mengerAcrossDirection ===
+                null
+                  ? undefined
+                  : 'url(#menger-arrowhead)'
+              }
             />
           </g>
         )}

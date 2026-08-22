@@ -283,38 +283,46 @@ function deriveState(
   return state
 }
 
-function getCurrentOutdegreeClasses(
-  possibilities:
-    PartOutdegreePossibilities,
+function uniqueSorted(
+  values:
+    readonly number[],
 ) {
   return Array.from(
-    new Set([
-      ...possibilities.L,
-      ...possibilities.R,
-    ]),
+    new Set(values),
   ).sort(
     (a, b) =>
       a - b,
   )
 }
 
+function getCurrentOutdegreeClasses(
+  possibilities:
+    PartOutdegreePossibilities,
+) {
+  return uniqueSorted([
+    ...possibilities.L,
+    ...possibilities.R,
+  ])
+}
+
 /*
- * This is a defensive state check.
+ * A DirectedMengerApplication is
+ * mathematically certified when it is
+ * created.
  *
- * The application itself will already
- * have been certified before reaching
- * usePlayground, but the playground
- * also verifies that its roles refer
- * to outdegree classes that actually
- * occur in the current starting
- * orientation.
+ * The playground therefore does not
+ * re-prove the alpha certificate here.
+ * Its job is only to verify that the
+ * saved application is being used on
+ * exactly the starting outdegree state
+ * for which it was certified.
  *
- * Moreover, every currently possible
- * high-outdegree class must appear in
- * the capacity data. A missing class
- * would amount to silently ignoring a
- * negative-imbalance vertex class in
- * the alpha certificate.
+ * This is also important for V2:
+ * increase and decrease have opposite
+ * low/high roles, so duplicating those
+ * role checks here would create two
+ * competing sources of mathematical
+ * truth.
  */
 function directedMengerApplicationFits(
   application:
@@ -337,151 +345,29 @@ function directedMengerApplicationFits(
       possibilities,
     )
 
-  const currentClassSet =
-    new Set(
-      currentClasses,
-    )
-
-  const demandClasses =
-    application
-      .demandRules
-      .map(
-        (rule) =>
-          rule.outdegree,
-      )
-
-  const capacityClasses =
-    application
-      .capacityRules
-      .map(
-        (rule) =>
-          rule.outdegree,
-      )
-
-  const demandClassSet =
-    new Set(
-      demandClasses,
-    )
-
-  const capacityClassSet =
-    new Set(
-      capacityClasses,
+  const certifiedClasses =
+    uniqueSorted(
+      application
+        .startingOutdegrees,
     )
 
   if (
-    demandClassSet.size !==
-    demandClasses.length
+    currentClasses.length !==
+    certifiedClasses.length
   ) {
     return false
   }
 
-  if (
-    capacityClassSet.size !==
-    capacityClasses.length
-  ) {
-    return false
-  }
-
-  const allDemandClassesCurrent =
-    demandClasses.every(
-      (outdegree) =>
-        currentClassSet.has(
-          outdegree,
-        ),
-    )
-
-  if (
-    !allDemandClassesCurrent
-  ) {
-    return false
-  }
-
-  const allCapacityClassesCurrent =
-    capacityClasses.every(
-      (outdegree) =>
-        currentClassSet.has(
-          outdegree,
-        ),
-    )
-
-  if (
-    !allCapacityClassesCurrent
-  ) {
-    return false
-  }
-
-  const rolesAreDisjoint =
-    demandClasses.every(
-      (outdegree) =>
-        !capacityClassSet.has(
-          outdegree,
-        ),
-    )
-
-  if (
-    !rolesAreDisjoint
-  ) {
-    return false
-  }
-
-  const demandClassesAreLow =
-    application
-      .demandRules
-      .every(
-        (rule) =>
-          2 * rule.outdegree <
-          degree,
-      )
-
-  if (
-    !demandClassesAreLow
-  ) {
-    return false
-  }
-
-  const capacityClassesAreHigh =
-    application
-      .capacityRules
-      .every(
-        (rule) =>
-          2 * rule.outdegree >
-          degree,
-      )
-
-  if (
-    !capacityClassesAreHigh
-  ) {
-    return false
-  }
-
-  /*
-   * Every currently possible class
-   * above d/2 participates in the
-   * upper-bound side of the alpha
-   * certificate.
-   */
-  const currentHighClasses =
-    currentClasses.filter(
-      (outdegree) =>
-        2 * outdegree >
-        degree,
-    )
-
-  const everyHighClassRepresented =
-    currentHighClasses.every(
-      (outdegree) =>
-        capacityClassSet.has(
-          outdegree,
-        ),
-    )
-
-  if (
-    !everyHighClassRepresented
-  ) {
-    return false
-  }
-
-  return true
+  return currentClasses.every(
+    (
+      outdegree,
+      index,
+    ) =>
+      outdegree ===
+      certifiedClasses[
+        index
+      ],
+  )
 }
 
 export default function usePlayground(
@@ -546,6 +432,33 @@ export default function usePlayground(
       leftAlreadyOriented &&
       rightAlreadyOriented
     )
+
+  /*
+   * V2 safeguard:
+   *
+   * An oriented 2-factor is currently
+   * represented as a removed factor
+   * contributing a fixed +1 to every
+   * total outdegree.
+   *
+   * Our Menger certificate, however,
+   * is a certificate for path reversal
+   * in the full orientation D.
+   * A repair path could use an edge of
+   * that 2-factor, destroying the
+   * interpretation of the factor as a
+   * permanently fixed +1 contribution.
+   *
+   * Until we explicitly develop the
+   * residual-subdigraph version of the
+   * repair theorem, Menger is therefore
+   * unavailable after any oriented
+   * 2-factor has been removed.
+   */
+  const directedMengerCompatibleWithConstruction =
+    state
+      .orientedTwoFactorCount ===
+    0
 
   let residualOutdegreePossibilities:
     PartOutdegreePossibilities
@@ -622,6 +535,13 @@ export default function usePlayground(
    * resulting TOTAL outdegrees, so it
    * must be applied only after this
    * shift.
+   *
+   * In V2 we disallow Menger whenever
+   * a removed 2-factor is present, but
+   * retaining this ordering keeps the
+   * state model correct and prepares
+   * for a future residual-subdigraph
+   * version.
    */
   const preRepairOutdegreePossibilities =
     shiftPartOutdegrees(
@@ -1094,13 +1014,19 @@ export default function usePlayground(
 
   /*
    * The workspace creates and
-   * certifies the application before
-   * passing it here.
+   * mathematically certifies the
+   * application before passing it
+   * here.
    *
-   * usePlayground then verifies that
-   * the application is compatible
-   * with the actual starting
-   * orientation currently displayed.
+   * usePlayground then verifies that:
+   *
+   *   1. Menger is compatible with the
+   *      current construction, and
+   *
+   *   2. the current total-outdegree
+   *      state is exactly the state for
+   *      which the application was
+   *      certified.
    */
   function applyDirectedMengerRepair(
     application:
@@ -1109,7 +1035,8 @@ export default function usePlayground(
     if (
       state.directedMenger !==
         null ||
-      !startingOrientationComplete
+      !startingOrientationComplete ||
+      !directedMengerCompatibleWithConstruction
     ) {
       return
     }
@@ -1243,10 +1170,16 @@ export default function usePlayground(
 
     /*
      * This is what the graph displays.
-     * After our running repair:
      *
-     *   L = {0,2,3}
-     *   R = {7,8,9,10}.
+     * Increase example:
+     *
+     *   bad 1 -> 2,
+     *   high buffers may decrease.
+     *
+     * Decrease repairs are handled by
+     * the same transformation helper,
+     * using the direction stored in the
+     * application.
      */
     outdegreePossibilities,
 
@@ -1255,8 +1188,14 @@ export default function usePlayground(
 
     startingOrientationComplete,
 
+    /*
+     * V2 intentionally disables
+     * Directed Menger after an oriented
+     * 2-factor has been removed.
+     */
     canApplyDirectedMengerRepair:
       startingOrientationComplete &&
+      directedMengerCompatibleWithConstruction &&
       state.directedMenger ===
         null,
 

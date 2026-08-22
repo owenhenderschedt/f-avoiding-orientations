@@ -51,6 +51,7 @@ import {
 import type {
   MengerCapacityRule,
   MengerDemandRule,
+  MengerRepairDirection,
 } from '../tools/directedMengerMath'
 
 type BlobLabProps = {
@@ -128,18 +129,27 @@ function getCombinedOutdegrees({
 }
 
 function getMengerRepairLatex(
-  demandRules:
-    readonly MengerDemandRule[],
+  application:
+    DirectedMengerApplication,
 ) {
-  return demandRules
+  return application
+    .demandRules
     .map(
-      (rule) =>
-        `${rule.outdegree}`
-        + '\\to'
-        + `${
-          rule.outdegree +
-          rule.demand
-        }`,
+      (rule) => {
+        const finalOutdegree =
+          application.direction ===
+          'increase'
+            ? rule.outdegree +
+              rule.demand
+            : rule.outdegree -
+              rule.demand
+
+        return (
+          `${rule.outdegree}`
+          + '\\to'
+          + `${finalOutdegree}`
+        )
+      },
     )
     .join(',\\ ')
 }
@@ -310,6 +320,9 @@ export default function BlobLab({
 
     capacityRules:
       readonly MengerCapacityRule[],
+
+    direction:
+      MengerRepairDirection,
   ) {
     const application =
       createDirectedMengerApplication({
@@ -323,6 +336,8 @@ export default function BlobLab({
         demandRules,
 
         capacityRules,
+
+        direction,
       })
 
     if (
@@ -1120,8 +1135,7 @@ export default function BlobLab({
                             {
                               getMengerRepairLatex(
                                 move
-                                  .application
-                                  .demandRules,
+                                  .application,
                               )
                             }
                           </Math>

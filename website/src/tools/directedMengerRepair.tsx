@@ -1,4 +1,8 @@
 import Math from '../components/Math'
+import {
+  getCapacityVisitedOutdegrees,
+  getDemandFinalOutdegree,
+} from './directedMengerMath'
 import type {
   DirectedMengerApplication,
 } from './directedMengerApplication'
@@ -22,26 +26,6 @@ function latexSet(
   )
 }
 
-function getCapacityLandingValues(
-  outdegree: number,
-  capacity: number,
-) {
-  const values:
-    number[] = []
-
-  for (
-    let used = 0;
-    used <= capacity;
-    used += 1
-  ) {
-    values.push(
-      outdegree - used,
-    )
-  }
-
-  return values
-}
-
 function getMengerRepairLatex(
   application:
     DirectedMengerApplication,
@@ -49,13 +33,25 @@ function getMengerRepairLatex(
   return application
     .demandRules
     .map(
-      (rule) =>
-        `${rule.outdegree}`
-        + '\\to'
-        + `${
-          rule.outdegree +
-          rule.demand
-        }`,
+      (rule) => {
+        const target =
+          getDemandFinalOutdegree({
+            outdegree:
+              rule.outdegree,
+
+            demand:
+              rule.demand,
+
+            direction:
+              application.direction,
+          })
+
+        return (
+          `${rule.outdegree}`
+          + '\\to'
+          + `${target}`
+        )
+      },
     )
     .join(',\\ ')
 }
@@ -160,6 +156,24 @@ export function DirectedMengerRepairReference({
     application?.degree ??
     degree
 
+  const applicationDirection =
+    application?.direction ??
+    'increase'
+
+  const applicationIsIncrease =
+    applicationDirection ===
+    'increase'
+
+  const demandRole =
+    applicationIsIncrease
+      ? 'receiver'
+      : 'sender'
+
+  const capacityRole =
+    applicationIsIncrease
+      ? 'donor'
+      : 'receiver'
+
   return (
     <div
       style={{
@@ -186,47 +200,69 @@ export function DirectedMengerRepairReference({
       <p>
         Let{' '}
         <Math>{'D'}</Math>{' '}
-        be a digraph, and let{' '}
+        be a digraph and let{' '}
         <Math>
           {'B\\subseteq V(D)'}
         </Math>{' '}
-        be a set of receiver
+        be the set of bad
         vertices. For each{' '}
         <Math>{'b\\in B'}</Math>,
-        prescribe a
-        nonnegative integer
-        demand{' '}
-        <Math>{'r(b)'}</Math>.
-        For each{' '}
+        prescribe a positive
+        integer demand{' '}
+        <Math>{'r(b)'}</Math>,
+        and for every{' '}
         <Math>
           {
             'v\\in V(D)\\setminus B'
           }
-        </Math>,
+        </Math>{' '}
         prescribe a
-        nonnegative integer
-        capacity{' '}
+        nonnegative capacity{' '}
         <Math>{'c(v)'}</Math>.
       </p>
 
       <p>
-        There exists a family
-        of pairwise
-        arc-disjoint directed
-        paths such that exactly{' '}
-        <Math>{'r(b)'}</Math>{' '}
-        paths end at each{' '}
+        There are two
+        symmetric one-sided
+        versions of the
+        directed Menger
+        repair.
+      </p>
+
+      <h4
+        style={{
+          marginTop:
+            '18px',
+
+          marginBottom:
+            '8px',
+        }}
+      >
+        Increase the bad
+        outdegrees
+      </h4>
+
+      <p>
+        Here each bad vertex{' '}
         <Math>{'b\\in B'}</Math>{' '}
-        and at most{' '}
+        is a receiver. We seek
+        exactly{' '}
+        <Math>{'r(b)'}</Math>{' '}
+        directed paths ending
+        at{' '}
+        <Math>{'b'}</Math>,
+        while at most{' '}
         <Math>{'c(v)'}</Math>{' '}
-        paths begin at each{' '}
-        <Math>
-          {
-            'v\\in V(D)\\setminus B'
-          }
-        </Math>{' '}
-        if and only if, for
-        every{' '}
+        paths may begin at each
+        nonbad vertex{' '}
+        <Math>{'v'}</Math>.
+      </p>
+
+      <p>
+        Such a pairwise
+        arc-disjoint path
+        family exists if and
+        only if, for every{' '}
         <Math>
           {
             'Y\\subseteq V(D)'
@@ -239,6 +275,57 @@ export function DirectedMengerRepairReference({
           '\\sum_{b\\in B\\cap Y} r(b)'
           + ' \\leq '
           + 'e_D(V(D)\\setminus Y,Y)'
+          + ' + '
+          + '\\sum_{v\\in Y\\setminus B} c(v).'
+        }
+      </PanelFormula>
+
+      <h4
+        style={{
+          marginTop:
+            '20px',
+
+          marginBottom:
+            '8px',
+        }}
+      >
+        Decrease the bad
+        outdegrees
+      </h4>
+
+      <p>
+        Here each bad vertex{' '}
+        <Math>{'b\\in B'}</Math>{' '}
+        is a sender. We seek
+        exactly{' '}
+        <Math>{'r(b)'}</Math>{' '}
+        directed paths
+        beginning at{' '}
+        <Math>{'b'}</Math>,
+        while at most{' '}
+        <Math>{'c(v)'}</Math>{' '}
+        paths may end at each
+        nonbad vertex{' '}
+        <Math>{'v'}</Math>.
+      </p>
+
+      <p>
+        Such a pairwise
+        arc-disjoint path
+        family exists if and
+        only if, for every{' '}
+        <Math>
+          {
+            'Y\\subseteq V(D)'
+          }
+        </Math>,
+      </p>
+
+      <PanelFormula>
+        {
+          '\\sum_{b\\in B\\cap Y} r(b)'
+          + ' \\leq '
+          + 'e_D(Y,V(D)\\setminus Y)'
           + ' + '
           + '\\sum_{v\\in Y\\setminus B} c(v).'
         }
@@ -272,13 +359,17 @@ export function DirectedMengerRepairReference({
             '#475569',
         }}
       >
-        This is the
-        capacitated directed
-        edge-Menger theorem,
-        equivalently an
-        integral
+        The decrease version
+        is exactly the
+        increase theorem
+        applied to the
+        reversed digraph.
+        Both are capacitated
+        directed edge-Menger
+        statements,
+        equivalently integral
         max-flow/min-cut
-        statement.
+        statements.
       </div>
 
       {/* FLOW INTERPRETATION */}
@@ -293,25 +384,21 @@ export function DirectedMengerRepairReference({
       </h3>
 
       <p>
-        Introduce a new source{' '}
+        For the increase
+        version, introduce a
+        source{' '}
         <Math>{'s'}</Math>{' '}
-        and a new sink{' '}
+        and sink{' '}
         <Math>{'t'}</Math>.
-        For each{' '}
-        <Math>
-          {
-            'v\\in V(D)\\setminus B'
-          }
-        </Math>,
-        join{' '}
+        Add an arc from{' '}
         <Math>{'s'}</Math>{' '}
-        to{' '}
+        to every nonbad
+        vertex{' '}
         <Math>{'v'}</Math>{' '}
         with capacity{' '}
-        <Math>{'c(v)'}</Math>.
-        For each{' '}
-        <Math>{'b\\in B'}</Math>,
-        join{' '}
+        <Math>{'c(v)'}</Math>,
+        and an arc from every
+        bad vertex{' '}
         <Math>{'b'}</Math>{' '}
         to{' '}
         <Math>{'t'}</Math>{' '}
@@ -320,9 +407,28 @@ export function DirectedMengerRepairReference({
       </p>
 
       <p>
-        Meeting every demand
-        is equivalent to
-        obtaining an integral{' '}
+        For the decrease
+        version, reverse these
+        roles: add an arc from{' '}
+        <Math>{'s'}</Math>{' '}
+        to each bad vertex{' '}
+        <Math>{'b'}</Math>{' '}
+        with capacity{' '}
+        <Math>{'r(b)'}</Math>,
+        and an arc from each
+        nonbad vertex{' '}
+        <Math>{'v'}</Math>{' '}
+        to{' '}
+        <Math>{'t'}</Math>{' '}
+        with capacity{' '}
+        <Math>{'c(v)'}</Math>.
+      </p>
+
+      <p>
+        In either case,
+        meeting every demand
+        is equivalent to an
+        integral{' '}
         <Math>{'s'}</Math>-
         <Math>{'t'}</Math>{' '}
         flow of value
@@ -337,14 +443,13 @@ export function DirectedMengerRepairReference({
       </PanelFormula>
 
       <p>
-        The displayed cut
-        inequality is exactly
-        the max-flow/min-cut
-        condition for such a
-        flow. Integrality then
-        decomposes the flow
-        into the required
-        arc-disjoint directed
+        Max-flow/min-cut gives
+        exactly the
+        corresponding cut
+        inequality above, and
+        integrality decomposes
+        the flow into the
+        required directed
         paths.
       </p>
 
@@ -366,14 +471,16 @@ export function DirectedMengerRepairReference({
       </h3>
 
       <p>
-        Let{' '}
-        <Math>{'D'}</Math>{' '}
-        be an orientation of
-        a graph, with receiver
-        set{' '}
-        <Math>{'B'}</Math>.
-        Suppose there exists
-        a real number
+        The global cut
+        conditions admit a
+        simple local
+        sufficient condition.
+      </p>
+
+      <p>
+        For an increase
+        repair, suppose there
+        is a real number
       </p>
 
       <PanelFormula>
@@ -387,7 +494,7 @@ export function DirectedMengerRepairReference({
       </PanelFormula>
 
       <p>
-        such that every
+        such that every bad
         receiver{' '}
         <Math>{'b\\in B'}</Math>{' '}
         satisfies
@@ -407,14 +514,8 @@ export function DirectedMengerRepairReference({
       </PanelFormula>
 
       <p>
-        and every
-        nonreceiver{' '}
-        <Math>
-          {
-            'v\\in V(D)\\setminus B'
-          }
-        </Math>{' '}
-        satisfies
+        and every nonbad
+        vertex satisfies
       </p>
 
       <PanelFormula>
@@ -431,13 +532,51 @@ export function DirectedMengerRepairReference({
       </PanelFormula>
 
       <p>
-        Then the cut
-        condition in the
-        theorem holds.
-        Consequently, the
-        required family of
-        directed repair paths
-        exists.
+        Then the increase cut
+        condition holds.
+      </p>
+
+      <p>
+        Symmetrically, for a
+        decrease repair it is
+        enough that every bad
+        sender satisfies
+      </p>
+
+      <PanelFormula>
+        {
+          'r(b)'
+          + ' \\leq '
+          + '\\alpha'
+          + '\\bigl('
+          + 'd_D^+(b)'
+          + '-'
+          + 'd_D^-(b)'
+          + '\\bigr),'
+        }
+      </PanelFormula>
+
+      <p>
+        while every nonbad
+        vertex satisfies
+      </p>
+
+      <PanelFormula>
+        {
+          '-c(v)'
+          + ' \\leq '
+          + '\\alpha'
+          + '\\bigl('
+          + 'd_D^+(v)'
+          + '-'
+          + 'd_D^-(v)'
+          + '\\bigr).'
+        }
+      </PanelFormula>
+
+      <p>
+        Then the decrease cut
+        condition holds.
       </p>
 
       {/* PROOF OF COROLLARY */}
@@ -456,6 +595,10 @@ export function DirectedMengerRepairReference({
       </h3>
 
       <p>
+        The two proofs are the
+        same after reversing
+        every arc, so consider
+        the increase version.
         Fix{' '}
         <Math>
           {
@@ -464,8 +607,7 @@ export function DirectedMengerRepairReference({
         </Math>.
         Summing the local
         inequalities over
-        the vertices of{' '}
-        <Math>{'Y'}</Math>{' '}
+        <Math>{'\\ Y'}</Math>{' '}
         gives
       </p>
 
@@ -490,9 +632,9 @@ export function DirectedMengerRepairReference({
         <Math>{'D[Y]'}</Math>{' '}
         contributes once to
         indegree and once to
-        outdegree, so these
-        contributions cancel.
-        Therefore
+        outdegree, so the
+        internal contributions
+        cancel. Hence
       </p>
 
       <PanelFormula>
@@ -511,7 +653,7 @@ export function DirectedMengerRepairReference({
       </PanelFormula>
 
       <p>
-        Set
+        Write
       </p>
 
       <PanelFormula>
@@ -520,14 +662,14 @@ export function DirectedMengerRepairReference({
           + ' = '
           + 'e_D(V(D)\\setminus Y,Y),'
           + '\\qquad '
-          + 'b'
+          + 'h'
           + ' = '
           + 'e_D(Y,V(D)\\setminus Y).'
         }
       </PanelFormula>
 
       <p>
-        Since{' '}
+        Because{' '}
         <Math>
           {
             '0\\leq\\alpha\\leq1'
@@ -537,7 +679,7 @@ export function DirectedMengerRepairReference({
 
       <PanelFormula>
         {
-          '\\alpha(a-b)'
+          '\\alpha(a-h)'
           + ' \\leq '
           + 'a.'
         }
@@ -545,43 +687,25 @@ export function DirectedMengerRepairReference({
 
       <p>
         Indeed, if{' '}
-        <Math>
-          {'a-b\\leq0'}
-        </Math>,
-        then the left side
-        is nonpositive. If{' '}
-        <Math>
-          {'a-b>0'}
-        </Math>,
+        <Math>{'a-h\\leq0'}</Math>,
+        the left side is
+        nonpositive, while if{' '}
+        <Math>{'a-h>0'}</Math>,
         then
       </p>
 
       <PanelFormula>
         {
-          '\\alpha(a-b)'
+          '\\alpha(a-h)'
           + ' \\leq '
-          + 'a-b'
+          + 'a-h'
           + ' \\leq '
           + 'a.'
         }
       </PanelFormula>
 
       <p>
-        Hence
-      </p>
-
-      <PanelFormula>
-        {
-          '\\sum_{b\\in B\\cap Y} r(b)'
-          + ' - '
-          + '\\sum_{v\\in Y\\setminus B} c(v)'
-          + ' \\leq '
-          + 'e_D(V(D)\\setminus Y,Y).'
-        }
-      </PanelFormula>
-
-      <p>
-        Rearranging gives
+        Therefore
       </p>
 
       <PanelFormula>
@@ -595,9 +719,12 @@ export function DirectedMengerRepairReference({
       </PanelFormula>
 
       <p>
-        which is exactly the
-        cut condition from the
-        theorem.
+        which is the increase
+        cut condition. Applying
+        the same argument to
+        the reversed digraph
+        proves the decrease
+        version.
       </p>
 
       {/* REGULAR GRAPH SPECIALIZATION */}
@@ -616,14 +743,14 @@ export function DirectedMengerRepairReference({
       </h3>
 
       <p>
-        If the underlying
+        Suppose the underlying
         graph is{' '}
         <Math>{'d'}</Math>
         -regular and a vertex
         currently has
         outdegree{' '}
-        <Math>{'q'}</Math>,
-        then
+        <Math>{'q'}</Math>.
+        Then
       </p>
 
       <PanelFormula>
@@ -634,17 +761,41 @@ export function DirectedMengerRepairReference({
           + ' = '
           + 'd'
           + '-'
-          + '2q.'
+          + '2q'
         }
       </PanelFormula>
 
+      <PanelFormula>
+        {
+          'd_D^+(v)'
+          + '-'
+          + 'd_D^-(v)'
+          + ' = '
+          + '2q'
+          + '-'
+          + 'd.'
+        }
+      </PanelFormula>
+
+      <h4
+        style={{
+          marginTop:
+            '19px',
+
+          marginBottom:
+            '8px',
+        }}
+      >
+        Increase
+      </h4>
+
       <p>
-        Thus a receiver of
-        current outdegree{' '}
+        A bad receiver of
+        outdegree{' '}
         <Math>{'q<d/2'}</Math>{' '}
         and demand{' '}
         <Math>{'r'}</Math>{' '}
-        gives the lower bound
+        gives
       </p>
 
       <PanelFormula>
@@ -656,12 +807,13 @@ export function DirectedMengerRepairReference({
       </PanelFormula>
 
       <p>
-        A donor of current
+        A buffer vertex of
         outdegree{' '}
         <Math>{'q>d/2'}</Math>{' '}
-        and capacity{' '}
+        that may donate at
+        most{' '}
         <Math>{'c'}</Math>{' '}
-        gives the upper bound
+        units gives
       </p>
 
       <PanelFormula>
@@ -672,10 +824,93 @@ export function DirectedMengerRepairReference({
         }
       </PanelFormula>
 
+      <h4
+        style={{
+          marginTop:
+            '19px',
+
+          marginBottom:
+            '8px',
+        }}
+      >
+        Decrease
+      </h4>
+
       <p>
-        Therefore the
-        playground can reduce
-        the global cut
+        A bad sender of
+        outdegree{' '}
+        <Math>{'q>d/2'}</Math>{' '}
+        and demand{' '}
+        <Math>{'r'}</Math>{' '}
+        gives
+      </p>
+
+      <PanelFormula>
+        {
+          '\\alpha'
+          + ' \\geq '
+          + '\\frac{r}{2q-d}.'
+        }
+      </PanelFormula>
+
+      <p>
+        A buffer vertex of
+        outdegree{' '}
+        <Math>{'q<d/2'}</Math>{' '}
+        that may absorb at
+        most{' '}
+        <Math>{'c'}</Math>{' '}
+        units gives
+      </p>
+
+      <PanelFormula>
+        {
+          '\\alpha'
+          + ' \\leq '
+          + '\\frac{c}{d-2q}.'
+        }
+      </PanelFormula>
+
+      <div
+        style={{
+          margin:
+            '16px 0 22px',
+
+          padding:
+            '12px 14px',
+
+          borderLeft:
+            '3px solid #94a3b8',
+
+          background:
+            '#f8fafc',
+
+          color:
+            '#475569',
+        }}
+      >
+        If{' '}
+        <Math>{'q=d/2'}</Math>,
+        then the local
+        imbalance is zero.
+        Therefore this{' '}
+        <Math>{'\\alpha'}</Math>
+        -certificate cannot
+        certify a positive
+        repair demand at that
+        class. This does not
+        say that a directed
+        Menger repair is
+        impossible; it only
+        says that this local
+        sufficient condition
+        gives no certificate.
+      </div>
+
+      <p>
+        Thus in the regular
+        setting the playground
+        reduces the global cut
         condition to a simple
         interval test for{' '}
         <Math>{'\\alpha'}</Math>.
@@ -712,9 +947,15 @@ export function DirectedMengerRepairReference({
           </h3>
 
           <p>
-            The starting
-            orientation has
-            possible total
+            This is a{' '}
+            <strong>
+              {applicationIsIncrease
+                ? 'increase'
+                : 'decrease'}
+            </strong>{' '}
+            repair. The
+            starting orientation
+            has possible total
             outdegrees
           </p>
 
@@ -750,7 +991,9 @@ export function DirectedMengerRepairReference({
                 '8px',
             }}
           >
-            Receiver demands
+            {applicationIsIncrease
+              ? 'Receiver demands'
+              : 'Sender demands'}
           </h4>
 
           {application
@@ -758,22 +1001,43 @@ export function DirectedMengerRepairReference({
             .map(
               (rule) => {
                 const target =
-                  rule.outdegree +
-                  rule.demand
+                  getDemandFinalOutdegree({
+                    outdegree:
+                      rule.outdegree,
 
-                const imbalance =
-                  effectiveDegree -
-                  2 *
-                    rule.outdegree
+                    demand:
+                      rule.demand,
+
+                    direction:
+                      application.direction,
+                  })
+
+                const signedImbalance =
+                  applicationIsIncrease
+                    ? effectiveDegree -
+                      2 *
+                        rule.outdegree
+                    : 2 *
+                        rule.outdegree -
+                      effectiveDegree
 
                 const bound =
                   rule.demand /
-                  imbalance
+                  signedImbalance
+
+                const localExpression =
+                  applicationIsIncrease
+                    ? `${effectiveDegree}`
+                      + '-'
+                      + `2\\cdot${rule.outdegree}`
+                    : `2\\cdot${rule.outdegree}`
+                      + '-'
+                      + `${effectiveDegree}`
 
                 return (
                   <div
                     key={
-                      `receiver-${rule.outdegree}`
+                      `demand-${rule.outdegree}`
                     }
                     style={{
                       marginBottom:
@@ -810,7 +1074,14 @@ export function DirectedMengerRepairReference({
                           '6px',
                       }}
                     >
-                      Demand:{' '}
+                      {demandRole
+                        .charAt(0)
+                        .toUpperCase()
+                        + demandRole.slice(
+                          1,
+                        )}{' '}
+                      demand:{' '}
+
                       <Math>
                         {
                           `r=${rule.demand}`
@@ -834,9 +1105,7 @@ export function DirectedMengerRepairReference({
                         + ' \\leq '
                         + '\\alpha'
                         + '\\bigl('
-                        + `${effectiveDegree}`
-                        + '-'
-                        + `2\\cdot${rule.outdegree}`
+                        + localExpression
                         + '\\bigr).'
                       }
                     </PanelFormula>
@@ -868,7 +1137,9 @@ export function DirectedMengerRepairReference({
                 '8px',
             }}
           >
-            Donor capacities
+            {applicationIsIncrease
+              ? 'Donor capacities'
+              : 'Receiver capacities'}
           </h4>
 
           {application
@@ -876,26 +1147,60 @@ export function DirectedMengerRepairReference({
             .map(
               (rule) => {
                 const landingValues =
-                  getCapacityLandingValues(
+                  getCapacityVisitedOutdegrees(
                     rule.outdegree,
+
                     rule.capacity,
+
+                    application.direction,
                   )
 
-                const imbalance =
-                  2 *
-                    rule.outdegree -
-                  effectiveDegree
+                /*
+                 * The local capacity
+                 * inequality uses the
+                 * same signed imbalance
+                 * as the chosen repair
+                 * direction.
+                 *
+                 * For the classes
+                 * exposed by the V2
+                 * workspace this value
+                 * is negative, giving
+                 * the displayed upper
+                 * bound.
+                 */
+                const signedImbalance =
+                  applicationIsIncrease
+                    ? effectiveDegree -
+                      2 *
+                        rule.outdegree
+                    : 2 *
+                        rule.outdegree -
+                      effectiveDegree
+
+                const opposingImbalance =
+                  -signedImbalance
 
                 const bound =
-                  imbalance > 0
+                  opposingImbalance >
+                  0
                     ? rule.capacity /
-                      imbalance
+                      opposingImbalance
                     : null
+
+                const localExpression =
+                  applicationIsIncrease
+                    ? `${effectiveDegree}`
+                      + '-'
+                      + `2\\cdot${rule.outdegree}`
+                    : `2\\cdot${rule.outdegree}`
+                      + '-'
+                      + `${effectiveDegree}`
 
                 return (
                   <div
                     key={
-                      `donor-${rule.outdegree}`
+                      `capacity-${rule.outdegree}`
                     }
                     style={{
                       marginBottom:
@@ -930,7 +1235,14 @@ export function DirectedMengerRepairReference({
                           '6px',
                       }}
                     >
-                      Capacity:{' '}
+                      {capacityRole
+                        .charAt(0)
+                        .toUpperCase()
+                        + capacityRole.slice(
+                          1,
+                        )}{' '}
+                      capacity:{' '}
+
                       <Math>
                         {
                           `c=${rule.capacity}`
@@ -957,9 +1269,7 @@ export function DirectedMengerRepairReference({
                             + ' \\leq '
                             + '\\alpha'
                             + '\\bigl('
-                            + `${effectiveDegree}`
-                            + '-'
-                            + `2\\cdot${rule.outdegree}`
+                            + localExpression
                             + '\\bigr).'
                           }
                         </PanelFormula>
@@ -989,6 +1299,7 @@ export function DirectedMengerRepairReference({
                       Possible
                       resulting
                       outdegrees:{' '}
+
                       <Math>
                         {
                           latexSet(
@@ -1072,8 +1383,11 @@ export function DirectedMengerRepairReference({
             inequalities. The
             corollary therefore
             verifies every cut
-            condition in the
-            theorem, and the
+            condition for this{' '}
+            {applicationIsIncrease
+              ? 'increase'
+              : 'decrease'}{' '}
+            repair, so the
             required directed
             path family exists.
           </p>
@@ -1114,8 +1428,6 @@ export function DirectedMengerRepairReference({
           </div>
         </>
       )}
-
-    
     </div>
   )
 }

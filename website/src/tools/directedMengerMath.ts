@@ -5,62 +5,95 @@
  * This file contains no React and no
  * playground state.
  *
- * Basic repair move:
+ * Basic directed-path move:
  *
- *   donor ----directed path----> receiver
+ *   x ----directed path----> y
  *
- * Reversing the path decreases the
- * donor's outdegree by 1 and increases
- * the receiver's outdegree by 1.
+ * Reversing the path changes only the
+ * endpoint outdegrees:
+ *
+ *   d+(x) decreases by 1,
+ *   d+(y) increases by 1.
  *
  * Internal vertices keep the same
  * outdegree.
+ *
+ * Therefore there are two symmetric
+ * one-sided repair modes.
+ *
+ * INCREASE:
+ *
+ *   buffer ----path----> bad vertex
+ *
+ * The bad vertex gains outdegree and
+ * the buffer vertex loses outdegree.
+ *
+ * DECREASE:
+ *
+ *   bad vertex ----path----> buffer
+ *
+ * The bad vertex loses outdegree and
+ * the buffer vertex gains outdegree.
  */
+
+export type MengerRepairDirection =
+  | 'increase'
+  | 'decrease'
 
 export type MengerDemandRule = {
   /*
    * Current total outdegree of the
-   * receiver class.
+   * bad class being repaired.
    */
   outdegree: number
 
   /*
-   * Exact number of repair paths that
-   * must end at each vertex in this
-   * class.
+   * Exact amount by which the bad
+   * outdegree must move.
    *
-   * Example:
+   * In increase mode:
    *
-   *   1 -> 2
+   *   q -> q + demand.
    *
-   * has demand 1.
+   * In decrease mode:
+   *
+   *   q -> q - demand.
    */
   demand: number
 }
 
 export type MengerCapacityRule = {
   /*
-   * Current total outdegree of the
-   * donor class.
+   * Current total outdegree of a
+   * buffer class.
    */
   outdegree: number
 
   /*
    * Maximum number of repair paths
-   * that may begin at a vertex in this
-   * class.
+   * that may use a vertex in this
+   * class as the opposite endpoint.
    *
-   * Example:
+   * In increase mode the buffer loses
+   * outdegree:
    *
-   *   10 -> 9 -> 8 -> 7
+   *   q, q-1, ..., q-capacity.
    *
-   * has capacity 3.
+   * In decrease mode the buffer gains
+   * outdegree:
+   *
+   *   q, q+1, ..., q+capacity.
    */
   capacity: number
 }
 
 export type MengerEndpointSafetyCheck = {
-  kind: 'demand' | 'capacity'
+  kind:
+    | 'demand'
+    | 'capacity'
+
+  direction:
+    MengerRepairDirection
 
   outdegree: number
 
@@ -74,12 +107,25 @@ export type MengerEndpointSafetyCheck = {
 export type MengerAlphaLowerBound = {
   kind: 'demand'
 
+  direction:
+    MengerRepairDirection
+
   outdegree: number
 
   demand: number
 
   /*
-   * d - 2d^+(v).
+   * Positive imbalance available at
+   * a bad vertex in the chosen repair
+   * direction.
+   *
+   * Increase:
+   *
+   *   d - 2q.
+   *
+   * Decrease:
+   *
+   *   2q - d.
    */
   imbalance: number
 
@@ -94,12 +140,24 @@ export type MengerAlphaLowerBound = {
 export type MengerAlphaUpperBound = {
   kind: 'capacity'
 
+  direction:
+    MengerRepairDirection
+
   outdegree: number
 
   capacity: number
 
   /*
-   * 2d^+(v) - d.
+   * Positive imbalance opposing the
+   * chosen repair direction.
+   *
+   * Increase:
+   *
+   *   2q - d.
+   *
+   * Decrease:
+   *
+   *   d - 2q.
    */
   imbalance: number
 
@@ -113,6 +171,9 @@ export type MengerAlphaUpperBound = {
 
 export type DirectedMengerAlphaCertificate = {
   degree: number
+
+  direction:
+    MengerRepairDirection
 
   demandBounds:
     MengerAlphaLowerBound[]
@@ -129,6 +190,9 @@ export type DirectedMengerAlphaCertificate = {
 
 export type DirectedMengerRepairCertificate = {
   degree: number
+
+  direction:
+    MengerRepairDirection
 
   currentOutdegrees: number[]
 
@@ -164,7 +228,8 @@ function uniqueSorted(
   return Array.from(
     new Set(values),
   ).sort(
-    (a, b) => a - b,
+    (a, b) =>
+      a - b,
   )
 }
 
@@ -173,7 +238,9 @@ function isIntegerInDegreeRange(
   degree: number,
 ) {
   return (
-    Number.isInteger(value) &&
+    Number.isInteger(
+      value,
+    ) &&
     value >= 0 &&
     value <= degree
   )
@@ -183,7 +250,9 @@ function isPositiveInteger(
   value: number,
 ) {
   return (
-    Number.isInteger(value) &&
+    Number.isInteger(
+      value,
+    ) &&
     value > 0
   )
 }
@@ -192,9 +261,77 @@ function isNonnegativeInteger(
   value: number,
 ) {
   return (
-    Number.isInteger(value) &&
+    Number.isInteger(
+      value,
+    ) &&
     value >= 0
   )
+}
+
+function getDirectionStep(
+  direction:
+    MengerRepairDirection,
+) {
+  return direction ===
+    'increase'
+    ? 1
+    : -1
+}
+
+function getDemandImbalance({
+  degree,
+  outdegree,
+  direction,
+}: {
+  degree: number
+  outdegree: number
+  direction:
+    MengerRepairDirection
+}) {
+  /*
+   * Increase uses
+   *
+   *   d^- - d^+
+   *   =
+   *   d - 2q.
+   *
+   * Decrease uses
+   *
+   *   d^+ - d^-
+   *   =
+   *   2q - d.
+   */
+  return direction ===
+    'increase'
+    ? degree -
+        2 * outdegree
+    : 2 * outdegree -
+        degree
+}
+
+function getCapacityImbalance({
+  degree,
+  outdegree,
+  direction,
+}: {
+  degree: number
+  outdegree: number
+  direction:
+    MengerRepairDirection
+}) {
+  /*
+   * This is the positive quantity
+   * appearing when a capacity class
+   * creates an upper bound on alpha.
+   *
+   * It is exactly the negative of the
+   * demand imbalance.
+   */
+  return -getDemandImbalance({
+    degree,
+    outdegree,
+    direction,
+  })
 }
 
 function rulesUseDistinctClasses(
@@ -248,20 +385,50 @@ function rulesUseDistinctClasses(
   )
 }
 
+export function getDemandFinalOutdegree({
+  outdegree,
+  demand,
+  direction = 'increase',
+}: {
+  outdegree: number
+  demand: number
+
+  direction?:
+    MengerRepairDirection
+}) {
+  return (
+    outdegree +
+    getDirectionStep(
+      direction,
+    ) *
+      demand
+  )
+}
+
 export function getDemandVisitedOutdegrees(
   outdegree: number,
   demand: number,
+  direction:
+    MengerRepairDirection =
+      'increase',
 ) {
   const values:
     number[] = []
 
+  const step =
+    getDirectionStep(
+      direction,
+    )
+
   for (
-    let step = 0;
-    step <= demand;
-    step += 1
+    let amount = 0;
+    amount <= demand;
+    amount += 1
   ) {
     values.push(
-      outdegree + step,
+      outdegree +
+        step *
+          amount,
     )
   }
 
@@ -271,17 +438,40 @@ export function getDemandVisitedOutdegrees(
 export function getCapacityVisitedOutdegrees(
   outdegree: number,
   capacity: number,
+  direction:
+    MengerRepairDirection =
+      'increase',
 ) {
   const values:
     number[] = []
 
+  /*
+   * Capacity vertices move in the
+   * opposite direction from demand
+   * vertices.
+   *
+   * Increase repair:
+   *
+   *   q -> q-j.
+   *
+   * Decrease repair:
+   *
+   *   q -> q+j.
+   */
+  const step =
+    -getDirectionStep(
+      direction,
+    )
+
   for (
-    let step = 0;
-    step <= capacity;
-    step += 1
+    let amount = 0;
+    amount <= capacity;
+    amount += 1
   ) {
     values.push(
-      outdegree - step,
+      outdegree +
+        step *
+          amount,
     )
   }
 
@@ -292,6 +482,7 @@ export function getDemandEndpointSafetyCheck({
   degree,
   forbiddenSet,
   rule,
+  direction = 'increase',
 }: {
   degree: number
 
@@ -300,16 +491,27 @@ export function getDemandEndpointSafetyCheck({
 
   rule:
     MengerDemandRule
+
+  direction?:
+    MengerRepairDirection
 }): MengerEndpointSafetyCheck {
   const visitedOutdegrees =
     getDemandVisitedOutdegrees(
       rule.outdegree,
       rule.demand,
+      direction,
     )
 
   const finalOutdegree =
-    rule.outdegree +
-    rule.demand
+    getDemandFinalOutdegree({
+      outdegree:
+        rule.outdegree,
+
+      demand:
+        rule.demand,
+
+      direction,
+    })
 
   /*
    * The starting value is allowed to
@@ -317,7 +519,7 @@ export function getDemandEndpointSafetyCheck({
    * why it belongs to the bad set.
    *
    * The demand is exact, so only the
-   * final value must be F-safe.
+   * final value needs to be F-safe.
    */
   const passes =
     isIntegerInDegreeRange(
@@ -327,14 +529,19 @@ export function getDemandEndpointSafetyCheck({
     isPositiveInteger(
       rule.demand,
     ) &&
-    finalOutdegree <=
-      degree &&
+    isIntegerInDegreeRange(
+      finalOutdegree,
+      degree,
+    ) &&
     !forbiddenSet.includes(
       finalOutdegree,
     )
 
   return {
-    kind: 'demand',
+    kind:
+      'demand',
+
+    direction,
 
     outdegree:
       rule.outdegree,
@@ -352,6 +559,7 @@ export function getCapacityEndpointSafetyCheck({
   degree,
   forbiddenSet,
   rule,
+  direction = 'increase',
 }: {
   degree: number
 
@@ -360,21 +568,25 @@ export function getCapacityEndpointSafetyCheck({
 
   rule:
     MengerCapacityRule
+
+  direction?:
+    MengerRepairDirection
 }): MengerEndpointSafetyCheck {
   const visitedOutdegrees =
     getCapacityVisitedOutdegrees(
       rule.outdegree,
       rule.capacity,
+      direction,
     )
 
   /*
-   * A donor may actually be used
-   * 0,1,...,capacity times.
+   * A capacity vertex may actually be
+   * used 0,1,...,capacity times.
    *
-   * Thus every possible landing value
-   * must be F-safe, including the
-   * current value corresponding to
-   * zero uses.
+   * Thus every possible resulting
+   * outdegree must be F-safe,
+   * including the current value
+   * corresponding to zero uses.
    */
   const passes =
     isIntegerInDegreeRange(
@@ -384,18 +596,22 @@ export function getCapacityEndpointSafetyCheck({
     isNonnegativeInteger(
       rule.capacity,
     ) &&
-    rule.outdegree -
-      rule.capacity >=
-      0 &&
     visitedOutdegrees.every(
       (value) =>
+        isIntegerInDegreeRange(
+          value,
+          degree,
+        ) &&
         !forbiddenSet.includes(
           value,
         ),
     )
 
   return {
-    kind: 'capacity',
+    kind:
+      'capacity',
+
+    direction,
 
     outdegree:
       rule.outdegree,
@@ -447,8 +663,8 @@ function getEffectiveCapacityRules({
    * outside the bad set.
    *
    * Any class not explicitly given a
-   * positive capacity is interpreted
-   * as capacity zero.
+   * capacity is interpreted as
+   * capacity zero.
    */
   return currentOutdegrees
     .filter(
@@ -475,6 +691,7 @@ export function getMengerAlphaCertificate({
   currentOutdegrees,
   demandRules,
   capacityRules,
+  direction = 'increase',
 }: {
   degree: number
 
@@ -486,6 +703,9 @@ export function getMengerAlphaCertificate({
 
   capacityRules:
     readonly MengerCapacityRule[]
+
+  direction?:
+    MengerRepairDirection
 }): DirectedMengerAlphaCertificate {
   const demandBounds =
     demandRules.map(
@@ -493,16 +713,27 @@ export function getMengerAlphaCertificate({
         rule,
       ): MengerAlphaLowerBound => {
         /*
-         * At a receiver of current
-         * outdegree q:
+         * INCREASE:
          *
          *   r
          *   <=
          *   alpha(d-2q).
+         *
+         * DECREASE:
+         *
+         *   r
+         *   <=
+         *   alpha(2q-d).
          */
         const imbalance =
-          degree -
-          2 * rule.outdegree
+          getDemandImbalance({
+            degree,
+
+            outdegree:
+              rule.outdegree,
+
+            direction,
+          })
 
         const valid =
           isIntegerInDegreeRange(
@@ -518,10 +749,14 @@ export function getMengerAlphaCertificate({
           valid
             ? rule.demand /
               imbalance
-            : Number.POSITIVE_INFINITY
+            : Number
+                .POSITIVE_INFINITY
 
         return {
-          kind: 'demand',
+          kind:
+            'demand',
+
+          direction,
 
           outdegree:
             rule.outdegree,
@@ -548,31 +783,76 @@ export function getMengerAlphaCertificate({
     })
 
   /*
-   * For q <= d/2, the inequality
+   * Every effective capacity rule
+   * must itself be meaningful, even
+   * when its local alpha inequality
+   * is automatic.
+   */
+  const allCapacityRulesValid =
+    effectiveCapacityRules.every(
+      (rule) =>
+        isIntegerInDegreeRange(
+          rule.outdegree,
+          degree,
+        ) &&
+        isNonnegativeInteger(
+          rule.capacity,
+        ),
+    )
+
+  /*
+   * A capacity class gives an upper
+   * bound only when its imbalance
+   * points against the chosen repair
+   * direction.
    *
-   *   -c(q)
-   *   <=
-   *   alpha(d-2q)
+   * INCREASE:
    *
-   * is automatic for alpha >= 0.
+   *   q > d/2
    *
-   * Only high-outdegree classes give
-   * an upper bound on alpha.
+   * gives
+   *
+   *   alpha <= c/(2q-d).
+   *
+   * DECREASE:
+   *
+   *   q < d/2
+   *
+   * gives
+   *
+   *   alpha <= c/(d-2q).
+   *
+   * On the other side of d/2, the
+   * capacity inequality is automatic
+   * for alpha >= 0.
    */
   const capacityBounds =
     effectiveCapacityRules
       .filter(
         (rule) =>
-          2 * rule.outdegree >
-          degree,
+          getCapacityImbalance({
+            degree,
+
+            outdegree:
+              rule.outdegree,
+
+            direction,
+          }) >
+          0,
       )
       .map(
         (
           rule,
         ): MengerAlphaUpperBound => {
           const imbalance =
-            2 * rule.outdegree -
-            degree
+            getCapacityImbalance({
+              degree,
+
+              outdegree:
+                rule.outdegree,
+
+              direction,
+            })
 
           const valid =
             isIntegerInDegreeRange(
@@ -581,16 +861,21 @@ export function getMengerAlphaCertificate({
             ) &&
             isNonnegativeInteger(
               rule.capacity,
-            )
+            ) &&
+            imbalance > 0
 
           const bound =
             valid
               ? rule.capacity /
                 imbalance
-              : Number.NEGATIVE_INFINITY
+              : Number
+                  .NEGATIVE_INFINITY
 
           return {
-            kind: 'capacity',
+            kind:
+              'capacity',
+
+            direction,
 
             outdegree:
               rule.outdegree,
@@ -613,7 +898,7 @@ export function getMengerAlphaCertificate({
         check.valid,
     )
 
-  const allCapacityRulesValid =
+  const allCapacityBoundsValid =
     capacityBounds.every(
       (check) =>
         check.valid,
@@ -662,6 +947,7 @@ export function getMengerAlphaCertificate({
     demandRules.length > 0 &&
     allDemandRulesValid &&
     allCapacityRulesValid &&
+    allCapacityBoundsValid &&
     lowerBound >= 0 &&
     lowerBound <= 1 &&
     upperBound >= 0 &&
@@ -671,6 +957,8 @@ export function getMengerAlphaCertificate({
 
   return {
     degree,
+
+    direction,
 
     demandBounds,
 
@@ -690,6 +978,7 @@ export function getDirectedMengerRepairCertificate({
   currentOutdegrees,
   demandRules,
   capacityRules,
+  direction = 'increase',
 }: {
   degree: number
 
@@ -704,6 +993,9 @@ export function getDirectedMengerRepairCertificate({
 
   capacityRules:
     readonly MengerCapacityRule[]
+
+  direction?:
+    MengerRepairDirection
 }): DirectedMengerRepairCertificate {
   const normalizedForbiddenSet =
     uniqueSorted(
@@ -784,12 +1076,12 @@ export function getDirectedMengerRepairCertificate({
     )
 
   /*
-   * The bad set B consists precisely
-   * of vertices whose CURRENT
-   * outdegree is forbidden.
+   * B is the set of vertices whose
+   * CURRENT outdegree is forbidden.
    *
-   * Hence demand rules may only be
-   * assigned to currently bad classes.
+   * Therefore demand rules may only
+   * be assigned to currently bad
+   * classes.
    */
   const allDemandClassesBad =
     normalizedDemandRules.every(
@@ -847,6 +1139,8 @@ export function getDirectedMengerRepairCertificate({
             normalizedForbiddenSet,
 
           rule,
+
+          direction,
         }),
     ),
 
@@ -859,6 +1153,8 @@ export function getDirectedMengerRepairCertificate({
             normalizedForbiddenSet,
 
           rule,
+
+          direction,
         }),
     ),
   ]
@@ -881,10 +1177,14 @@ export function getDirectedMengerRepairCertificate({
 
       capacityRules:
         normalizedCapacityRules,
+
+      direction,
     })
 
   return {
     degree,
+
+    direction,
 
     currentOutdegrees:
       normalizedCurrentOutdegrees,
@@ -913,6 +1213,7 @@ export function getDirectedMengerRepairCertificate({
       rolesValid &&
       coversAllBadClasses &&
       endpointSafe &&
-      alphaCertificate.applicable,
+      alphaCertificate
+        .applicable,
   }
 }

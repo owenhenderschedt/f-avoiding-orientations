@@ -1,3 +1,7 @@
+import {
+  getCapacityVisitedOutdegrees,
+  getDemandFinalOutdegree,
+} from '../tools/directedMengerMath'
 import type {
   DirectedMengerApplication,
 } from '../tools/directedMengerApplication'
@@ -56,20 +60,32 @@ function getCapacityRule(
  * to one current set of possible TOTAL
  * outdegrees.
  *
- * Receiver class:
+ * There are two symmetric one-sided
+ * repair directions.
+ *
+ * INCREASE
+ *
+ * Bad demand class:
  *
  *   q -> q+r
  *
- * because each receiver gets exactly r
- * repair paths.
+ * Buffer capacity class:
  *
- * Donor class:
+ *   q -> {q-c,...,q}.
  *
- *   q -> {q-c,...,q}
+ * DECREASE
  *
- * because each donor may actually be
- * used any number of times from zero
- * through its capacity.
+ * Bad demand class:
+ *
+ *   q -> q-r
+ *
+ * Buffer capacity class:
+ *
+ *   q -> {q,...,q+c}.
+ *
+ * A demand is exact, while a capacity
+ * endpoint may be used any number of
+ * times from zero through its capacity.
  *
  * Every other outdegree class remains
  * unchanged.
@@ -100,8 +116,15 @@ export function getDirectedMengerRepairedOutdegrees({
         null
       ) {
         result.push(
-          outdegree +
-            demandRule.demand,
+          getDemandFinalOutdegree({
+            outdegree,
+
+            demand:
+              demandRule.demand,
+
+            direction:
+              application.direction,
+          }),
         )
 
         return
@@ -117,17 +140,15 @@ export function getDirectedMengerRepairedOutdegrees({
         capacityRule !==
         null
       ) {
-        for (
-          let used = 0;
-          used <=
-          capacityRule.capacity;
-          used += 1
-        ) {
-          result.push(
-            outdegree -
-              used,
-          )
-        }
+        result.push(
+          ...getCapacityVisitedOutdegrees(
+            outdegree,
+
+            capacityRule.capacity,
+
+            application.direction,
+          ),
+        )
 
         return
       }
@@ -150,9 +171,9 @@ export function getDirectedMengerRepairedOutdegrees({
  * total outdegree classes could occur
  * on L and on R before the repair.
  *
- * Applying the same class rules to
- * each side therefore gives the new
- * displayed possibilities.
+ * Applying the same certified class
+ * rules to each side therefore gives
+ * the new displayed possibilities.
  */
 export function getDirectedMengerRepairedPartOutdegrees({
   L,
