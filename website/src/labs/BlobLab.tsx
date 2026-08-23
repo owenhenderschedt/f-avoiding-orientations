@@ -47,9 +47,25 @@ import type {
   MaLuTarget,
 } from '../tools/maLuMath'
 import {
+  StabilizeOutdegreeClassReference,
+  stabilizeOutdegreeClassTool,
+} from '../tools/stabilizeOutdegreeClass'
+import type {
+  StabilizeOutdegreeClassApplication,
+} from '../tools/stabilizeOutdegreeClassApplication'
+import type {
+  StabilizeTarget,
+} from '../tools/stabilizeOutdegreeClassMath'
+import {
   DirectedMengerRepairReference,
   directedMengerRepairTool,
 } from '../tools/directedMengerRepair'
+import {
+  DirectedMengerReservoirReference,
+} from '../tools/directedMengerReservoir'
+import type {
+  DirectedMengerReservoirApplication,
+} from '../tools/directedMengerReservoirApplication'
 import {
   createDirectedMengerApplication,
   type DirectedMengerApplication,
@@ -96,9 +112,23 @@ type ActiveReference =
         MaLuApplication | null
     }
   | {
+      type:
+        'stabilize-outdegree-class'
+      target:
+        StabilizeTarget
+      application:
+        StabilizeOutdegreeClassApplication | null
+    }
+  | {
       type: 'directed-menger'
       application:
         DirectedMengerApplication | null
+    }
+  | {
+      type:
+        'directed-menger-reservoir'
+      application:
+        DirectedMengerReservoirApplication | null
     }
   | null
 
@@ -203,6 +233,25 @@ function getHasanvandRuleLatex(
     .join(',\\ ')
 }
 
+function getStabilizeTargetLatex(
+  target:
+    StabilizeTarget,
+) {
+  if (
+    target === 'L'
+  ) {
+    return 'G[L]'
+  }
+
+  if (
+    target === 'R'
+  ) {
+    return 'G[R]'
+  }
+
+  return 'G'
+}
+
 export default function BlobLab({
   degree,
   forbiddenSet,
@@ -223,9 +272,16 @@ export default function BlobLab({
   ] =
     useState(false)
 
+  /*
+   * Reservoir Menger needs to know the
+   * actual forbidden set in order to
+   * verify q+1 and the reservoir
+   * interval are safe.
+   */
   const playground =
     usePlayground(
       degree,
+      forbiddenSet,
     )
 
   const wholeGraphOriented =
@@ -359,6 +415,36 @@ export default function BlobLab({
     })
   }
 
+  function openStabilizeSelectorReference(
+    target:
+      StabilizeTarget,
+  ) {
+    setActiveReference({
+      type:
+        'stabilize-outdegree-class',
+
+      target,
+
+      application:
+        null,
+    })
+  }
+
+  function openAppliedStabilizeReference(
+    application:
+      StabilizeOutdegreeClassApplication,
+  ) {
+    setActiveReference({
+      type:
+        'stabilize-outdegree-class',
+
+      target:
+        application.target,
+
+      application,
+    })
+  }
+
   function openDirectedMengerTheorem() {
     setActiveReference({
       type:
@@ -376,6 +462,18 @@ export default function BlobLab({
     setActiveReference({
       type:
         'directed-menger',
+
+      application,
+    })
+  }
+
+  function openDirectedMengerReservoirReference(
+    application:
+      DirectedMengerReservoirApplication,
+  ) {
+    setActiveReference({
+      type:
+        'directed-menger-reservoir',
 
       application,
     })
@@ -456,9 +554,15 @@ export default function BlobLab({
                 'ma-lu'
               ? maLuTool.name
               : activeReference?.type ===
-                  'directed-menger'
-                ? directedMengerRepairTool.name
-                : lovaszPartitionTool.name
+                  'stabilize-outdegree-class'
+                ? stabilizeOutdegreeClassTool.name
+                : activeReference?.type ===
+                    'directed-menger-reservoir'
+                  ? 'Directed Menger — Reservoir certificate'
+                  : activeReference?.type ===
+                      'directed-menger'
+                    ? directedMengerRepairTool.name
+                    : lovaszPartitionTool.name
 
   const forbiddenSetMath =
     `\\{${forbiddenSet.join(
@@ -679,9 +783,17 @@ export default function BlobLab({
               playground
                 .hasanvandApplicationR
             }
+            stabilizeOutdegreeClassApplication={
+              playground
+                .stabilizeOutdegreeClassApplication
+            }
             directedMengerApplication={
               playground
                 .directedMengerApplication
+            }
+            directedMengerReservoirApplication={
+              playground
+                .directedMengerReservoirApplication
             }
             outdegreeGuarantees={
               playground
@@ -722,8 +834,14 @@ export default function BlobLab({
             onOpenHasanvandReference={
               openAppliedHasanvandReference
             }
+            onOpenStabilizeOutdegreeClassReference={
+              openAppliedStabilizeReference
+            }
             onOpenDirectedMengerReference={
               openAppliedDirectedMengerReference
+            }
+            onOpenDirectedMengerReservoirReference={
+              openDirectedMengerReservoirReference
             }
             onOpenTwoFactorReference={() =>
               setActiveReference({
@@ -819,6 +937,33 @@ export default function BlobLab({
                 playground
                   .hasanvandR
               }
+              stabilizeOutdegreeClassApplied={
+                playground
+                  .stabilizeOutdegreeClassApplied
+              }
+              canStabilizeG={
+                playground
+                  .canStabilizeG
+              }
+              canStabilizeL={
+                playground
+                  .canStabilizeL
+              }
+              canStabilizeR={
+                playground
+                  .canStabilizeR
+              }
+              preStabilizationOutdegreePossibilities={
+                playground
+                  .preStabilizationOutdegreePossibilities
+              }
+              onApplyStabilizeOutdegreeClass={
+                playground
+                  .applyStabilizeOutdegreeClass
+              }
+              onOpenStabilizeOutdegreeClassReference={
+                openStabilizeSelectorReference
+              }
               directedMengerApplied={
                 playground
                   .directedMengerApplied
@@ -829,6 +974,17 @@ export default function BlobLab({
               }
               onOpenDirectedMengerWorkspace={
                 openDirectedMengerWorkspace
+              }
+              directedMengerReservoirCandidate={
+                playground
+                  .directedMengerReservoirCandidate
+              }
+              onApplyDirectedMengerReservoirRepair={
+                playground
+                  .applyDirectedMengerReservoirRepair
+              }
+              onOpenDirectedMengerReservoirReference={
+                openDirectedMengerReservoirReference
               }
               onApplyLovasz={
                 playground
@@ -964,7 +1120,7 @@ export default function BlobLab({
 
                           <Math>
                             {
-                              `(${move.pair.s},${move.pair.t})`
+                              `(${move.application.pair.s},${move.application.pair.t})`
                             }
                           </Math>
                         </span>
@@ -1257,6 +1413,38 @@ export default function BlobLab({
 
                     if (
                       move.type ===
+                      'stabilize-outdegree-class'
+                    ) {
+                      return (
+                        <span
+                          key={
+                            index
+                          }
+                        >
+                          Stabilize{' '}
+
+                          <Math>
+                            {
+                              `${move.application.q}`
+                            }
+                          </Math>
+                          -class in{' '}
+
+                          <Math>
+                            {
+                              getStabilizeTargetLatex(
+                                move
+                                  .application
+                                  .target,
+                              )
+                            }
+                          </Math>
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
                       'directed-menger-repair'
                     ) {
                       return (
@@ -1274,6 +1462,30 @@ export default function BlobLab({
                                 move
                                   .application,
                               )
+                            }
+                          </Math>
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
+                      'directed-menger-reservoir-repair'
+                    ) {
+                      return (
+                        <span
+                          key={
+                            index
+                          }
+                        >
+                          Reservoir
+                          Menger repair{' '}
+
+                          <Math>
+                            {
+                              `${move.application.q}`
+                              + '\\to'
+                              + `${move.application.repairedOutdegree}`
                             }
                           </Math>
                         </span>
@@ -1316,6 +1528,10 @@ export default function BlobLab({
             partition={
               playground
                 .partition
+            }
+            application={
+              playground
+                .lovaszApplication
             }
           />
         )}
@@ -1415,6 +1631,20 @@ export default function BlobLab({
         )}
 
         {activeReference?.type ===
+          'stabilize-outdegree-class' && (
+          <StabilizeOutdegreeClassReference
+            target={
+              activeReference
+                .target
+            }
+            application={
+              activeReference
+                .application
+            }
+          />
+        )}
+
+        {activeReference?.type ===
           'directed-menger' && (
           <DirectedMengerRepairReference
             degree={
@@ -1423,6 +1653,16 @@ export default function BlobLab({
             forbiddenSet={
               forbiddenSet
             }
+            application={
+              activeReference
+                .application
+            }
+          />
+        )}
+
+        {activeReference?.type ===
+          'directed-menger-reservoir' && (
+          <DirectedMengerReservoirReference
             application={
               activeReference
                 .application

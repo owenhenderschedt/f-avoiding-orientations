@@ -1,11 +1,9 @@
-import InitialGraphView from './InitialGraphView'
-import PartitionGraphView from './PartitionGraphView'
-import {
-  allOutdegrees,
-} from './outdegreePossibilities'
 import type {
   LovaszPair,
 } from '../tools/lovaszPartition'
+import type {
+  AcrossDirection,
+} from '../tools/orientAcrossPartition'
 import type {
   BalancedTarget,
 } from '../tools/balancedOrientation'
@@ -19,15 +17,24 @@ import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
 import type {
+  StabilizeOutdegreeClassApplication,
+} from '../tools/stabilizeOutdegreeClassApplication'
+import type {
   DirectedMengerApplication,
 } from '../tools/directedMengerApplication'
 import type {
-  AcrossDirection,
-  AcrossOutdegreeGuarantees,
-} from '../tools/orientAcrossPartition'
+  DirectedMengerReservoirApplication,
+} from '../tools/directedMengerReservoirApplication'
+import {
+  allOutdegrees,
+  type PartOutdegreePossibilities,
+} from './outdegreePossibilities'
+import InitialGraphView from './InitialGraphView'
+import PartitionGraphView from './PartitionGraphView'
 
 type GraphViewProps = {
-  degree: number
+  degree:
+    number
 
   workingDegree:
     number
@@ -47,9 +54,14 @@ type GraphViewProps = {
   acrossDirection:
     AcrossDirection | null
 
-  balancedG: boolean
-  balancedL: boolean
-  balancedR: boolean
+  balancedG:
+    boolean
+
+  balancedL:
+    boolean
+
+  balancedR:
+    boolean
 
   avoidCG:
     number | null
@@ -60,58 +72,99 @@ type GraphViewProps = {
   avoidCR:
     number | null
 
-  maLuApplicationG?:
+  maLuApplicationG:
     MaLuApplication | null
 
-  maLuApplicationL?:
+  maLuApplicationL:
     MaLuApplication | null
 
-  maLuApplicationR?:
+  maLuApplicationR:
     MaLuApplication | null
 
-  hasanvandApplicationG?:
+  hasanvandApplicationG:
     HasanvandApplication | null
 
-  hasanvandApplicationL?:
+  hasanvandApplicationL:
     HasanvandApplication | null
 
-  hasanvandApplicationR?:
+  hasanvandApplicationR:
     HasanvandApplication | null
 
-  directedMengerApplication?:
+  stabilizeOutdegreeClassApplication:
+    StabilizeOutdegreeClassApplication | null
+
+  directedMengerApplication:
     DirectedMengerApplication | null
 
-  outdegreeGuarantees:
-    AcrossOutdegreeGuarantees | null
+  /*
+   * NEW:
+   * Reservoir Menger only occurs after
+   * a Lovasz partition, so this will
+   * eventually be consumed by
+   * PartitionGraphView.
+   *
+   * Optional for the current staged
+   * wiring step so BlobLab does not
+   * break before we update it.
+   */
+  directedMengerReservoirApplication?:
+    DirectedMengerReservoirApplication | null
+
+  outdegreeGuarantees?:
+    PartOutdegreePossibilities
 
   onOpenLovaszReference:
     () => void
 
-  onOpenBalancedReference: (
-    target:
-      BalancedTarget,
-  ) => void
+  onOpenBalancedReference:
+    (
+      target:
+        BalancedTarget,
+    ) => void
 
-  onOpenAvoidCReference: (
-    target:
-      AvoidCTarget,
-    c: number,
-  ) => void
+  onOpenAvoidCReference:
+    (
+      target:
+        AvoidCTarget,
 
-  onOpenMaLuReference?: (
-    application:
-      MaLuApplication,
-  ) => void
+      c:
+        number,
+    ) => void
 
-  onOpenHasanvandReference?: (
-    application:
-      HasanvandApplication,
-  ) => void
+  onOpenMaLuReference:
+    (
+      application:
+        MaLuApplication,
+    ) => void
 
-  onOpenDirectedMengerReference?: (
-    application:
-      DirectedMengerApplication,
-  ) => void
+  onOpenHasanvandReference:
+    (
+      application:
+        HasanvandApplication,
+    ) => void
+
+  onOpenStabilizeOutdegreeClassReference:
+    (
+      application:
+        StabilizeOutdegreeClassApplication,
+    ) => void
+
+  onOpenDirectedMengerReference:
+    (
+      application:
+        DirectedMengerApplication,
+    ) => void
+
+  /*
+   * NEW:
+   * Clicking the reservoir badge will
+   * reopen its reservoir certificate.
+   */
+  onOpenDirectedMengerReservoirReference?:
+    (
+      application:
+        DirectedMengerReservoirApplication,
+    ) => void
 
   onOpenTwoFactorReference:
     () => void
@@ -131,20 +184,24 @@ export default function GraphView({
   avoidCG,
   avoidCL,
   avoidCR,
-  maLuApplicationG = null,
-  maLuApplicationL = null,
-  maLuApplicationR = null,
-  hasanvandApplicationG = null,
-  hasanvandApplicationL = null,
-  hasanvandApplicationR = null,
-  directedMengerApplication = null,
+  maLuApplicationG,
+  maLuApplicationL,
+  maLuApplicationR,
+  hasanvandApplicationG,
+  hasanvandApplicationL,
+  hasanvandApplicationR,
+  stabilizeOutdegreeClassApplication,
+  directedMengerApplication,
+  directedMengerReservoirApplication = null,
   outdegreeGuarantees,
   onOpenLovaszReference,
   onOpenBalancedReference,
   onOpenAvoidCReference,
   onOpenMaLuReference,
   onOpenHasanvandReference,
+  onOpenStabilizeOutdegreeClassReference,
   onOpenDirectedMengerReference,
+  onOpenDirectedMengerReservoirReference,
   onOpenTwoFactorReference,
 }: GraphViewProps) {
   const allPossible =
@@ -153,24 +210,35 @@ export default function GraphView({
     )
 
   const possibleOutdegreesL =
-    outdegreeGuarantees?.L ??
+    outdegreeGuarantees
+      ?.L ??
     allPossible
 
   const possibleOutdegreesR =
-    outdegreeGuarantees?.R ??
+    outdegreeGuarantees
+      ?.R ??
     allPossible
 
-  const openMaLuReference =
-    onOpenMaLuReference ??
-    (() => {})
-
-  const openHasanvandReference =
-    onOpenHasanvandReference ??
-    (() => {})
-
-  const openDirectedMengerReference =
-    onOpenDirectedMengerReference ??
-    (() => {})
+  /*
+   * Before a Lovasz partition there is
+   * only one graph, so use the union of
+   * the two possibility slots.
+   *
+   * In normal whole-graph states they
+   * are identical, but taking the union
+   * makes this layer robust to the
+   * representation.
+   */
+  const possibleOutdegreesG =
+    Array.from(
+      new Set([
+        ...possibleOutdegreesL,
+        ...possibleOutdegreesR,
+      ]),
+    ).sort(
+      (a, b) =>
+        a - b,
+    )
 
   if (
     partition ===
@@ -193,9 +261,6 @@ export default function GraphView({
         forbiddenSet={
           forbiddenSet
         }
-        possibleOutdegrees={
-          possibleOutdegreesL
-        }
         balancedG={
           balancedG
         }
@@ -208,6 +273,15 @@ export default function GraphView({
         hasanvandApplicationG={
           hasanvandApplicationG
         }
+        stabilizeOutdegreeClassApplication={
+          stabilizeOutdegreeClassApplication
+        }
+        directedMengerApplication={
+          directedMengerApplication
+        }
+        possibleOutdegrees={
+          possibleOutdegreesG
+        }
         onOpenBalancedReference={
           onOpenBalancedReference
         }
@@ -215,10 +289,16 @@ export default function GraphView({
           onOpenAvoidCReference
         }
         onOpenMaLuReference={
-          openMaLuReference
+          onOpenMaLuReference
         }
         onOpenHasanvandReference={
-          openHasanvandReference
+          onOpenHasanvandReference
+        }
+        onOpenStabilizeOutdegreeClassReference={
+          onOpenStabilizeOutdegreeClassReference
+        }
+        onOpenDirectedMengerReference={
+          onOpenDirectedMengerReference
         }
         onOpenTwoFactorReference={
           onOpenTwoFactorReference
@@ -271,9 +351,21 @@ export default function GraphView({
       hasanvandApplicationR={
         hasanvandApplicationR
       }
+      stabilizeOutdegreeClassApplication={
+        stabilizeOutdegreeClassApplication
+      }
       directedMengerApplication={
         directedMengerApplication
       }
+
+      /*
+       * NEW reservoir proof-state
+       * plumbing.
+       */
+      directedMengerReservoirApplication={
+        directedMengerReservoirApplication
+      }
+
       possibleOutdegreesL={
         possibleOutdegreesL
       }
@@ -290,14 +382,27 @@ export default function GraphView({
         onOpenAvoidCReference
       }
       onOpenMaLuReference={
-        openMaLuReference
+        onOpenMaLuReference
       }
       onOpenHasanvandReference={
-        openHasanvandReference
+        onOpenHasanvandReference
+      }
+      onOpenStabilizeOutdegreeClassReference={
+        onOpenStabilizeOutdegreeClassReference
       }
       onOpenDirectedMengerReference={
-        openDirectedMengerReference
+        onOpenDirectedMengerReference
       }
+
+      /*
+       * PartitionGraphView will use this
+       * for the clickable Reservoir
+       * Menger q->q+1 badge.
+       */
+      onOpenDirectedMengerReservoirReference={
+        onOpenDirectedMengerReservoirReference
+      }
+
       onOpenTwoFactorReference={
         onOpenTwoFactorReference
       }

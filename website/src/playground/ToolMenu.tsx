@@ -1,7 +1,14 @@
-import { useState } from 'react'
+import {
+  useState,
+  type ReactNode,
+} from 'react'
 import Math from '../components/Math'
 import MaLuSelector from '../components/MaLuSelector'
 import HasanvandSelector from '../components/HasanvandSelector'
+import StabilizeOutdegreeClassSelector, {
+  type StabilizeTargetOption,
+} from '../components/StabilizeOutdegreeClassSelector'
+import DirectedMengerModeSelector from '../components/DirectedMengerModeSelector'
 import {
   getLovaszPairs,
   lovaszPartitionTool,
@@ -35,7 +42,14 @@ import type {
   MaLuApplicationMode,
 } from '../tools/maLuApplication'
 import type {
+  StabilizeTarget,
+} from '../tools/stabilizeOutdegreeClassMath'
+import type {
+  DirectedMengerReservoirApplication,
+} from '../tools/directedMengerReservoirApplication'
+import type {
   GraphPart,
+  PartOutdegreePossibilities,
 } from './outdegreePossibilities'
 
 type OrientationMenuTarget =
@@ -82,21 +96,53 @@ type ToolMenuProps = {
 
   directedMengerApplied?: boolean
 
-  /*
-   * When supplied, this is the
-   * authoritative playground answer
-   * about whether the Menger workspace
-   * may open.
-   *
-   * In particular, usePlayground knows
-   * about restrictions such as the
-   * current oriented-2-factor safeguard.
-   */
-  canApplyDirectedMengerRepair?:
-    boolean
+  canApplyDirectedMengerRepair?: boolean
 
   onOpenDirectedMengerWorkspace?:
     () => void
+
+  /*
+   * Directed Menger V3 reservoir mode.
+   *
+   * These are optional during the
+   * incremental wiring step. BlobLab
+   * will supply them next.
+   */
+  directedMengerReservoirCandidate?:
+    DirectedMengerReservoirApplication | null
+
+  onApplyDirectedMengerReservoirRepair?:
+    () => void
+
+  onOpenDirectedMengerReservoirReference?:
+    (
+      application:
+        DirectedMengerReservoirApplication,
+    ) => void
+
+  stabilizeOutdegreeClassApplied?:
+    boolean
+
+  canStabilizeG?: boolean
+  canStabilizeL?: boolean
+  canStabilizeR?: boolean
+
+  preStabilizationOutdegreePossibilities?:
+    PartOutdegreePossibilities
+
+  onApplyStabilizeOutdegreeClass?:
+    (
+      target:
+        StabilizeTarget,
+
+      q: number,
+    ) => void
+
+  onOpenStabilizeOutdegreeClassReference?:
+    (
+      target:
+        StabilizeTarget,
+    ) => void
 
   onApplyLovasz:
     (pair: LovaszPair) => void
@@ -107,17 +153,23 @@ type ToolMenuProps = {
         AcrossDirection,
     ) => void
 
-  onBalanceGraph: () => void
+  onBalanceGraph:
+    () => void
 
   onBalancePart:
-    (part: GraphPart) => void
+    (
+      part:
+        GraphPart,
+    ) => void
 
   onAvoidCGraph:
     (c: number) => void
 
   onAvoidCPart:
     (
-      part: GraphPart,
+      part:
+        GraphPart,
+
       c: number,
     ) => void
 
@@ -132,7 +184,8 @@ type ToolMenuProps = {
 
   onApplyMaLuPart:
     (
-      part: GraphPart,
+      part:
+        GraphPart,
 
       mode:
         MaLuApplicationMode,
@@ -141,9 +194,11 @@ type ToolMenuProps = {
         readonly number[],
     ) => void
 
-  onOpenMaLuReference?: (
-    target: MaLuTarget,
-  ) => void
+  onOpenMaLuReference?:
+    (
+      target:
+        MaLuTarget,
+    ) => void
 
   onTakeOrientedTwoFactor:
     () => void
@@ -160,10 +215,39 @@ type ToolMenuProps = {
         readonly HasanvandDegreeRule[],
     ) => void
 
-  onOpenHasanvandReference?: (
-    target:
-      HasanvandTarget,
-  ) => void
+  onOpenHasanvandReference?:
+    (
+      target:
+        HasanvandTarget,
+    ) => void
+}
+
+function uniqueSorted(
+  values:
+    readonly number[],
+) {
+  return Array.from(
+    new Set(values),
+  ).sort(
+    (a, b) =>
+      a - b,
+  )
+}
+
+function getAllDegreesThrough(
+  maxDegree: number,
+) {
+  return Array.from(
+    {
+      length:
+        maxDegree + 1,
+    },
+    (
+      _,
+      degree,
+    ) =>
+      degree,
+  )
 }
 
 function getAvoidCValues(
@@ -183,26 +267,12 @@ function getAvoidCValues(
   return values
 }
 
-function getAllDegreesThrough(
-  maxDegree: number,
-) {
-  return Array.from(
-    {
-      length:
-        maxDegree + 1,
-    },
-    (
-      _,
-      degree,
-    ) =>
-      degree,
-  )
-}
-
 function getCurrentTotalOutdegrees(
-  target: MaLuTarget,
+  target:
+    MaLuTarget,
 
-  workingDegree: number,
+  workingDegree:
+    number,
 
   fixedOutdegreeContribution:
     number,
@@ -224,8 +294,10 @@ function getCurrentTotalOutdegrees(
     target !== 'G'
   ) {
     if (
-      partition === null ||
-      acrossDirection === null
+      partition ===
+        null ||
+      acrossDirection ===
+        null
     ) {
       return []
     }
@@ -237,12 +309,14 @@ function getCurrentTotalOutdegrees(
 
     const crossingPointsOut =
       (
-        target === 'L' &&
+        target ===
+          'L' &&
         acrossDirection ===
           'L-to-R'
       ) ||
       (
-        target === 'R' &&
+        target ===
+          'R' &&
         acrossDirection ===
           'R-to-L'
       )
@@ -275,7 +349,10 @@ function getCurrentTotalOutdegrees(
         minimumTotal +
         1,
     },
-    (_, index) =>
+    (
+      _,
+      index,
+    ) =>
       minimumTotal +
       index,
   )
@@ -329,10 +406,42 @@ function MenuSectionLabel({
 
 function OrientationFolderHeader({
   target,
+  onBack,
 }: {
   target:
     OrientationMenuTarget
+
+  onBack:
+    () => void
 }) {
+  let title:
+    ReactNode
+
+  if (
+    target ===
+    'across'
+  ) {
+    title = (
+      <>
+        Orient{' '}
+
+        <Math>
+          {'L\\leftrightarrow R'}
+        </Math>
+      </>
+    )
+  } else {
+    title = (
+      <>
+        Orient{' '}
+
+        <Math>
+          {target}
+        </Math>
+      </>
+    )
+  }
+
   return (
     <div
       style={{
@@ -344,28 +453,54 @@ function OrientationFolderHeader({
 
         marginBottom:
           '4px',
-
-        textAlign:
-          'center',
-
-        color:
-          '#334155',
       }}
     >
-      Orient{' '}
+      <div
+        style={{
+          display:
+            'flex',
 
-      {target ===
-      'across' ? (
-        <Math>
-          {
-            'L\\leftrightarrow R'
+          alignItems:
+            'center',
+
+          justifyContent:
+            'space-between',
+
+          gap:
+            '10px',
+        }}
+      >
+        <button
+          type="button"
+          onClick={
+            onBack
           }
-        </Math>
-      ) : (
-        <Math>
-          {target}
-        </Math>
-      )}
+          style={{
+            font:
+              'inherit',
+
+            border:
+              'none',
+
+            background:
+              'transparent',
+
+            color:
+              '#64748b',
+
+            cursor:
+              'pointer',
+
+            padding: 0,
+          }}
+        >
+          ← Back
+        </button>
+
+        <div>
+          {title}
+        </div>
+      </div>
     </div>
   )
 }
@@ -389,8 +524,18 @@ export default function ToolMenu({
   hasanvandL,
   hasanvandR,
   directedMengerApplied = false,
-  canApplyDirectedMengerRepair,
+  canApplyDirectedMengerRepair = false,
   onOpenDirectedMengerWorkspace,
+  directedMengerReservoirCandidate = null,
+  onApplyDirectedMengerReservoirRepair,
+  onOpenDirectedMengerReservoirReference,
+  stabilizeOutdegreeClassApplied = false,
+  canStabilizeG = false,
+  canStabilizeL = false,
+  canStabilizeR = false,
+  preStabilizationOutdegreePossibilities,
+  onApplyStabilizeOutdegreeClass,
+  onOpenStabilizeOutdegreeClassReference,
   onApplyLovasz,
   onOrientAcross,
   onBalanceGraph,
@@ -417,12 +562,14 @@ export default function ToolMenu({
     useState(false)
 
   const [
-    orientationMenuTarget,
-    setOrientationMenuTarget,
+    orientationTarget,
+    setOrientationTarget,
   ] =
     useState<
       OrientationMenuTarget | null
-    >(null)
+    >(
+      null,
+    )
 
   const [
     avoidCTarget,
@@ -430,7 +577,9 @@ export default function ToolMenu({
   ] =
     useState<
       AvoidCTarget | null
-    >(null)
+    >(
+      null,
+    )
 
   const [
     maLuTarget,
@@ -438,7 +587,9 @@ export default function ToolMenu({
   ] =
     useState<
       MaLuTarget | null
-    >(null)
+    >(
+      null,
+    )
 
   const [
     hasanvandTarget,
@@ -446,38 +597,237 @@ export default function ToolMenu({
   ] =
     useState<
       HasanvandTarget | null
-    >(null)
+    >(
+      null,
+    )
+
+  const [
+    stabilizationOpen,
+    setStabilizationOpen,
+  ] =
+    useState(false)
+
+  /*
+   * NEW:
+   * Clicking Directed Menger from the
+   * root menu now opens a certificate
+   * mode chooser rather than jumping
+   * directly to Local-alpha.
+   */
+  const [
+    directedMengerModeOpen,
+    setDirectedMengerModeOpen,
+  ] =
+    useState(false)
 
   const lovaszPairs =
     getLovaszPairs(
       workingDegree,
     )
 
-  /*
-   * Avoid-c data for whichever
-   * orientation folder launched the
-   * selector.
-   */
-  let avoidCMaxDegree = 0
+  const wholeGraphOriented =
+    balancedG ||
+    avoidCG !==
+      null ||
+    maLuG ||
+    hasanvandG !==
+      null
+
+  const leftInternallyOriented =
+    balancedL ||
+    avoidCL !==
+      null ||
+    maLuL ||
+    hasanvandL !==
+      null
+
+  const rightInternallyOriented =
+    balancedR ||
+    avoidCR !==
+      null ||
+    maLuR ||
+    hasanvandR !==
+      null
+
+  const constructorsLocked =
+    directedMengerApplied
+
+  const canTakeTwoFactor =
+    !constructorsLocked &&
+    partition ===
+      null &&
+    !wholeGraphOriented &&
+    workingDegree >=
+      2 &&
+    workingDegree %
+      2 ===
+      0
+
+  const canOrientG =
+    !constructorsLocked &&
+    partition ===
+      null &&
+    !wholeGraphOriented &&
+    workingDegree >=
+      0
+
+  const canOrientL =
+    !constructorsLocked &&
+    partition !==
+      null &&
+    !leftInternallyOriented
+
+  const canOrientR =
+    !constructorsLocked &&
+    partition !==
+      null &&
+    !rightInternallyOriented
+
+  const canOrientAcross =
+    !constructorsLocked &&
+    partition !==
+      null &&
+    acrossDirection ===
+      null
+
+  const canAvoidCInG =
+    canOrientG &&
+    workingDegree >=
+      2
+
+  const canAvoidCInL =
+    canOrientL &&
+    partition !==
+      null &&
+    partition.s >=
+      2
+
+  const canAvoidCInR =
+    canOrientR &&
+    partition !==
+      null &&
+    partition.t >=
+      2
+
+  const canUseMaLuInG =
+    canOrientG &&
+    workingDegree >
+      0
+
+  const canUseMaLuInL =
+    canOrientL &&
+    partition !==
+      null &&
+    partition.s >
+      0
+
+  const canUseMaLuInR =
+    canOrientR &&
+    partition !==
+      null &&
+    partition.t >
+      0
+
+  const canUseHasanvandInG =
+    canOrientG
+
+  const canUseHasanvandInL =
+    canOrientL
+
+  const canUseHasanvandInR =
+    canOrientR
+
+  const anyStabilizationAvailable =
+    (
+      canStabilizeG ||
+      canStabilizeL ||
+      canStabilizeR
+    ) &&
+    !stabilizeOutdegreeClassApplied &&
+    onApplyStabilizeOutdegreeClass !==
+      undefined &&
+    preStabilizationOutdegreePossibilities !==
+      undefined
+
+  const stabilizationTargets:
+    StabilizeTargetOption[] = []
 
   if (
-    avoidCTarget === 'G'
+    anyStabilizationAvailable &&
+    preStabilizationOutdegreePossibilities !==
+      undefined
+  ) {
+    if (
+      canStabilizeG
+    ) {
+      stabilizationTargets.push({
+        target:
+          'G',
+
+        possibleOutdegrees:
+          uniqueSorted([
+            ...preStabilizationOutdegreePossibilities
+              .L,
+
+            ...preStabilizationOutdegreePossibilities
+              .R,
+          ]),
+      })
+    }
+
+    if (
+      canStabilizeL
+    ) {
+      stabilizationTargets.push({
+        target:
+          'L',
+
+        possibleOutdegrees:
+          preStabilizationOutdegreePossibilities
+            .L,
+      })
+    }
+
+    if (
+      canStabilizeR
+    ) {
+      stabilizationTargets.push({
+        target:
+          'R',
+
+        possibleOutdegrees:
+          preStabilizationOutdegreePossibilities
+            .R,
+      })
+    }
+  }
+
+  let avoidCMaxDegree =
+    0
+
+  if (
+    avoidCTarget ===
+    'G'
   ) {
     avoidCMaxDegree =
       workingDegree
   }
 
   if (
-    avoidCTarget === 'L' &&
-    partition !== null
+    avoidCTarget ===
+      'L' &&
+    partition !==
+      null
   ) {
     avoidCMaxDegree =
       partition.s
   }
 
   if (
-    avoidCTarget === 'R' &&
-    partition !== null
+    avoidCTarget ===
+      'R' &&
+    partition !==
+      null
   ) {
     avoidCMaxDegree =
       partition.t
@@ -488,17 +838,15 @@ export default function ToolMenu({
       avoidCMaxDegree,
     )
 
-  /*
-   * Ma-Lu data for the selected
-   * orientation target.
-   */
-  let maLuMaxDegree = 0
+  let maLuMaxDegree =
+    0
 
   let maLuPossibleDegrees:
     number[] = []
 
   if (
-    maLuTarget === 'G'
+    maLuTarget ===
+    'G'
   ) {
     maLuMaxDegree =
       workingDegree
@@ -509,8 +857,10 @@ export default function ToolMenu({
   }
 
   if (
-    maLuTarget === 'L' &&
-    partition !== null
+    maLuTarget ===
+      'L' &&
+    partition !==
+      null
   ) {
     maLuMaxDegree =
       partition.s
@@ -522,8 +872,10 @@ export default function ToolMenu({
   }
 
   if (
-    maLuTarget === 'R' &&
-    partition !== null
+    maLuTarget ===
+      'R' &&
+    partition !==
+      null
   ) {
     maLuMaxDegree =
       partition.t
@@ -535,7 +887,8 @@ export default function ToolMenu({
   }
 
   const maLuTotalCandidates =
-    maLuTarget === null
+    maLuTarget ===
+    null
       ? []
       : getCurrentTotalOutdegrees(
           maLuTarget,
@@ -549,26 +902,15 @@ export default function ToolMenu({
           acrossDirection,
         )
 
-  /*
-   * Hasanvand degree information.
-   *
-   * The whole graph is regular, so G
-   * has one actual degree.
-   *
-   * For a Lovasz part with
-   *
-   *   Delta(H) <= s,
-   *
-   * the abstract playground must allow
-   * every degree 0,...,s.
-   */
-  let hasanvandMaxDegree = 0
+  let hasanvandMaxDegree =
+    0
 
   let hasanvandPossibleDegrees:
     number[] = []
 
   if (
-    hasanvandTarget === 'G'
+    hasanvandTarget ===
+    'G'
   ) {
     hasanvandMaxDegree =
       workingDegree
@@ -579,8 +921,10 @@ export default function ToolMenu({
   }
 
   if (
-    hasanvandTarget === 'L' &&
-    partition !== null
+    hasanvandTarget ===
+      'L' &&
+    partition !==
+      null
   ) {
     hasanvandMaxDegree =
       partition.s
@@ -592,8 +936,10 @@ export default function ToolMenu({
   }
 
   if (
-    hasanvandTarget === 'R' &&
-    partition !== null
+    hasanvandTarget ===
+      'R' &&
+    partition !==
+      null
   ) {
     hasanvandMaxDegree =
       partition.t
@@ -604,24 +950,33 @@ export default function ToolMenu({
       )
   }
 
-  /*
-   * Closing a leaf selector should
-   * return to its orientation folder.
-   *
-   * Closing everything returns to the
-   * root Tools menu.
-   */
-  function closeLeafMenus() {
-    setLovaszOpen(false)
-    setAvoidCTarget(null)
-    setMaLuTarget(null)
-    setHasanvandTarget(null)
-  }
+  function closeSubmenus() {
+    setLovaszOpen(
+      false,
+    )
 
-  function closeAllSubmenus() {
-    closeLeafMenus()
-    setOrientationMenuTarget(
+    setOrientationTarget(
       null,
+    )
+
+    setAvoidCTarget(
+      null,
+    )
+
+    setMaLuTarget(
+      null,
+    )
+
+    setHasanvandTarget(
+      null,
+    )
+
+    setStabilizationOpen(
+      false,
+    )
+
+    setDirectedMengerModeOpen(
+      false,
     )
   }
 
@@ -631,24 +986,28 @@ export default function ToolMenu({
         !current,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
+  }
+
+  function returnToRoot() {
+    closeSubmenus()
   }
 
   function openLovaszMenu() {
-    closeAllSubmenus()
+    closeSubmenus()
 
     setLovaszOpen(
       true,
     )
   }
 
-  function openOrientationMenu(
+  function openOrientationFolder(
     target:
       OrientationMenuTarget,
   ) {
-    closeLeafMenus()
+    closeSubmenus()
 
-    setOrientationMenuTarget(
+    setOrientationTarget(
       target,
     )
   }
@@ -657,20 +1016,12 @@ export default function ToolMenu({
     target:
       AvoidCTarget,
   ) {
+    setOrientationTarget(
+      null,
+    )
+
     setAvoidCTarget(
       target,
-    )
-
-    setMaLuTarget(
-      null,
-    )
-
-    setHasanvandTarget(
-      null,
-    )
-
-    setLovaszOpen(
-      false,
     )
   }
 
@@ -678,20 +1029,12 @@ export default function ToolMenu({
     target:
       MaLuTarget,
   ) {
+    setOrientationTarget(
+      null,
+    )
+
     setMaLuTarget(
       target,
-    )
-
-    setAvoidCTarget(
-      null,
-    )
-
-    setHasanvandTarget(
-      null,
-    )
-
-    setLovaszOpen(
-      false,
     )
   }
 
@@ -699,68 +1042,34 @@ export default function ToolMenu({
     target:
       HasanvandTarget,
   ) {
+    setOrientationTarget(
+      null,
+    )
+
     setHasanvandTarget(
       target,
     )
+  }
 
-    setAvoidCTarget(
-      null,
-    )
+  function openStabilizationMenu() {
+    closeSubmenus()
 
-    setMaLuTarget(
-      null,
-    )
-
-    setLovaszOpen(
-      false,
+    setStabilizationOpen(
+      true,
     )
   }
 
-  function openMaLuReference() {
-    if (
-      maLuTarget ===
-      null
-    ) {
-      return
-    }
+  function openDirectedMengerModeMenu() {
+    closeSubmenus()
 
-    onOpenMaLuReference?.(
-      maLuTarget,
+    setDirectedMengerModeOpen(
+      true,
     )
-  }
-
-  function openHasanvandReference() {
-    if (
-      hasanvandTarget ===
-      null
-    ) {
-      return
-    }
-
-    onOpenHasanvandReference?.(
-      hasanvandTarget,
-    )
-  }
-
-  function openDirectedMengerWorkspace() {
-    if (
-      onOpenDirectedMengerWorkspace ===
-      undefined
-    ) {
-      return
-    }
-
-    onOpenDirectedMengerWorkspace()
-
-    setToolsOpen(
-      false,
-    )
-
-    closeAllSubmenus()
   }
 
   function applyLovasz(
-    pair: LovaszPair,
+    pair:
+      LovaszPair,
   ) {
     onApplyLovasz(
       pair,
@@ -770,7 +1079,7 @@ export default function ToolMenu({
       false,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
   }
 
   function applyAcrossOrientation(
@@ -785,7 +1094,7 @@ export default function ToolMenu({
       false,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
   }
 
   function applyBalanceGraph() {
@@ -795,11 +1104,12 @@ export default function ToolMenu({
       false,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
   }
 
   function applyBalancedOrientation(
-    part: GraphPart,
+    part:
+      GraphPart,
   ) {
     onBalancePart(
       part,
@@ -809,11 +1119,12 @@ export default function ToolMenu({
       false,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
   }
 
   function applyAvoidC(
-    c: number,
+    c:
+      number,
   ) {
     if (
       avoidCTarget ===
@@ -832,6 +1143,7 @@ export default function ToolMenu({
     ) {
       onAvoidCPart(
         avoidCTarget,
+
         c,
       )
     }
@@ -840,7 +1152,7 @@ export default function ToolMenu({
       false,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
   }
 
   function applyMaLu(
@@ -856,6 +1168,7 @@ export default function ToolMenu({
     ) {
       onApplyMaLuGraph(
         mode,
+
         selectedValues,
       )
     }
@@ -868,7 +1181,9 @@ export default function ToolMenu({
     ) {
       onApplyMaLuPart(
         maLuTarget,
+
         mode,
+
         selectedValues,
       )
     }
@@ -877,7 +1192,7 @@ export default function ToolMenu({
       false,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
   }
 
   function applyHasanvand(
@@ -896,7 +1211,9 @@ export default function ToolMenu({
 
     onApplyHasanvand(
       hasanvandTarget,
+
       mode,
+
       rules,
     )
 
@@ -904,7 +1221,34 @@ export default function ToolMenu({
       false,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
+  }
+
+  function applyStabilization(
+    target:
+      StabilizeTarget,
+
+    q:
+      number,
+  ) {
+    if (
+      onApplyStabilizeOutdegreeClass ===
+      undefined
+    ) {
+      return
+    }
+
+    onApplyStabilizeOutdegreeClass(
+      target,
+
+      q,
+    )
+
+    setToolsOpen(
+      false,
+    )
+
+    closeSubmenus()
   }
 
   function takeOrientedTwoFactor() {
@@ -914,7 +1258,47 @@ export default function ToolMenu({
       false,
     )
 
-    closeAllSubmenus()
+    closeSubmenus()
+  }
+
+  /*
+   * LOCAL-ALPHA MODE
+   */
+  function openDirectedMengerWorkspace() {
+    if (
+      onOpenDirectedMengerWorkspace ===
+      undefined
+    ) {
+      return
+    }
+
+    onOpenDirectedMengerWorkspace()
+
+    setToolsOpen(
+      false,
+    )
+
+    closeSubmenus()
+  }
+
+  /*
+   * RESERVOIR MODE
+   */
+  function applyDirectedMengerReservoirRepair() {
+    if (
+      onApplyDirectedMengerReservoirRepair ===
+      undefined
+    ) {
+      return
+    }
+
+    onApplyDirectedMengerReservoirRepair()
+
+    setToolsOpen(
+      false,
+    )
+
+    closeSubmenus()
   }
 
   const controlButtonStyle = {
@@ -983,199 +1367,15 @@ export default function ToolMenu({
       1.35,
   }
 
-  const wholeGraphOriented =
-    balancedG ||
-    avoidCG !==
-      null ||
-    maLuG ||
-    hasanvandG !==
-      null
-
-  const leftInternallyOriented =
-    balancedL ||
-    avoidCL !==
-      null ||
-    maLuL ||
-    hasanvandL !==
-      null
-
-  const rightInternallyOriented =
-    balancedR ||
-    avoidCR !==
-      null ||
-    maLuR ||
-    hasanvandR !==
-      null
-
-  /*
-   * A Menger fixer needs a complete
-   * starting orientation.
-   */
-  const startingOrientationComplete =
-    wholeGraphOriented ||
-    (
-      partition !==
-        null &&
-      acrossDirection !==
-        null &&
-      leftInternallyOriented &&
-      rightInternallyOriented
-    )
-
-  const constructorsLocked =
-    directedMengerApplied
-
-  const canTakeTwoFactor =
-    !constructorsLocked &&
+  const hasAnyConstructor =
     partition ===
-      null &&
-    !wholeGraphOriented &&
-    workingDegree >=
-      2 &&
-    workingDegree %
-      2 ===
-      0
-
-  const canAvoidCInG =
-    !constructorsLocked &&
-    partition ===
-      null &&
-    !wholeGraphOriented &&
-    workingDegree >=
-      2
-
-  const canAvoidCInL =
-    !constructorsLocked &&
-    partition !==
-      null &&
-    !leftInternallyOriented &&
-    partition.s >=
-      2
-
-  const canAvoidCInR =
-    !constructorsLocked &&
-    partition !==
-      null &&
-    !rightInternallyOriented &&
-    partition.t >=
-      2
-
-  const canUseMaLuInG =
-    !constructorsLocked &&
-    partition ===
-      null &&
-    !wholeGraphOriented &&
-    workingDegree >
-      0
-
-  const canUseMaLuInL =
-    !constructorsLocked &&
-    partition !==
-      null &&
-    !leftInternallyOriented &&
-    partition.s >
-      0
-
-  const canUseMaLuInR =
-    !constructorsLocked &&
-    partition !==
-      null &&
-    !rightInternallyOriented &&
-    partition.t >
-      0
-
-  const canUseHasanvandInG =
-    !constructorsLocked &&
-    partition ===
-      null &&
-    !wholeGraphOriented &&
-    workingDegree >
-      0
-
-  const canUseHasanvandInL =
-    !constructorsLocked &&
-    partition !==
-      null &&
-    !leftInternallyOriented
-
-  const canUseHasanvandInR =
-    !constructorsLocked &&
-    partition !==
-      null &&
-    !rightInternallyOriented
-
-  const hasAvailablePartitionConstructor =
-    !constructorsLocked &&
-    (
-      acrossDirection ===
-        null ||
-      !leftInternallyOriented ||
-      !rightInternallyOriented
-    )
-
-  /*
-   * Prefer the authoritative value
-   * supplied by usePlayground.
-   *
-   * The fallback preserves compatibility
-   * until BlobLab is updated.
-   */
-  const canOpenDirectedMenger =
-    canApplyDirectedMengerRepair ??
-    (
-      startingOrientationComplete &&
-      !directedMengerApplied
-    )
-
-  const directedMengerButtonEnabled =
-    canOpenDirectedMenger &&
-    onOpenDirectedMengerWorkspace !==
-      undefined
-
-  /*
-   * The target currently represented by
-   * an Orient G/L/R folder.
-   */
-  const orientationTarget =
-    orientationMenuTarget ===
-      'G' ||
-    orientationMenuTarget ===
-      'L' ||
-    orientationMenuTarget ===
-      'R'
-      ? orientationMenuTarget
-      : null
-
-  let orientationTargetMaxDegree =
-    0
-
-  if (
-    orientationTarget ===
-    'G'
-  ) {
-    orientationTargetMaxDegree =
-      workingDegree
-  }
-
-  if (
-    orientationTarget ===
-      'L' &&
-    partition !==
       null
-  ) {
-    orientationTargetMaxDegree =
-      partition.s
-  }
-
-  if (
-    orientationTarget ===
-      'R' &&
-    partition !==
-      null
-  ) {
-    orientationTargetMaxDegree =
-      partition.t
-  }
+      ? !wholeGraphOriented
+      : (
+          canOrientL ||
+          canOrientR ||
+          canOrientAcross
+        )
 
   return (
     <div
@@ -1231,10 +1431,60 @@ export default function ToolMenu({
               'left',
           }}
         >
-          {/* AVOID C SELECTOR */}
+          {/* DIRECTED MENGER MODE SELECTOR */}
 
-          {avoidCTarget !==
-          null ? (
+          {directedMengerModeOpen ? (
+            <DirectedMengerModeSelector
+              canUseLocalAlpha={
+                canApplyDirectedMengerRepair
+              }
+              reservoirCandidate={
+                directedMengerReservoirCandidate
+              }
+              onOpenLocalAlpha={
+                openDirectedMengerWorkspace
+              }
+              onApplyReservoir={
+                applyDirectedMengerReservoirRepair
+              }
+              onOpenReservoirReference={(
+                application,
+              ) =>
+                onOpenDirectedMengerReservoirReference?.(
+                  application,
+                )
+              }
+              onBack={
+                returnToRoot
+              }
+            />
+
+          /* STABILIZATION SELECTOR */
+
+          ) : stabilizationOpen ? (
+            <StabilizeOutdegreeClassSelector
+              targets={
+                stabilizationTargets
+              }
+              onApply={
+                applyStabilization
+              }
+              onOpenReference={(
+                target,
+              ) =>
+                onOpenStabilizeOutdegreeClassReference?.(
+                  target,
+                )
+              }
+              onBack={
+                returnToRoot
+              }
+            />
+
+          /* AVOID C SELECTOR */
+
+          ) : avoidCTarget !==
+            null ? (
             <>
               <div
                 style={{
@@ -1261,7 +1511,10 @@ export default function ToolMenu({
 
                 <Math>
                   {
-                    avoidCTarget
+                    avoidCTarget ===
+                    'G'
+                      ? 'G'
+                      : `G[${avoidCTarget}]`
                   }
                 </Math>
 
@@ -1297,7 +1550,9 @@ export default function ToolMenu({
                 }}
               >
                 {avoidCValues.map(
-                  (c) => (
+                  (
+                    c,
+                  ) => (
                     <button
                       key={
                         c
@@ -1348,17 +1603,11 @@ export default function ToolMenu({
                 ← Back
               </button>
             </>
+
+          /* MA-LU SELECTOR */
+
           ) : maLuTarget !==
             null ? (
-            /*
-             * MA-LU SELECTOR
-             *
-             * Back returns to the
-             * corresponding Orient
-             * folder because
-             * orientationMenuTarget is
-             * intentionally preserved.
-             */
             <MaLuSelector
               target={
                 maLuTarget
@@ -1390,8 +1639,10 @@ export default function ToolMenu({
               onApply={
                 applyMaLu
               }
-              onOpenReference={
-                openMaLuReference
+              onOpenReference={() =>
+                onOpenMaLuReference?.(
+                  maLuTarget,
+                )
               }
               onBack={() =>
                 setMaLuTarget(
@@ -1399,11 +1650,11 @@ export default function ToolMenu({
                 )
               }
             />
+
+          /* HASANVAND SELECTOR */
+
           ) : hasanvandTarget !==
             null ? (
-            /*
-             * HASANVAND V2 SELECTOR
-             */
             <HasanvandSelector
               target={
                 hasanvandTarget
@@ -1417,8 +1668,10 @@ export default function ToolMenu({
               onApply={
                 applyHasanvand
               }
-              onOpenReference={
-                openHasanvandReference
+              onOpenReference={() =>
+                onOpenHasanvandReference?.(
+                  hasanvandTarget,
+                )
               }
               onBack={() =>
                 setHasanvandTarget(
@@ -1426,10 +1679,10 @@ export default function ToolMenu({
                 )
               }
             />
+
+          /* LOVASZ SELECTOR */
+
           ) : lovaszOpen ? (
-            /*
-             * LOVASZ PARTITION
-             */
             <>
               <div
                 style={{
@@ -1446,14 +1699,14 @@ export default function ToolMenu({
                 Choose{' '}
 
                 <Math>
-                  {
-                    '(s,t)'
-                  }
+                  {'(s,t)'}
                 </Math>
               </div>
 
               {lovaszPairs.map(
-                (pair) => (
+                (
+                  pair,
+                ) => (
                   <button
                     key={
                       `${pair.s}-${pair.t}`
@@ -1482,10 +1735,8 @@ export default function ToolMenu({
 
               <button
                 type="button"
-                onClick={() =>
-                  setLovaszOpen(
-                    false,
-                  )
+                onClick={
+                  returnToRoot
                 }
                 style={{
                   ...menuButtonStyle,
@@ -1503,95 +1754,46 @@ export default function ToolMenu({
                 ← Back
               </button>
             </>
-          ) : orientationMenuTarget !==
+
+          /* ORIENTATION FOLDERS */
+
+          ) : orientationTarget !==
             null ? (
-            /*
-             * ORIENTATION FOLDER
-             */
             <>
               <OrientationFolderHeader
                 target={
-                  orientationMenuTarget
+                  orientationTarget
+                }
+                onBack={
+                  returnToRoot
                 }
               />
 
-              {orientationMenuTarget ===
-              'across' ? (
+              {orientationTarget ===
+                'G' && (
                 <>
                   <button
                     type="button"
-                    onClick={() =>
-                      applyAcrossOrientation(
-                        'L-to-R',
-                      )
+                    onClick={
+                      applyBalanceGraph
                     }
                     style={
                       menuButtonStyle
                     }
                   >
+                    Balance{' '}
+
                     <Math>
-                      {
-                        'L\\to R'
-                      }
+                      {'G'}
                     </Math>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyAcrossOrientation(
-                        'R-to-L',
-                      )
-                    }
-                    style={
-                      menuButtonStyle
-                    }
-                  >
-                    <Math>
-                      {
-                        'R\\to L'
-                      }
-                    </Math>
-                  </button>
-                </>
-              ) : orientationTarget !==
-                null ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (
-                        orientationTarget ===
-                        'G'
-                      ) {
-                        applyBalanceGraph()
-                      } else {
-                        applyBalancedOrientation(
-                          orientationTarget,
-                        )
-                      }
-                    }}
-                    style={
-                      menuButtonStyle
-                    }
-                  >
-                    Balance
-                  </button>
-
-                  {(
-                    orientationTarget ===
-                      'G'
-                      ? canAvoidCInG
-                      : orientationTarget ===
-                          'L'
-                        ? canAvoidCInL
-                        : canAvoidCInR
-                  ) && (
+                  {canAvoidCInG && (
                     <button
                       type="button"
                       onClick={() =>
                         openAvoidCMenu(
-                          orientationTarget,
+                          'G',
                         )
                       }
                       style={
@@ -1608,45 +1810,28 @@ export default function ToolMenu({
                     </button>
                   )}
 
-                  {(
-                    orientationTarget ===
-                      'G'
-                      ? canUseMaLuInG
-                      : orientationTarget ===
-                          'L'
-                        ? canUseMaLuInL
-                        : canUseMaLuInR
-                  ) && (
+                  {canUseMaLuInG && (
                     <button
                       type="button"
                       onClick={() =>
                         openMaLuMenu(
-                          orientationTarget,
+                          'G',
                         )
                       }
                       style={
                         menuButtonStyle
                       }
                     >
-                      Ma–Lu{' '}
-                      →
+                      Ma–Lu →
                     </button>
                   )}
 
-                  {(
-                    orientationTarget ===
-                      'G'
-                      ? canUseHasanvandInG
-                      : orientationTarget ===
-                          'L'
-                        ? canUseHasanvandInL
-                        : canUseHasanvandInR
-                  ) && (
+                  {canUseHasanvandInG && (
                     <button
                       type="button"
                       onClick={() =>
                         openHasanvandMenu(
-                          orientationTarget,
+                          'G',
                         )
                       }
                       style={
@@ -1660,49 +1845,216 @@ export default function ToolMenu({
                       →
                     </button>
                   )}
+                </>
+              )}
 
-                  {orientationTargetMaxDegree ===
-                    0 && (
-                    <div
+              {orientationTarget ===
+                'L' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyBalancedOrientation(
+                        'L',
+                      )
+                    }
+                    style={
+                      menuButtonStyle
+                    }
+                  >
+                    Balance{' '}
+
+                    <Math>
+                      {'L'}
+                    </Math>
+                  </button>
+
+                  {canAvoidCInL && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openAvoidCMenu(
+                          'L',
+                        )
+                      }
                       style={
-                        mutedMessageStyle
+                        menuButtonStyle
                       }
                     >
-                      This induced
-                      graph is
-                      edgeless.
-                    </div>
+                      Avoid{' '}
+
+                      <Math>
+                        {'c'}
+                      </Math>{' '}
+
+                      →
+                    </button>
+                  )}
+
+                  {canUseMaLuInL && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openMaLuMenu(
+                          'L',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Ma–Lu →
+                    </button>
+                  )}
+
+                  {canUseHasanvandInL && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openHasanvandMenu(
+                          'L',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      {
+                        hasanvandCompressionTool
+                          .menuLabel
+                      }{' '}
+                      →
+                    </button>
                   )}
                 </>
-              ) : null}
+              )}
 
-              <button
-                type="button"
-                onClick={() =>
-                  setOrientationMenuTarget(
-                    null,
-                  )
-                }
-                style={{
-                  ...menuButtonStyle,
+              {orientationTarget ===
+                'R' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyBalancedOrientation(
+                        'R',
+                      )
+                    }
+                    style={
+                      menuButtonStyle
+                    }
+                  >
+                    Balance{' '}
 
-                  marginTop:
-                    '4px',
+                    <Math>
+                      {'R'}
+                    </Math>
+                  </button>
 
-                  borderTop:
-                    '1px solid #e2e8f0',
+                  {canAvoidCInR && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openAvoidCMenu(
+                          'R',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Avoid{' '}
 
-                  textAlign:
-                    'center',
-                }}
-              >
-                ← Back
-              </button>
+                      <Math>
+                        {'c'}
+                      </Math>{' '}
+
+                      →
+                    </button>
+                  )}
+
+                  {canUseMaLuInR && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openMaLuMenu(
+                          'R',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Ma–Lu →
+                    </button>
+                  )}
+
+                  {canUseHasanvandInR && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openHasanvandMenu(
+                          'R',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      {
+                        hasanvandCompressionTool
+                          .menuLabel
+                      }{' '}
+                      →
+                    </button>
+                  )}
+                </>
+              )}
+
+              {orientationTarget ===
+                'across' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyAcrossOrientation(
+                        'L-to-R',
+                      )
+                    }
+                    style={
+                      menuButtonStyle
+                    }
+                  >
+                    Orient{' '}
+
+                    <Math>
+                      {'L\\to R'}
+                    </Math>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyAcrossOrientation(
+                        'R-to-L',
+                      )
+                    }
+                    style={
+                      menuButtonStyle
+                    }
+                  >
+                    Orient{' '}
+
+                    <Math>
+                      {'R\\to L'}
+                    </Math>
+                  </button>
+                </>
+              )}
             </>
+
+          /* ROOT MENU */
+
           ) : (
-            /*
-             * ROOT TOOLS MENU
-             */
             <>
               <MenuSectionLabel
                 label="Constructors"
@@ -1714,18 +2066,17 @@ export default function ToolMenu({
                     mutedMessageStyle
                   }
                 >
-                  The starting
-                  orientation has
-                  already been
-                  repaired.
+                  The orientation has
+                  already been repaired.
                 </div>
-              ) : partition ===
-                null ? (
+              ) : (
                 <>
-                  {!wholeGraphOriented ? (
+                  {partition ===
+                  null ? (
                     <>
-                      {workingDegree >
-                        0 && (
+                      {!wholeGraphOriented &&
+                        workingDegree >
+                          0 && (
                         <button
                           type="button"
                           onClick={
@@ -1743,12 +2094,11 @@ export default function ToolMenu({
                         </button>
                       )}
 
-                      {workingDegree >
-                        0 && (
+                      {canOrientG && (
                         <button
                           type="button"
                           onClick={() =>
-                            openOrientationMenu(
+                            openOrientationFolder(
                               'G',
                             )
                           }
@@ -1761,107 +2111,95 @@ export default function ToolMenu({
                           <Math>
                             {'G'}
                           </Math>{' '}
-
                           →
                         </button>
                       )}
                     </>
                   ) : (
+                    <>
+                      {canOrientL && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openOrientationFolder(
+                              'L',
+                            )
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          Orient{' '}
+
+                          <Math>
+                            {'L'}
+                          </Math>{' '}
+                          →
+                        </button>
+                      )}
+
+                      {canOrientR && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openOrientationFolder(
+                              'R',
+                            )
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          Orient{' '}
+
+                          <Math>
+                            {'R'}
+                          </Math>{' '}
+                          →
+                        </button>
+                      )}
+
+                      {canOrientAcross && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openOrientationFolder(
+                              'across',
+                            )
+                          }
+                          style={
+                            menuButtonStyle
+                          }
+                        >
+                          Orient{' '}
+
+                          <Math>
+                            {
+                              'L\\leftrightarrow R'
+                            }
+                          </Math>{' '}
+                          →
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  {!hasAnyConstructor && (
                     <div
                       style={
                         mutedMessageStyle
                       }
                     >
-                      Starting
-                      orientation
+                      Starting orientation
                       complete.
                     </div>
                   )}
                 </>
-              ) : hasAvailablePartitionConstructor ? (
-                <>
-                  {!leftInternallyOriented && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openOrientationMenu(
-                          'L',
-                        )
-                      }
-                      style={
-                        menuButtonStyle
-                      }
-                    >
-                      Orient{' '}
-
-                      <Math>
-                        {'L'}
-                      </Math>{' '}
-
-                      →
-                    </button>
-                  )}
-
-                  {!rightInternallyOriented && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openOrientationMenu(
-                          'R',
-                        )
-                      }
-                      style={
-                        menuButtonStyle
-                      }
-                    >
-                      Orient{' '}
-
-                      <Math>
-                        {'R'}
-                      </Math>{' '}
-
-                      →
-                    </button>
-                  )}
-
-                  {acrossDirection ===
-                    null && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openOrientationMenu(
-                          'across',
-                        )
-                      }
-                      style={
-                        menuButtonStyle
-                      }
-                    >
-                      Orient{' '}
-
-                      <Math>
-                        {
-                          'L\\leftrightarrow R'
-                        }
-                      </Math>{' '}
-
-                      →
-                    </button>
-                  )}
-                </>
-              ) : (
-                <div
-                  style={
-                    mutedMessageStyle
-                  }
-                >
-                  Starting
-                  orientation
-                  complete.
-                </div>
               )}
 
-              {canTakeTwoFactor && (
+              {partition ===
+                null &&
+                canTakeTwoFactor && (
                 <>
                   <MenuSectionLabel
                     label="Reductions"
@@ -1890,6 +2228,35 @@ export default function ToolMenu({
                 separated
               />
 
+              {stabilizeOutdegreeClassApplied ? (
+                <div
+                  style={
+                    mutedMessageStyle
+                  }
+                >
+                  An outdegree class has
+                  been stabilized.
+                </div>
+              ) : anyStabilizationAvailable ? (
+                <button
+                  type="button"
+                  onClick={
+                    openStabilizationMenu
+                  }
+                  style={
+                    menuButtonStyle
+                  }
+                >
+                  Stabilize{' '}
+
+                  <Math>
+                    {'q'}
+                  </Math>
+                  -class →
+
+                </button>
+              ) : null}
+
               {directedMengerApplied ? (
                 <div
                   style={
@@ -1899,45 +2266,30 @@ export default function ToolMenu({
                   Directed Menger
                   repair applied.
                 </div>
-              ) : canOpenDirectedMenger ? (
+              ) : canApplyDirectedMengerRepair ? (
                 <button
                   type="button"
                   onClick={
-                    openDirectedMengerWorkspace
+                    openDirectedMengerModeMenu
                   }
-                  disabled={
-                    !directedMengerButtonEnabled
+                  style={
+                    menuButtonStyle
                   }
-                  style={{
-                    ...menuButtonStyle,
-
-                    color:
-                      directedMengerButtonEnabled
-                        ? '#334155'
-                        : '#94a3b8',
-
-                    cursor:
-                      directedMengerButtonEnabled
-                        ? 'pointer'
-                        : 'default',
-                  }}
                 >
                   Directed Menger
-                  repair{' '}
-                  →
+                  repair →
                 </button>
-              ) : (
+              ) : !anyStabilizationAvailable &&
+                !stabilizeOutdegreeClassApplied ? (
                 <div
                   style={
                     mutedMessageStyle
                   }
                 >
-                  Complete a
-                  starting
-                  orientation
-                  first.
+                  Complete a starting
+                  orientation first.
                 </div>
-              )}
+              ) : null}
             </>
           )}
         </div>

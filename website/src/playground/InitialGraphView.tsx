@@ -3,6 +3,7 @@ import BalancedBadge from '../components/BalancedBadge'
 import AvoidCBadge from '../components/AvoidCBadge'
 import MaLuBadge from '../components/MaLuBadge'
 import HasanvandBadge from '../components/HasanvandBadge'
+import StabilizeOutdegreeClassBadge from '../components/StabilizeOutdegreeClassBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
 import type {
   BalancedTarget,
@@ -17,11 +18,18 @@ import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
 import type {
+  StabilizeOutdegreeClassApplication,
+} from '../tools/stabilizeOutdegreeClassApplication'
+import type {
+  DirectedMengerApplication,
+} from '../tools/directedMengerApplication'
+import type {
   OutdegreeSet,
 } from './outdegreePossibilities'
 
 type InitialGraphViewProps = {
-  degree: number
+  degree:
+    number
 
   workingDegree:
     number
@@ -35,10 +43,8 @@ type InitialGraphViewProps = {
   forbiddenSet:
     readonly number[]
 
-  possibleOutdegrees:
-    OutdegreeSet
-
-  balancedG: boolean
+  balancedG:
+    boolean
 
   avoidCG:
     number | null
@@ -49,26 +55,53 @@ type InitialGraphViewProps = {
   hasanvandApplicationG:
     HasanvandApplication | null
 
-  onOpenBalancedReference: (
-    target:
-      BalancedTarget,
-  ) => void
+  stabilizeOutdegreeClassApplication:
+    StabilizeOutdegreeClassApplication | null
 
-  onOpenAvoidCReference: (
-    target:
-      AvoidCTarget,
-    c: number,
-  ) => void
+  directedMengerApplication:
+    DirectedMengerApplication | null
 
-  onOpenMaLuReference: (
-    application:
-      MaLuApplication,
-  ) => void
+  possibleOutdegrees:
+    OutdegreeSet
 
-  onOpenHasanvandReference: (
-    application:
-      HasanvandApplication,
-  ) => void
+  onOpenBalancedReference:
+    (
+      target:
+        BalancedTarget,
+    ) => void
+
+  onOpenAvoidCReference:
+    (
+      target:
+        AvoidCTarget,
+
+      c:
+        number,
+    ) => void
+
+  onOpenMaLuReference:
+    (
+      application:
+        MaLuApplication,
+    ) => void
+
+  onOpenHasanvandReference:
+    (
+      application:
+        HasanvandApplication,
+    ) => void
+
+  onOpenStabilizeOutdegreeClassReference:
+    (
+      application:
+        StabilizeOutdegreeClassApplication,
+    ) => void
+
+  onOpenDirectedMengerReference:
+    (
+      application:
+        DirectedMengerApplication,
+    ) => void
 
   onOpenTwoFactorReference:
     () => void
@@ -78,8 +111,11 @@ function TwoFactorNote({
   count,
   onOpen,
 }: {
-  count: number
-  onOpen: () => void
+  count:
+    number
+
+  onOpen:
+    () => void
 }) {
   return (
     <div
@@ -183,26 +219,72 @@ function TwoFactorNote({
   )
 }
 
+function getMengerRepairLatex(
+  application:
+    DirectedMengerApplication,
+) {
+  return application
+    .demandRules
+    .map(
+      (
+        rule,
+      ) => {
+        const finalOutdegree =
+          application.direction ===
+          'increase'
+            ? rule.outdegree +
+              rule.demand
+            : rule.outdegree -
+              rule.demand
+
+        return (
+          `${rule.outdegree}`
+          + '\\to'
+          + `${finalOutdegree}`
+        )
+      },
+    )
+    .join(',\\ ')
+}
+
 export default function InitialGraphView({
   degree,
   workingDegree,
   fixedOutdegreeContribution,
   orientedTwoFactorCount,
   forbiddenSet,
-  possibleOutdegrees,
   balancedG,
   avoidCG,
   maLuApplicationG,
   hasanvandApplicationG,
+  stabilizeOutdegreeClassApplication,
+  directedMengerApplication,
+  possibleOutdegrees,
   onOpenBalancedReference,
   onOpenAvoidCReference,
   onOpenMaLuReference,
   onOpenHasanvandReference,
+  onOpenStabilizeOutdegreeClassReference,
+  onOpenDirectedMengerReference,
   onOpenTwoFactorReference,
 }: InitialGraphViewProps) {
   const hasResidualGraph =
     orientedTwoFactorCount >
     0
+
+  /*
+   * A whole-graph stabilization should
+   * only appear here when its target is
+   * genuinely G.
+   */
+  const stabilizationOnG =
+    stabilizeOutdegreeClassApplication !==
+      null &&
+    stabilizeOutdegreeClassApplication
+      .target ===
+      'G'
+      ? stabilizeOutdegreeClassApplication
+      : null
 
   return (
     <>
@@ -252,6 +334,60 @@ export default function InitialGraphView({
             onOpenTwoFactorReference
           }
         />
+      )}
+
+      {directedMengerApplication !==
+        null && (
+        <div
+          style={{
+            margin:
+              '0 auto 8px',
+
+            textAlign:
+              'center',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() =>
+              onOpenDirectedMengerReference(
+                directedMengerApplication,
+              )
+            }
+            style={{
+              font:
+                'inherit',
+
+              color:
+                '#2f6f4e',
+
+              background:
+                'transparent',
+
+              border:
+                'none',
+
+              borderBottom:
+                '1px solid #4f7f65',
+
+              padding:
+                '0 1px 2px',
+
+              cursor:
+                'pointer',
+            }}
+          >
+            Directed Menger{' '}
+
+            <Math>
+              {
+                getMengerRepairLatex(
+                  directedMengerApplication,
+                )
+              }
+            </Math>
+          </button>
+        </div>
       )}
 
       <svg
@@ -304,9 +440,9 @@ export default function InitialGraphView({
 
         <foreignObject
           x="150"
-          y="245"
+          y="225"
           width="300"
-          height="110"
+          height="100"
         >
           <div
             style={{
@@ -354,7 +490,7 @@ export default function InitialGraphView({
               avoidCG
             }
             x={225}
-            y={320}
+            y={325}
             onOpen={
               onOpenAvoidCReference
             }
@@ -368,7 +504,7 @@ export default function InitialGraphView({
               maLuApplicationG
             }
             x={210}
-            y={320}
+            y={325}
             onOpen={
               onOpenMaLuReference
             }
@@ -385,6 +521,20 @@ export default function InitialGraphView({
             y={320}
             onOpen={
               onOpenHasanvandReference
+            }
+          />
+        )}
+
+        {stabilizationOnG !==
+          null && (
+          <StabilizeOutdegreeClassBadge
+            application={
+              stabilizationOnG
+            }
+            x={170}
+            y={390}
+            onOpen={
+              onOpenStabilizeOutdegreeClassReference
             }
           />
         )}
@@ -406,8 +556,7 @@ export default function InitialGraphView({
               '19px',
           }}
         >
-          fixed
-          contribution:{' '}
+          fixed contribution:{' '}
 
           <Math>
             {
@@ -415,8 +564,7 @@ export default function InitialGraphView({
             }
           </Math>{' '}
 
-          to every
-          outdegree
+          to every outdegree
         </div>
       )}
 

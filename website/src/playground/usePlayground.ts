@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import type {
-  LovaszPair,
+import {
+  createLovaszApplication,
+  type LovaszApplication,
+  type LovaszPair,
 } from '../tools/lovaszPartition'
 import type {
   AcrossDirection,
@@ -35,8 +37,25 @@ import type {
   DirectedMengerApplication,
 } from '../tools/directedMengerApplication'
 import {
+  createDirectedMengerReservoirApplication,
+  type DirectedMengerReservoirApplication,
+} from '../tools/directedMengerReservoirApplication'
+import {
+  createStabilizeOutdegreeClassApplication,
+  type StabilizeOutdegreeClassApplication,
+} from '../tools/stabilizeOutdegreeClassApplication'
+import type {
+  StabilizeTarget,
+} from '../tools/stabilizeOutdegreeClassMath'
+import {
+  getStabilizedOutdegreePossibilities,
+} from './stabilizeOutdegreeClassOutdegrees'
+import {
   getDirectedMengerRepairedPartOutdegrees,
 } from './directedMengerOutdegrees'
+import {
+  getDirectedMengerReservoirRepairedOutdegrees,
+} from './directedMengerReservoirOutdegrees'
 import deriveOutdegreePossibilities from './deriveOutdegreePossibilities'
 import {
   getResidualGraphState,
@@ -48,7 +67,8 @@ import {
 export type PlaygroundMove =
   | {
       type: 'lovasz-partition'
-      pair: LovaszPair
+      application:
+        LovaszApplication
     }
   | {
       type: 'orient-across'
@@ -90,14 +110,37 @@ export type PlaygroundMove =
     }
   | {
       type:
+        'stabilize-outdegree-class'
+      application:
+        StabilizeOutdegreeClassApplication
+    }
+  | {
+      /*
+       * Existing Directed Menger V2
+       * local-alpha application.
+       */
+      type:
         'directed-menger-repair'
       application:
         DirectedMengerApplication
+    }
+  | {
+      /*
+       * New Directed Menger V3
+       * reservoir certificate.
+       */
+      type:
+        'directed-menger-reservoir-repair'
+      application:
+        DirectedMengerReservoirApplication
     }
 
 export type PlaygroundState = {
   partition:
     LovaszPair | null
+
+  lovaszApplication:
+    LovaszApplication | null
 
   acrossDirection:
     AcrossDirection | null
@@ -136,13 +179,28 @@ export type PlaygroundState = {
   orientedTwoFactorCount:
     number
 
+  stabilizeOutdegreeClass:
+    StabilizeOutdegreeClassApplication | null
+
+  /*
+   * Existing local-alpha mode.
+   */
   directedMenger:
     DirectedMengerApplication | null
+
+  /*
+   * New reservoir mode.
+   */
+  directedMengerReservoir:
+    DirectedMengerReservoirApplication | null
 }
 
 const initialState:
   PlaygroundState = {
   partition: null,
+
+  lovaszApplication:
+    null,
 
   acrossDirection:
     null,
@@ -166,7 +224,13 @@ const initialState:
   orientedTwoFactorCount:
     0,
 
+  stabilizeOutdegreeClass:
+    null,
+
   directedMenger: null,
+
+  directedMengerReservoir:
+    null,
 }
 
 function deriveState(
@@ -186,8 +250,11 @@ function deriveState(
       move.type ===
       'lovasz-partition'
     ) {
+      state.lovaszApplication =
+        move.application
+
       state.partition =
-        move.pair
+        move.application.pair
     }
 
     if (
@@ -330,9 +397,26 @@ function deriveState(
 
     if (
       move.type ===
+      'stabilize-outdegree-class'
+    ) {
+      state
+        .stabilizeOutdegreeClass =
+        move.application
+    }
+
+    if (
+      move.type ===
       'directed-menger-repair'
     ) {
       state.directedMenger =
+        move.application
+    }
+
+    if (
+      move.type ===
+      'directed-menger-reservoir-repair'
+    ) {
+      state.directedMengerReservoir =
         move.application
     }
   }
@@ -379,16 +463,8 @@ function getAllDegreesThrough(
 }
 
 /*
- * A DirectedMengerApplication is
- * mathematically certified when it is
- * created.
- *
- * The playground therefore does not
- * re-prove the alpha certificate here.
- * Its job is only to verify that the
- * saved application is being used on
- * exactly the starting outdegree state
- * for which it was certified.
+ * Existing Local-alpha Directed Menger
+ * application check.
  */
 function directedMengerApplicationFits(
   application:
@@ -438,6 +514,18 @@ function directedMengerApplicationFits(
 
 export default function usePlayground(
   originalDegree: number,
+
+  /*
+   * Optional for incremental wiring.
+   *
+   * BlobLab will pass the real forbidden
+   * set in the next step. Until then,
+   * all existing V2 functionality keeps
+   * working and reservoir mode simply
+   * remains unavailable.
+   */
+  forbiddenSet:
+    readonly number[] = [],
 ) {
   const [
     moves,
@@ -459,6 +547,13 @@ export default function usePlayground(
       state
         .orientedTwoFactorCount,
     )
+
+  const hasAnyDirectedMengerRepair =
+    state.directedMenger !==
+      null ||
+    state
+      .directedMengerReservoir !==
+      null
 
   const wholeGraphAlreadyOriented =
     state.balancedG ||
@@ -487,11 +582,6 @@ export default function usePlayground(
     state.hasanvandR !==
       null
 
-  /*
-   * The Menger fixer acts only after
-   * we have a genuine starting
-   * orientation.
-   */
   const startingOrientationComplete =
     wholeGraphAlreadyOriented ||
     (
@@ -504,33 +594,20 @@ export default function usePlayground(
     )
 
   /*
-   * V2 safeguard:
+   * The current arc-reversal fixers act
+   * on an explicitly oriented graph.
    *
-   * An oriented 2-factor is currently
-   * represented as a removed factor
-   * contributing a fixed +1 to every
-   * total outdegree.
-   *
-   * Until we model the repair inside
-   * an explicitly chosen residual
-   * subdigraph, Directed Menger stays
-   * unavailable after any such factor
-   * has been removed.
+   * After removing an oriented 2-factor
+   * we presently retain only its fixed
+   * outdegree contribution, not enough
+   * edge-level information to run these
+   * repairs safely.
    */
-  const directedMengerCompatibleWithConstruction =
+  const arcReversalFixersCompatibleWithConstruction =
     state
       .orientedTwoFactorCount ===
     0
 
-  /*
-   * All constructor methods now feed
-   * through the same possibility
-   * engine.
-   *
-   * In particular, Hasanvand is no
-   * longer a special whole-graph-only
-   * branch. It can act on G, L, or R.
-   */
   const residualOutdegreePossibilities =
     deriveOutdegreePossibilities(
       {
@@ -584,17 +661,10 @@ export default function usePlayground(
     )
 
   /*
-   * Constructors first determine
-   * residual outdegrees.
-   *
-   * Removed oriented 2-factors then
-   * contribute their fixed amount.
-   *
-   * Directed Menger is a fixer of the
-   * resulting TOTAL outdegrees, so it
-   * is applied after this shift.
+   * Constructor state -> TOTAL
+   * outdegrees before stabilization.
    */
-  const preRepairOutdegreePossibilities =
+  const preStabilizationOutdegreePossibilities =
     shiftPartOutdegrees(
       residualOutdegreePossibilities,
 
@@ -602,31 +672,140 @@ export default function usePlayground(
         .fixedOutdegreeContribution,
     )
 
-  const outdegreePossibilities =
-    state.directedMenger ===
+  /*
+   * Stabilization may create q-1 and
+   * q+1, while preserving q as a
+   * possible class and attaching the
+   * independent-class certificate.
+   */
+  const preRepairOutdegreePossibilities =
+    state
+      .stabilizeOutdegreeClass ===
     null
-      ? preRepairOutdegreePossibilities
-      : getDirectedMengerRepairedPartOutdegrees(
+      ? preStabilizationOutdegreePossibilities
+      : getStabilizedOutdegreePossibilities(
           {
-            L:
-              preRepairOutdegreePossibilities
-                .L,
-
-            R:
-              preRepairOutdegreePossibilities
-                .R,
+            possibilities:
+              preStabilizationOutdegreePossibilities,
 
             application:
               state
-                .directedMenger,
+                .stabilizeOutdegreeClass,
           },
         )
+
+  /*
+   * Reservoir Menger is completely
+   * determined by the current proof
+   * state.
+   *
+   * No demands/capacities are entered by
+   * the user. If all hypotheses are
+   * satisfied, creation succeeds and
+   * gives us the certified candidate.
+   */
+  const directedMengerReservoirCandidate =
+    !hasAnyDirectedMengerRepair &&
+    arcReversalFixersCompatibleWithConstruction
+      ? createDirectedMengerReservoirApplication(
+          {
+            degree:
+              originalDegree,
+
+            forbiddenSet,
+
+            lovaszApplication:
+              state
+                .lovaszApplication,
+
+            acrossDirection:
+              state
+                .acrossDirection,
+
+            balancedR:
+              state.balancedR,
+
+            stabilizationApplication:
+              state
+                .stabilizeOutdegreeClass,
+
+            currentOutdegreesL:
+              preRepairOutdegreePossibilities
+                .L,
+
+            currentOutdegreesR:
+              preRepairOutdegreePossibilities
+                .R,
+          },
+        )
+      : null
+
+  /*
+   * Only one Directed Menger repair may
+   * be present.
+   *
+   * Reservoir mode has its own numerical
+   * update. Otherwise we preserve the
+   * existing Local-alpha V2 update.
+   */
+  const outdegreePossibilities =
+    state
+      .directedMengerReservoir !==
+    null
+      ? getDirectedMengerReservoirRepairedOutdegrees(
+          {
+            possibilities:
+              preRepairOutdegreePossibilities,
+
+            application:
+              state
+                .directedMengerReservoir,
+          },
+        )
+      : state.directedMenger !==
+          null
+        ? getDirectedMengerRepairedPartOutdegrees(
+            {
+              L:
+                preRepairOutdegreePossibilities
+                  .L,
+
+              R:
+                preRepairOutdegreePossibilities
+                  .R,
+
+              application:
+                state
+                  .directedMenger,
+            },
+          )
+        : preRepairOutdegreePossibilities
 
   function applyLovaszPartition(
     pair: LovaszPair,
   ) {
     if (
-      state.directedMenger !==
+      hasAnyDirectedMengerRepair ||
+      state
+        .stabilizeOutdegreeClass !==
+        null
+    ) {
+      return
+    }
+
+    const application =
+      createLovaszApplication(
+        {
+          degree:
+            residualGraph
+              .workingDegree,
+
+          pair,
+        },
+      )
+
+    if (
+      application ===
       null
     ) {
       return
@@ -640,7 +819,7 @@ export default function usePlayground(
           type:
             'lovasz-partition',
 
-          pair,
+          application,
         },
       ],
     )
@@ -651,8 +830,10 @@ export default function usePlayground(
       AcrossDirection,
   ) {
     if (
-      state.directedMenger !==
-      null
+      hasAnyDirectedMengerRepair ||
+      state
+        .stabilizeOutdegreeClass !==
+        null
     ) {
       return
     }
@@ -675,8 +856,16 @@ export default function usePlayground(
     part: GraphPart,
   ) {
     if (
-      state.directedMenger !==
-      null
+      hasAnyDirectedMengerRepair
+    ) {
+      return
+    }
+
+    if (
+      state
+        .stabilizeOutdegreeClass
+        ?.target ===
+      part
     ) {
       return
     }
@@ -697,8 +886,10 @@ export default function usePlayground(
 
   function balanceGraph() {
     if (
-      state.directedMenger !==
-      null
+      hasAnyDirectedMengerRepair ||
+      state
+        .stabilizeOutdegreeClass !==
+        null
     ) {
       return
     }
@@ -719,8 +910,10 @@ export default function usePlayground(
     c: number,
   ) {
     if (
-      state.directedMenger !==
-      null
+      hasAnyDirectedMengerRepair ||
+      state
+        .stabilizeOutdegreeClass !==
+        null
     ) {
       return
     }
@@ -742,11 +935,20 @@ export default function usePlayground(
   function avoidCPart(
     part:
       GraphPart,
+
     c: number,
   ) {
     if (
-      state.directedMenger !==
-      null
+      hasAnyDirectedMengerRepair
+    ) {
+      return
+    }
+
+    if (
+      state
+        .stabilizeOutdegreeClass
+        ?.target ===
+      part
     ) {
       return
     }
@@ -775,7 +977,9 @@ export default function usePlayground(
       readonly number[],
   ) {
     if (
-      state.directedMenger !==
+      hasAnyDirectedMengerRepair ||
+      state
+        .stabilizeOutdegreeClass !==
         null ||
       state.partition !==
         null ||
@@ -895,12 +1099,20 @@ export default function usePlayground(
       readonly number[],
   ) {
     if (
-      state.directedMenger !==
-        null ||
+      hasAnyDirectedMengerRepair ||
       state.partition ===
         null ||
       selectedValues.length ===
         0
+    ) {
+      return
+    }
+
+    if (
+      state
+        .stabilizeOutdegreeClass
+        ?.target ===
+      part
     ) {
       return
     }
@@ -1024,27 +1236,6 @@ export default function usePlayground(
     )
   }
 
-  /*
-   * Hasanvand V2.
-   *
-   * The selector supplies a target,
-   * mode, and degree-rule system.
-   *
-   * usePlayground determines the exact
-   * degree information known about that
-   * target and creates the certified
-   * immutable application.
-   *
-   * For the regular whole graph G, the
-   * only possible degree is the current
-   * working degree.
-   *
-   * For a Lovasz part with maximum
-   * internal degree s, the abstract
-   * playground conservatively allows
-   *
-   *   0,1,...,s.
-   */
   function applyHasanvandCompression(
     target:
       HasanvandTarget,
@@ -1056,8 +1247,16 @@ export default function usePlayground(
       readonly HasanvandDegreeRule[],
   ) {
     if (
-      state.directedMenger !==
-      null
+      hasAnyDirectedMengerRepair
+    ) {
+      return
+    }
+
+    if (
+      state
+        .stabilizeOutdegreeClass
+        ?.target ===
+      target
     ) {
       return
     }
@@ -1075,7 +1274,10 @@ export default function usePlayground(
       if (
         state.partition !==
           null ||
-        wholeGraphAlreadyOriented
+        wholeGraphAlreadyOriented ||
+        state
+          .stabilizeOutdegreeClass !==
+          null
       ) {
         return
       }
@@ -1166,8 +1368,10 @@ export default function usePlayground(
 
   function takeOrientedTwoFactor() {
     if (
-      state.directedMenger !==
-      null
+      hasAnyDirectedMengerRepair ||
+      state
+        .stabilizeOutdegreeClass !==
+        null
     ) {
       return
     }
@@ -1184,31 +1388,123 @@ export default function usePlayground(
     )
   }
 
+  function applyStabilizeOutdegreeClass(
+    target:
+      StabilizeTarget,
+
+    q: number,
+  ) {
+    if (
+      hasAnyDirectedMengerRepair ||
+      state
+        .stabilizeOutdegreeClass !==
+        null ||
+      !arcReversalFixersCompatibleWithConstruction
+    ) {
+      return
+    }
+
+    let currentOutdegrees:
+      readonly number[]
+
+    if (
+      target ===
+      'G'
+    ) {
+      if (
+        state.partition !==
+          null ||
+        !wholeGraphAlreadyOriented
+      ) {
+        return
+      }
+
+      currentOutdegrees =
+        getCurrentOutdegreeClasses(
+          preStabilizationOutdegreePossibilities,
+        )
+    } else {
+      if (
+        state.partition ===
+          null ||
+        state.acrossDirection ===
+          null
+      ) {
+        return
+      }
+
+      if (
+        target ===
+          'L' &&
+        !leftAlreadyOriented
+      ) {
+        return
+      }
+
+      if (
+        target ===
+          'R' &&
+        !rightAlreadyOriented
+      ) {
+        return
+      }
+
+      currentOutdegrees =
+        target ===
+        'L'
+          ? preStabilizationOutdegreePossibilities
+              .L
+          : preStabilizationOutdegreePossibilities
+              .R
+    }
+
+    const application =
+      createStabilizeOutdegreeClassApplication(
+        {
+          target,
+
+          q,
+
+          degree:
+            originalDegree,
+
+          currentOutdegrees,
+        },
+      )
+
+    if (
+      application ===
+      null
+    ) {
+      return
+    }
+
+    setMoves(
+      (current) => [
+        ...current,
+
+        {
+          type:
+            'stabilize-outdegree-class',
+
+          application,
+        },
+      ],
+    )
+  }
+
   /*
-   * The workspace creates and
-   * mathematically certifies the
-   * application before passing it
-   * here.
-   *
-   * usePlayground verifies that:
-   *
-   *   1. Menger is compatible with the
-   *      current construction, and
-   *
-   *   2. the current total-outdegree
-   *      state is exactly the state for
-   *      which the application was
-   *      certified.
+   * Existing Local-alpha Directed
+   * Menger V2 application.
    */
   function applyDirectedMengerRepair(
     application:
       DirectedMengerApplication,
   ) {
     if (
-      state.directedMenger !==
-        null ||
+      hasAnyDirectedMengerRepair ||
       !startingOrientationComplete ||
-      !directedMengerCompatibleWithConstruction
+      !arcReversalFixersCompatibleWithConstruction
     ) {
       return
     }
@@ -1239,6 +1535,40 @@ export default function usePlayground(
     )
   }
 
+  /*
+   * New Reservoir Directed Menger V3.
+   *
+   * There are no user-entered parameters:
+   * the current proof state already
+   * determines the certified
+   * application.
+   */
+  function applyDirectedMengerReservoirRepair() {
+    if (
+      hasAnyDirectedMengerRepair ||
+      !startingOrientationComplete ||
+      !arcReversalFixersCompatibleWithConstruction ||
+      directedMengerReservoirCandidate ===
+        null
+    ) {
+      return
+    }
+
+    setMoves(
+      (current) => [
+        ...current,
+
+        {
+          type:
+            'directed-menger-reservoir-repair',
+
+          application:
+            directedMengerReservoirCandidate,
+        },
+      ],
+    )
+  }
+
   function undo() {
     setMoves(
       (current) =>
@@ -1252,6 +1582,45 @@ export default function usePlayground(
   function reset() {
     setMoves([])
   }
+
+  const canStabilizeCommon =
+    !hasAnyDirectedMengerRepair &&
+    state
+      .stabilizeOutdegreeClass ===
+      null &&
+    arcReversalFixersCompatibleWithConstruction
+
+  const canStabilizeG =
+    canStabilizeCommon &&
+    state.partition ===
+      null &&
+    wholeGraphAlreadyOriented
+
+  const canStabilizeL =
+    canStabilizeCommon &&
+    state.partition !==
+      null &&
+    state.acrossDirection !==
+      null &&
+    leftAlreadyOriented
+
+  const canStabilizeR =
+    canStabilizeCommon &&
+    state.partition !==
+      null &&
+    state.acrossDirection !==
+      null &&
+    rightAlreadyOriented
+
+  const canApplyDirectedMengerRepair =
+    startingOrientationComplete &&
+    arcReversalFixersCompatibleWithConstruction &&
+    !hasAnyDirectedMengerRepair
+
+  const canApplyDirectedMengerReservoirRepair =
+    canApplyDirectedMengerRepair &&
+    directedMengerReservoirCandidate !==
+      null
 
   return {
     moves,
@@ -1274,6 +1643,16 @@ export default function usePlayground(
 
     partition:
       state.partition,
+
+    lovaszApplication:
+      state
+        .lovaszApplication,
+
+    lovaszCertificate:
+      state
+        .lovaszApplication
+        ?.certificate ??
+      null,
 
     acrossDirection:
       state
@@ -1318,13 +1697,6 @@ export default function usePlayground(
     maLuApplicationR:
       state.maLuR,
 
-    /*
-     * Hasanvand applications are
-     * returned directly, like avoid-c
-     * state. Their null/non-null status
-     * also tells the menu whether that
-     * target has already been oriented.
-     */
     hasanvandG:
       state.hasanvandG,
 
@@ -1343,12 +1715,52 @@ export default function usePlayground(
     hasanvandApplicationR:
       state.hasanvandR,
 
-    directedMengerApplied:
-      state.directedMenger !==
+    stabilizeOutdegreeClassApplied:
+      state
+        .stabilizeOutdegreeClass !==
       null,
 
+    stabilizeOutdegreeClassApplication:
+      state
+        .stabilizeOutdegreeClass,
+
+    stabilizationCertificate:
+      state
+        .stabilizeOutdegreeClass
+        ?.certificate ??
+      null,
+
+    canStabilizeG,
+
+    canStabilizeL,
+
+    canStabilizeR,
+
+    /*
+     * True after EITHER Directed Menger
+     * certificate mode has been applied.
+     */
+    directedMengerApplied:
+      hasAnyDirectedMengerRepair,
+
+    /*
+     * Backward-compatible Local-alpha
+     * application for the files that
+     * have not yet been upgraded.
+     */
     directedMengerApplication:
       state.directedMenger,
+
+    /*
+     * New reservoir state.
+     */
+    directedMengerReservoirApplication:
+      state
+        .directedMengerReservoir,
+
+    directedMengerReservoirCandidate,
+
+    preStabilizationOutdegreePossibilities,
 
     preRepairOutdegreePossibilities,
 
@@ -1361,11 +1773,9 @@ export default function usePlayground(
 
     startingOrientationComplete,
 
-    canApplyDirectedMengerRepair:
-      startingOrientationComplete &&
-      directedMengerCompatibleWithConstruction &&
-      state.directedMenger ===
-        null,
+    canApplyDirectedMengerRepair,
+
+    canApplyDirectedMengerReservoirRepair,
 
     applyLovaszPartition,
 
@@ -1387,7 +1797,11 @@ export default function usePlayground(
 
     takeOrientedTwoFactor,
 
+    applyStabilizeOutdegreeClass,
+
     applyDirectedMengerRepair,
+
+    applyDirectedMengerReservoirRepair,
 
     undo,
 

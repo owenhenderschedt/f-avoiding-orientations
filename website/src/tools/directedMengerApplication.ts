@@ -6,8 +6,37 @@ import {
   type MengerDemandRule,
   type MengerRepairDirection,
 } from './directedMengerMath'
+import type {
+  DirectedMengerReservoirApplication,
+} from './directedMengerReservoirApplication'
 
+/*
+ * Existing V2 local-alpha application.
+ *
+ * We keep the exported name
+ *
+ *   DirectedMengerApplication
+ *
+ * for backward compatibility while the
+ * rest of the playground is upgraded to
+ * understand multiple Directed Menger
+ * certificate modes.
+ */
 export type DirectedMengerApplication = {
+  /*
+   * New explicit mode label.
+   *
+   * It is optional rather than required
+   * so any old in-memory V2 application
+   * remains structurally compatible
+   * during hot reload.
+   *
+   * Every newly created application
+   * receives mode = 'local-alpha'.
+   */
+  mode?:
+    'local-alpha'
+
   /*
    * Degree of the regular graph whose
    * orientation is being repaired.
@@ -40,7 +69,8 @@ export type DirectedMengerApplication = {
    * applied to the orientation for
    * which it was certified.
    */
-  startingOutdegrees: number[]
+  startingOutdegrees:
+    number[]
 
   /*
    * Each bad class receives an exact
@@ -79,10 +109,31 @@ export type DirectedMengerApplication = {
    * The alpha interval certifying the
    * local directed-Menger condition.
    */
-  alphaLowerBound: number
+  alphaLowerBound:
+    number
 
-  alphaUpperBound: number
+  alphaUpperBound:
+    number
 }
+
+/*
+ * Directed Menger V3 has two ways of
+ * certifying the SAME path-reversal
+ * theorem:
+ *
+ *   1. local-alpha
+ *   2. reservoir
+ *
+ * Existing files can continue importing
+ * DirectedMengerApplication until they
+ * are upgraded.
+ *
+ * New proof-state files should use this
+ * union whenever either mode may occur.
+ */
+export type AnyDirectedMengerApplication =
+  | DirectedMengerApplication
+  | DirectedMengerReservoirApplication
 
 function uniqueSorted(
   values:
@@ -126,6 +177,39 @@ function copyCapacityRules(
   )
 }
 
+/*
+ * Type guard for the new reservoir
+ * application.
+ */
+export function isDirectedMengerReservoirApplication(
+  application:
+    AnyDirectedMengerApplication,
+): application is DirectedMengerReservoirApplication {
+  return (
+    application.mode ===
+    'reservoir'
+  )
+}
+
+/*
+ * Type guard for the old local-alpha
+ * application.
+ *
+ * Old V2 objects may have no explicit
+ * mode field, so anything that is not a
+ * reservoir application is treated as
+ * local-alpha.
+ */
+export function isDirectedMengerLocalApplication(
+  application:
+    AnyDirectedMengerApplication,
+): application is DirectedMengerApplication {
+  return (
+    application.mode !==
+    'reservoir'
+  )
+}
+
 export function createDirectedMengerApplication({
   degree,
   forbiddenSet,
@@ -134,7 +218,8 @@ export function createDirectedMengerApplication({
   capacityRules,
   direction = 'increase',
 }: {
-  degree: number
+  degree:
+    number
 
   forbiddenSet:
     readonly number[]
@@ -149,10 +234,8 @@ export function createDirectedMengerApplication({
     readonly MengerCapacityRule[]
 
   /*
-   * Optional for this plumbing stage
-   * so the existing V1 callers keep
-   * behaving as upward repairs until
-   * the workspace is upgraded.
+   * Optional so older V1-style callers
+   * still default to upward repairs.
    */
   direction?:
     MengerRepairDirection
@@ -181,6 +264,9 @@ export function createDirectedMengerApplication({
   }
 
   return {
+    mode:
+      'local-alpha',
+
     degree,
 
     /*
@@ -254,8 +340,21 @@ export function getDirectedMengerApplicationCertificate({
 
 export function getDirectedMengerApplicationLabel(
   application:
-    DirectedMengerApplication,
+    AnyDirectedMengerApplication,
 ) {
+  if (
+    isDirectedMengerReservoirApplication(
+      application,
+    )
+  ) {
+    return (
+      `Reservoir Menger `
+      + `${application.q}`
+      + '→'
+      + `${application.repairedOutdegree}`
+    )
+  }
+
   const repairs =
     application
       .demandRules
@@ -282,7 +381,8 @@ export function getDirectedMengerApplicationLabel(
       )
 
   if (
-    repairs.length === 0
+    repairs.length ===
+    0
   ) {
     return (
       'Menger repair'

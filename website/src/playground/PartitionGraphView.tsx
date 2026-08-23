@@ -3,6 +3,8 @@ import BalancedBadge from '../components/BalancedBadge'
 import AvoidCBadge from '../components/AvoidCBadge'
 import MaLuBadge from '../components/MaLuBadge'
 import HasanvandBadge from '../components/HasanvandBadge'
+import StabilizeOutdegreeClassBadge from '../components/StabilizeOutdegreeClassBadge'
+import DirectedMengerReservoirBadge from '../components/DirectedMengerReservoirBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
 import {
   lovaszPartitionTool,
@@ -20,12 +22,15 @@ import type {
 import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
-import {
-  getDemandFinalOutdegree,
-} from '../tools/directedMengerMath'
+import type {
+  StabilizeOutdegreeClassApplication,
+} from '../tools/stabilizeOutdegreeClassApplication'
 import type {
   DirectedMengerApplication,
 } from '../tools/directedMengerApplication'
+import type {
+  DirectedMengerReservoirApplication,
+} from '../tools/directedMengerReservoirApplication'
 import type {
   AcrossDirection,
 } from '../tools/orientAcrossPartition'
@@ -52,8 +57,11 @@ type PartitionGraphViewProps = {
   acrossDirection:
     AcrossDirection | null
 
-  balancedL: boolean
-  balancedR: boolean
+  balancedL:
+    boolean
+
+  balancedR:
+    boolean
 
   avoidCL:
     number | null
@@ -73,8 +81,14 @@ type PartitionGraphViewProps = {
   hasanvandApplicationR:
     HasanvandApplication | null
 
+  stabilizeOutdegreeClassApplication:
+    StabilizeOutdegreeClassApplication | null
+
   directedMengerApplication:
     DirectedMengerApplication | null
+
+  directedMengerReservoirApplication?:
+    DirectedMengerReservoirApplication | null
 
   possibleOutdegreesL:
     OutdegreeSet
@@ -85,31 +99,50 @@ type PartitionGraphViewProps = {
   onOpenLovaszReference:
     () => void
 
-  onOpenBalancedReference: (
-    target:
-      BalancedTarget,
-  ) => void
+  onOpenBalancedReference:
+    (
+      target:
+        BalancedTarget,
+    ) => void
 
-  onOpenAvoidCReference: (
-    target:
-      AvoidCTarget,
-    c: number,
-  ) => void
+  onOpenAvoidCReference:
+    (
+      target:
+        AvoidCTarget,
 
-  onOpenMaLuReference: (
-    application:
-      MaLuApplication,
-  ) => void
+      c:
+        number,
+    ) => void
 
-  onOpenHasanvandReference: (
-    application:
-      HasanvandApplication,
-  ) => void
+  onOpenMaLuReference:
+    (
+      application:
+        MaLuApplication,
+    ) => void
 
-  onOpenDirectedMengerReference: (
-    application:
-      DirectedMengerApplication,
-  ) => void
+  onOpenHasanvandReference:
+    (
+      application:
+        HasanvandApplication,
+    ) => void
+
+  onOpenStabilizeOutdegreeClassReference:
+    (
+      application:
+        StabilizeOutdegreeClassApplication,
+    ) => void
+
+  onOpenDirectedMengerReference:
+    (
+      application:
+        DirectedMengerApplication,
+    ) => void
+
+  onOpenDirectedMengerReservoirReference?:
+    (
+      application:
+        DirectedMengerReservoirApplication,
+    ) => void
 
   onOpenTwoFactorReference:
     () => void
@@ -146,19 +179,16 @@ function getMengerRepairLatex(
   return application
     .demandRules
     .map(
-      (rule) => {
+      (
+        rule,
+      ) => {
         const finalOutdegree =
-          getDemandFinalOutdegree({
-            outdegree:
-              rule.outdegree,
-
-            demand:
-              rule.demand,
-
-            direction:
-              application
-                .direction,
-          })
+          application.direction ===
+          'increase'
+            ? rule.outdegree +
+              rule.demand
+            : rule.outdegree -
+              rule.demand
 
         return (
           `${rule.outdegree}`
@@ -170,43 +200,15 @@ function getMengerRepairLatex(
     .join(',\\ ')
 }
 
-/*
- * The green curves depict the
- * orientation AFTER a repair path has
- * been reversed.
- *
- * Therefore, when we have a displayed
- * crossing orientation, the schematic
- * repair arrows point in the opposite
- * direction.
- */
-function getMengerReversedAcrossDirection(
-  acrossDirection:
-    AcrossDirection | null,
-) {
-  if (
-    acrossDirection ===
-    'L-to-R'
-  ) {
-    return 'R-to-L'
-  }
-
-  if (
-    acrossDirection ===
-    'R-to-L'
-  ) {
-    return 'L-to-R'
-  }
-
-  return null
-}
-
 function TwoFactorNote({
   count,
   onOpen,
 }: {
-  count: number
-  onOpen: () => void
+  count:
+    number
+
+  onOpen:
+    () => void
 }) {
   return (
     <div
@@ -325,7 +327,9 @@ export default function PartitionGraphView({
   maLuApplicationR,
   hasanvandApplicationL,
   hasanvandApplicationR,
+  stabilizeOutdegreeClassApplication,
   directedMengerApplication,
+  directedMengerReservoirApplication = null,
   possibleOutdegreesL,
   possibleOutdegreesR,
   onOpenLovaszReference,
@@ -333,7 +337,9 @@ export default function PartitionGraphView({
   onOpenAvoidCReference,
   onOpenMaLuReference,
   onOpenHasanvandReference,
+  onOpenStabilizeOutdegreeClassReference,
   onOpenDirectedMengerReference,
+  onOpenDirectedMengerReservoirReference,
   onOpenTwoFactorReference,
 }: PartitionGraphViewProps) {
   const hasResidualGraph =
@@ -346,20 +352,55 @@ export default function PartitionGraphView({
       possibleOutdegreesR,
     )
 
+  /*
+   * The green path-reversal schematic
+   * is common to BOTH Directed Menger
+   * certificate modes.
+   */
   const hasMengerRepair =
     directedMengerApplication !==
-    null
+      null ||
+    directedMengerReservoirApplication !==
+      null
 
-  const mengerAcrossDirection =
-    hasMengerRepair
-      ? getMengerReversedAcrossDirection(
-          acrossDirection,
-        )
+  const stabilizationOnL =
+    stabilizeOutdegreeClassApplication !==
+      null &&
+    stabilizeOutdegreeClassApplication
+      .target ===
+      'L'
+      ? stabilizeOutdegreeClassApplication
       : null
 
-  const mengerRightToLeft =
-    mengerAcrossDirection ===
+  const stabilizationOnR =
+    stabilizeOutdegreeClassApplication !==
+      null &&
+    stabilizeOutdegreeClassApplication
+      .target ===
+      'R'
+      ? stabilizeOutdegreeClassApplication
+      : null
+
+  /*
+   * The green schematic arcs represent
+   * arcs AFTER the repair reversal.
+   *
+   * Hence they point opposite the
+   * original crossing orientation.
+   */
+  const mengerPointsLeftToRight =
+    acrossDirection ===
     'R-to-L'
+
+  const mengerStartX =
+    mengerPointsLeftToRight
+      ? 350
+      : 450
+
+  const mengerEndX =
+    mengerPointsLeftToRight
+      ? 450
+      : 350
 
   return (
     <>
@@ -393,6 +434,7 @@ export default function PartitionGraphView({
           }
         </Math>
         -
+
         <button
           type="button"
           onClick={
@@ -433,8 +475,7 @@ export default function PartitionGraphView({
             `${workingDegree}`
           }
         </Math>
-        -regular residual
-        graph
+        -regular residual graph
       </div>
 
       {directedMengerApplication !==
@@ -602,6 +643,26 @@ export default function PartitionGraphView({
           R
         </text>
 
+        {/* RESERVOIR MENGER CERTIFICATE */}
+
+        {directedMengerReservoirApplication !==
+          null &&
+          onOpenDirectedMengerReservoirReference !==
+            undefined && (
+          <DirectedMengerReservoirBadge
+            application={
+              directedMengerReservoirApplication
+            }
+            x={260}
+            y={5}
+            onOpenReference={
+              onOpenDirectedMengerReservoirReference
+            }
+          />
+        )}
+
+        {/* L CONSTRUCTOR BADGES */}
+
         {balancedL && (
           <BalancedBadge
             target="L"
@@ -655,6 +716,8 @@ export default function PartitionGraphView({
             }
           />
         )}
+
+        {/* R CONSTRUCTOR BADGES */}
 
         {balancedR && (
           <BalancedBadge
@@ -710,6 +773,38 @@ export default function PartitionGraphView({
           />
         )}
 
+        {/* STRUCTURAL CERTIFICATE BADGES */}
+
+        {stabilizationOnL !==
+          null && (
+          <StabilizeOutdegreeClassBadge
+            application={
+              stabilizationOnL
+            }
+            x={100}
+            y={320}
+            onOpen={
+              onOpenStabilizeOutdegreeClassReference
+            }
+          />
+        )}
+
+        {stabilizationOnR !==
+          null && (
+          <StabilizeOutdegreeClassBadge
+            application={
+              stabilizationOnR
+            }
+            x={440}
+            y={320}
+            onOpen={
+              onOpenStabilizeOutdegreeClassReference
+            }
+          />
+        )}
+
+        {/* ORIGINAL CROSSING ORIENTATION */}
+
         {acrossDirection !==
           null && (
           <g
@@ -724,7 +819,9 @@ export default function PartitionGraphView({
               235,
               265,
             ].map(
-              (y) => (
+              (
+                y,
+              ) => (
                 <line
                   key={
                     y
@@ -754,7 +851,11 @@ export default function PartitionGraphView({
           </g>
         )}
 
-        {hasMengerRepair && (
+        {/* DIRECTED MENGER REVERSED-ARC SCHEMATIC */}
+
+        {hasMengerRepair &&
+          acrossDirection !==
+            null && (
           <g
             stroke="#3f7d5a"
             strokeWidth="4"
@@ -764,47 +865,31 @@ export default function PartitionGraphView({
           >
             <path
               d={
-                mengerRightToLeft
-                  ? 'M 450 158 Q 400 116 350 158'
-                  : 'M 350 158 Q 400 116 450 158'
+                `M ${mengerStartX} 158 `
+                + `Q 400 116 ${mengerEndX} 158`
               }
-              markerEnd={
-                mengerAcrossDirection ===
-                null
-                  ? undefined
-                  : 'url(#menger-arrowhead)'
-              }
+              markerEnd="url(#menger-arrowhead)"
             />
 
             <path
               d={
-                mengerRightToLeft
-                  ? 'M 450 220 Q 400 182 350 220'
-                  : 'M 350 220 Q 400 182 450 220'
+                `M ${mengerStartX} 220 `
+                + `Q 400 182 ${mengerEndX} 220`
               }
-              markerEnd={
-                mengerAcrossDirection ===
-                null
-                  ? undefined
-                  : 'url(#menger-arrowhead)'
-              }
+              markerEnd="url(#menger-arrowhead)"
             />
 
             <path
               d={
-                mengerRightToLeft
-                  ? 'M 450 282 Q 400 324 350 282'
-                  : 'M 350 282 Q 400 324 450 282'
+                `M ${mengerStartX} 282 `
+                + `Q 400 324 ${mengerEndX} 282`
               }
-              markerEnd={
-                mengerAcrossDirection ===
-                null
-                  ? undefined
-                  : 'url(#menger-arrowhead)'
-              }
+              markerEnd="url(#menger-arrowhead)"
             />
           </g>
         )}
+
+        {/* DEGREE CERTIFICATES */}
 
         <foreignObject
           x="90"
@@ -881,8 +966,7 @@ export default function PartitionGraphView({
               '19px',
           }}
         >
-          fixed
-          contribution:{' '}
+          fixed contribution:{' '}
 
           <Math>
             {
@@ -890,8 +974,7 @@ export default function PartitionGraphView({
             }
           </Math>{' '}
 
-          to every
-          outdegree
+          to every outdegree
         </div>
       )}
 
