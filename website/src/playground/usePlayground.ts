@@ -10,9 +10,14 @@ import type {
   PartOutdegreePossibilities,
 } from './outdegreePossibilities'
 import {
-  getHasanvandValues,
-  type HasanvandParameters,
-} from '../tools/hasanvandCompression'
+  createHasanvandApplication,
+  type HasanvandApplication,
+} from '../tools/hasanvandApplication'
+import type {
+  HasanvandDegreeRule,
+  HasanvandMode,
+  HasanvandTarget,
+} from '../tools/hasanvandMath'
 import {
   createMaLuInternalApplication,
   createMaLuTotalApplication,
@@ -61,7 +66,8 @@ export type PlaygroundMove =
     }
   | {
       type: 'hasanvand-compression'
-      parameters: HasanvandParameters
+      application:
+        HasanvandApplication
     }
   | {
       type: 'avoid-c-whole-graph'
@@ -90,7 +96,8 @@ export type PlaygroundMove =
     }
 
 export type PlaygroundState = {
-  partition: LovaszPair | null
+  partition:
+    LovaszPair | null
 
   acrossDirection:
     AcrossDirection | null
@@ -99,9 +106,14 @@ export type PlaygroundState = {
   balancedL: boolean
   balancedR: boolean
 
-  avoidCG: number | null
-  avoidCL: number | null
-  avoidCR: number | null
+  avoidCG:
+    number | null
+
+  avoidCL:
+    number | null
+
+  avoidCR:
+    number | null
 
   maLuG:
     MaLuApplication | null
@@ -112,10 +124,17 @@ export type PlaygroundState = {
   maLuR:
     MaLuApplication | null
 
-  orientedTwoFactorCount: number
-
   hasanvandG:
-    HasanvandParameters | null
+    HasanvandApplication | null
+
+  hasanvandL:
+    HasanvandApplication | null
+
+  hasanvandR:
+    HasanvandApplication | null
+
+  orientedTwoFactorCount:
+    number
 
   directedMenger:
     DirectedMengerApplication | null
@@ -125,7 +144,8 @@ const initialState:
   PlaygroundState = {
   partition: null,
 
-  acrossDirection: null,
+  acrossDirection:
+    null,
 
   balancedG: false,
   balancedL: false,
@@ -139,22 +159,29 @@ const initialState:
   maLuL: null,
   maLuR: null,
 
-  orientedTwoFactorCount: 0,
-
   hasanvandG: null,
+  hasanvandL: null,
+  hasanvandR: null,
+
+  orientedTwoFactorCount:
+    0,
 
   directedMenger: null,
 }
 
 function deriveState(
-  moves: PlaygroundMove[],
+  moves:
+    PlaygroundMove[],
 ): PlaygroundState {
   const state:
     PlaygroundState = {
     ...initialState,
   }
 
-  for (const move of moves) {
+  for (
+    const move
+    of moves
+  ) {
     if (
       move.type ===
       'lovasz-partition'
@@ -176,14 +203,16 @@ function deriveState(
       'balanced-orientation'
     ) {
       if (
-        move.part === 'L'
+        move.part ===
+        'L'
       ) {
         state.balancedL =
           true
       }
 
       if (
-        move.part === 'R'
+        move.part ===
+        'R'
       ) {
         state.balancedR =
           true
@@ -211,14 +240,16 @@ function deriveState(
       'avoid-c-part'
     ) {
       if (
-        move.part === 'L'
+        move.part ===
+        'L'
       ) {
         state.avoidCL =
           move.c
       }
 
       if (
-        move.part === 'R'
+        move.part ===
+        'R'
       ) {
         state.avoidCR =
           move.c
@@ -239,7 +270,8 @@ function deriveState(
     ) {
       if (
         move.application
-          .target === 'L'
+          .target ===
+        'L'
       ) {
         state.maLuL =
           move.application
@@ -247,9 +279,42 @@ function deriveState(
 
       if (
         move.application
-          .target === 'R'
+          .target ===
+        'R'
       ) {
         state.maLuR =
+          move.application
+      }
+    }
+
+    if (
+      move.type ===
+      'hasanvand-compression'
+    ) {
+      if (
+        move.application
+          .target ===
+        'G'
+      ) {
+        state.hasanvandG =
+          move.application
+      }
+
+      if (
+        move.application
+          .target ===
+        'L'
+      ) {
+        state.hasanvandL =
+          move.application
+      }
+
+      if (
+        move.application
+          .target ===
+        'R'
+      ) {
+        state.hasanvandR =
           move.application
       }
     }
@@ -261,14 +326,6 @@ function deriveState(
       state
         .orientedTwoFactorCount +=
         1
-    }
-
-    if (
-      move.type ===
-      'hasanvand-compression'
-    ) {
-      state.hasanvandG =
-        move.parameters
     }
 
     if (
@@ -305,6 +362,22 @@ function getCurrentOutdegreeClasses(
   ])
 }
 
+function getAllDegreesThrough(
+  maxDegree: number,
+) {
+  return Array.from(
+    {
+      length:
+        maxDegree + 1,
+    },
+    (
+      _,
+      degree,
+    ) =>
+      degree,
+  )
+}
+
 /*
  * A DirectedMengerApplication is
  * mathematically certified when it is
@@ -316,13 +389,6 @@ function getCurrentOutdegreeClasses(
  * saved application is being used on
  * exactly the starting outdegree state
  * for which it was certified.
- *
- * This is also important for V2:
- * increase and decrease have opposite
- * low/high roles, so duplicating those
- * role checks here would create two
- * competing sources of mathematical
- * truth.
  */
 function directedMengerApplicationFits(
   application:
@@ -408,6 +474,8 @@ export default function usePlayground(
     state.avoidCL !==
       null ||
     state.maLuL !==
+      null ||
+    state.hasanvandL !==
       null
 
   const rightAlreadyOriented =
@@ -415,6 +483,8 @@ export default function usePlayground(
     state.avoidCR !==
       null ||
     state.maLuR !==
+      null ||
+    state.hasanvandR !==
       null
 
   /*
@@ -441,88 +511,77 @@ export default function usePlayground(
    * contributing a fixed +1 to every
    * total outdegree.
    *
-   * Our Menger certificate, however,
-   * is a certificate for path reversal
-   * in the full orientation D.
-   * A repair path could use an edge of
-   * that 2-factor, destroying the
-   * interpretation of the factor as a
-   * permanently fixed +1 contribution.
-   *
-   * Until we explicitly develop the
-   * residual-subdigraph version of the
-   * repair theorem, Menger is therefore
-   * unavailable after any oriented
-   * 2-factor has been removed.
+   * Until we model the repair inside
+   * an explicitly chosen residual
+   * subdigraph, Directed Menger stays
+   * unavailable after any such factor
+   * has been removed.
    */
   const directedMengerCompatibleWithConstruction =
     state
       .orientedTwoFactorCount ===
     0
 
-  let residualOutdegreePossibilities:
-    PartOutdegreePossibilities
-
-  if (
-    state.hasanvandG !==
-    null
-  ) {
-    const hasanvandValues =
-      getHasanvandValues(
-        state.hasanvandG.p,
-        state.hasanvandG.q,
-      )
-
-    residualOutdegreePossibilities =
+  /*
+   * All constructor methods now feed
+   * through the same possibility
+   * engine.
+   *
+   * In particular, Hasanvand is no
+   * longer a special whole-graph-only
+   * branch. It can act on G, L, or R.
+   */
+  const residualOutdegreePossibilities =
+    deriveOutdegreePossibilities(
       {
-        L: hasanvandValues,
+        degree:
+          residualGraph
+            .workingDegree,
 
-        R: hasanvandValues,
-      }
-  } else {
-    residualOutdegreePossibilities =
-      deriveOutdegreePossibilities(
-        {
-          degree:
-            residualGraph
-              .workingDegree,
+        partition:
+          state.partition,
 
-          partition:
-            state.partition,
+        acrossDirection:
+          state
+            .acrossDirection,
 
-          acrossDirection:
-            state
-              .acrossDirection,
+        balancedG:
+          state.balancedG,
 
-          balancedG:
-            state.balancedG,
+        balancedL:
+          state.balancedL,
 
-          balancedL:
-            state.balancedL,
+        balancedR:
+          state.balancedR,
 
-          balancedR:
-            state.balancedR,
+        avoidCG:
+          state.avoidCG,
 
-          avoidCG:
-            state.avoidCG,
+        avoidCL:
+          state.avoidCL,
 
-          avoidCL:
-            state.avoidCL,
+        avoidCR:
+          state.avoidCR,
 
-          avoidCR:
-            state.avoidCR,
+        maLuG:
+          state.maLuG,
 
-          maLuG:
-            state.maLuG,
+        maLuL:
+          state.maLuL,
 
-          maLuL:
-            state.maLuL,
+        maLuR:
+          state.maLuR,
 
-          maLuR:
-            state.maLuR,
-        },
-      )
-  }
+        hasanvandG:
+          state.hasanvandG,
+
+        hasanvandL:
+          state.hasanvandL,
+
+        hasanvandR:
+          state.hasanvandR,
+      },
+    )
 
   /*
    * Constructors first determine
@@ -533,15 +592,7 @@ export default function usePlayground(
    *
    * Directed Menger is a fixer of the
    * resulting TOTAL outdegrees, so it
-   * must be applied only after this
-   * shift.
-   *
-   * In V2 we disallow Menger whenever
-   * a removed 2-factor is present, but
-   * retaining this ordering keeps the
-   * state model correct and prepares
-   * for a future residual-subdigraph
-   * version.
+   * is applied after this shift.
    */
   const preRepairOutdegreePossibilities =
     shiftPartOutdegrees(
@@ -689,7 +740,8 @@ export default function usePlayground(
   }
 
   function avoidCPart(
-    part: GraphPart,
+    part:
+      GraphPart,
     c: number,
   ) {
     if (
@@ -854,26 +906,30 @@ export default function usePlayground(
     }
 
     if (
-      part === 'L' &&
+      part ===
+        'L' &&
       leftAlreadyOriented
     ) {
       return
     }
 
     if (
-      part === 'R' &&
+      part ===
+        'R' &&
       rightAlreadyOriented
     ) {
       return
     }
 
     if (
-      mode === 'internal'
+      mode ===
+      'internal'
     ) {
       const certificate =
         getMaLuPartSelectionCertificate(
           {
-            target: part,
+            target:
+              part,
 
             partition:
               state.partition,
@@ -915,7 +971,8 @@ export default function usePlayground(
     const certificate =
       getMaLuTotalCertificate(
         {
-          target: part,
+          target:
+            part,
 
           workingDegree:
             residualGraph
@@ -967,6 +1024,146 @@ export default function usePlayground(
     )
   }
 
+  /*
+   * Hasanvand V2.
+   *
+   * The selector supplies a target,
+   * mode, and degree-rule system.
+   *
+   * usePlayground determines the exact
+   * degree information known about that
+   * target and creates the certified
+   * immutable application.
+   *
+   * For the regular whole graph G, the
+   * only possible degree is the current
+   * working degree.
+   *
+   * For a Lovasz part with maximum
+   * internal degree s, the abstract
+   * playground conservatively allows
+   *
+   *   0,1,...,s.
+   */
+  function applyHasanvandCompression(
+    target:
+      HasanvandTarget,
+
+    mode:
+      HasanvandMode,
+
+    rules:
+      readonly HasanvandDegreeRule[],
+  ) {
+    if (
+      state.directedMenger !==
+      null
+    ) {
+      return
+    }
+
+    let maxDegree:
+      number
+
+    let possibleDegrees:
+      number[]
+
+    if (
+      target ===
+      'G'
+    ) {
+      if (
+        state.partition !==
+          null ||
+        wholeGraphAlreadyOriented
+      ) {
+        return
+      }
+
+      maxDegree =
+        residualGraph
+          .workingDegree
+
+      possibleDegrees = [
+        residualGraph
+          .workingDegree,
+      ]
+    } else {
+      if (
+        state.partition ===
+        null
+      ) {
+        return
+      }
+
+      if (
+        target ===
+          'L' &&
+        leftAlreadyOriented
+      ) {
+        return
+      }
+
+      if (
+        target ===
+          'R' &&
+        rightAlreadyOriented
+      ) {
+        return
+      }
+
+      maxDegree =
+        target ===
+        'L'
+          ? state
+              .partition
+              .s
+          : state
+              .partition
+              .t
+
+      possibleDegrees =
+        getAllDegreesThrough(
+          maxDegree,
+        )
+    }
+
+    const application =
+      createHasanvandApplication(
+        {
+          target,
+
+          mode,
+
+          maxDegree,
+
+          possibleDegrees,
+
+          rules,
+        },
+      )
+
+    if (
+      application ===
+      null
+    ) {
+      return
+    }
+
+    setMoves(
+      (current) => [
+        ...current,
+
+        {
+          type:
+            'hasanvand-compression',
+
+          application,
+        },
+      ],
+    )
+  }
+
   function takeOrientedTwoFactor() {
     if (
       state.directedMenger !==
@@ -987,38 +1184,13 @@ export default function usePlayground(
     )
   }
 
-  function applyHasanvandCompression(
-    parameters:
-      HasanvandParameters,
-  ) {
-    if (
-      state.directedMenger !==
-      null
-    ) {
-      return
-    }
-
-    setMoves(
-      (current) => [
-        ...current,
-
-        {
-          type:
-            'hasanvand-compression',
-
-          parameters,
-        },
-      ],
-    )
-  }
-
   /*
    * The workspace creates and
    * mathematically certifies the
    * application before passing it
    * here.
    *
-   * usePlayground then verifies that:
+   * usePlayground verifies that:
    *
    *   1. Menger is compatible with the
    *      current construction, and
@@ -1104,7 +1276,8 @@ export default function usePlayground(
       state.partition,
 
     acrossDirection:
-      state.acrossDirection,
+      state
+        .acrossDirection,
 
     balancedG:
       state.balancedG,
@@ -1145,8 +1318,30 @@ export default function usePlayground(
     maLuApplicationR:
       state.maLuR,
 
+    /*
+     * Hasanvand applications are
+     * returned directly, like avoid-c
+     * state. Their null/non-null status
+     * also tells the menu whether that
+     * target has already been oriented.
+     */
     hasanvandG:
       state.hasanvandG,
+
+    hasanvandL:
+      state.hasanvandL,
+
+    hasanvandR:
+      state.hasanvandR,
+
+    hasanvandApplicationG:
+      state.hasanvandG,
+
+    hasanvandApplicationL:
+      state.hasanvandL,
+
+    hasanvandApplicationR:
+      state.hasanvandR,
 
     directedMengerApplied:
       state.directedMenger !==
@@ -1155,32 +1350,10 @@ export default function usePlayground(
     directedMengerApplication:
       state.directedMenger,
 
-    /*
-     * This is the orientation the
-     * fixer sees when it opens.
-     *
-     * In our running d=10 example:
-     *
-     *   L = {0,1,2,3}
-     *   R = {8,9,10}.
-     */
     preRepairOutdegreePossibilities,
 
     residualOutdegreePossibilities,
 
-    /*
-     * This is what the graph displays.
-     *
-     * Increase example:
-     *
-     *   bad 1 -> 2,
-     *   high buffers may decrease.
-     *
-     * Decrease repairs are handled by
-     * the same transformation helper,
-     * using the direction stored in the
-     * application.
-     */
     outdegreePossibilities,
 
     outdegreeGuarantees:
@@ -1188,11 +1361,6 @@ export default function usePlayground(
 
     startingOrientationComplete,
 
-    /*
-     * V2 intentionally disables
-     * Directed Menger after an oriented
-     * 2-factor has been removed.
-     */
     canApplyDirectedMengerRepair:
       startingOrientationComplete &&
       directedMengerCompatibleWithConstruction &&
@@ -1215,9 +1383,9 @@ export default function usePlayground(
 
     applyMaLuPart,
 
-    takeOrientedTwoFactor,
-
     applyHasanvandCompression,
+
+    takeOrientedTwoFactor,
 
     applyDirectedMengerRepair,
 
@@ -1226,6 +1394,7 @@ export default function usePlayground(
     reset,
 
     canUndo:
-      moves.length > 0,
+      moves.length >
+      0,
   }
 }

@@ -14,6 +14,13 @@ import {
   getMaLuPartOutdegreePossibilities,
   getMaLuWholeGraphChoices,
 } from '../tools/maLuOutdegrees'
+import type {
+  HasanvandApplication,
+} from '../tools/hasanvandApplication'
+import {
+  getHasanvandPartOutdegreePossibilities,
+  getHasanvandWholeGraphChoices,
+} from '../tools/hasanvandOutdegrees'
 import {
   allOutdegrees,
   uniqueSorted,
@@ -47,6 +54,15 @@ type DeriveOutdegreePossibilitiesArgs = {
 
   maLuR:
     MaLuApplication | null
+
+  hasanvandG:
+    HasanvandApplication | null
+
+  hasanvandL:
+    HasanvandApplication | null
+
+  hasanvandR:
+    HasanvandApplication | null
 }
 
 function balancedInternalChoices(
@@ -111,12 +127,15 @@ function possibilitiesForPart(
 
   maLuApplication:
     MaLuApplication | null,
+
+  hasanvandApplication:
+    HasanvandApplication | null,
 ): OutdegreeSet {
   /*
    * Ma-Lu has its own helper because
    * the application remembers the
-   * exact internal set S selected by
-   * the user.
+   * exact internal set selected by the
+   * user.
    */
   if (
     maLuApplication !==
@@ -134,6 +153,44 @@ function possibilitiesForPart(
 
         application:
           maLuApplication,
+      },
+    )
+  }
+
+  /*
+   * Hasanvand is genuinely
+   * degree-sensitive.
+   *
+   * For each possible internal degree r,
+   * the saved application determines the
+   * appropriate pair
+   *
+   *   (p(r),q(r)),
+   *
+   * and therefore the appropriate
+   * compressed internal outdegrees.
+   *
+   * Its helper also handles the
+   * degree-dependent crossing
+   * contribution once the cut has been
+   * oriented.
+   */
+  if (
+    hasanvandApplication !==
+    null
+  ) {
+    return getHasanvandPartOutdegreePossibilities(
+      {
+        degree,
+
+        maxInternalDegree,
+
+        part,
+
+        acrossDirection,
+
+        application:
+          hasanvandApplication,
       },
     )
   }
@@ -234,6 +291,9 @@ export default function deriveOutdegreePossibilities({
   maLuG,
   maLuL,
   maLuR,
+  hasanvandG,
+  hasanvandL,
+  hasanvandR,
 }: DeriveOutdegreePossibilitiesArgs):
   PartOutdegreePossibilities {
   if (balancedG) {
@@ -283,6 +343,27 @@ export default function deriveOutdegreePossibilities({
     }
   }
 
+  /*
+   * For the whole regular graph there
+   * is one actual degree, so the
+   * Hasanvand application uses only
+   * the rule covering that degree.
+   */
+  if (
+    hasanvandG !== null
+  ) {
+    const values =
+      getHasanvandWholeGraphChoices(
+        degree,
+        hasanvandG,
+      )
+
+    return {
+      L: values,
+      R: values,
+    }
+  }
+
   if (
     partition === null
   ) {
@@ -306,6 +387,7 @@ export default function deriveOutdegreePossibilities({
       balancedL,
       avoidCL,
       maLuL,
+      hasanvandL,
     ),
 
     R: possibilitiesForPart(
@@ -316,6 +398,7 @@ export default function deriveOutdegreePossibilities({
       balancedR,
       avoidCR,
       maLuR,
+      hasanvandR,
     ),
   }
 }

@@ -1,107 +1,18 @@
 import Math from '../components/Math'
-
-export type HasanvandTarget =
-  | 'G'
-  | 'L'
-  | 'R'
-
-export type HasanvandParameters = {
-  p: number
-  q: number
-}
+import type {
+  HasanvandApplication,
+} from './hasanvandApplication'
+import {
+  getHasanvandValuesForDegree,
+  type HasanvandDegreeRule,
+  type HasanvandTarget,
+} from './hasanvandMath'
 
 export const hasanvandCompressionTool = {
   id: 'hasanvand-compression',
   name: 'Hasanvand Compression',
-  menuLabel: 'Hasanvand compression',
+  menuLabel: 'Hasanvand',
 } as const
-
-export function getHasanvandValues(
-  p: number,
-  q: number,
-) {
-  return Array.from(
-    new Set([
-      p,
-      p + 1,
-      q - 1,
-      q,
-    ]),
-  ).sort((a, b) => a - b)
-}
-
-/*
- * For an r-regular graph, a balanced orientation gives
- *
- *   floor(r/2) <= d^+(v) <= ceil(r/2).
- *
- * Hence it certifies the existence of a (p,q)-orientation
- * whenever
- *
- *   p <= floor(r/2)
- *   and
- *   q >= ceil(r/2).
- *
- * We then impose Hasanvand's additional hypotheses
- *
- *   q >= r/2
- *   and
- *   p >= q/2 - 2.
- *
- * The first is automatic from q >= ceil(r/2), but we keep
- * the logic conceptually explicit here.
- */
-export function getHasanvandParameterPairs(
-  degree: number,
-): HasanvandParameters[] {
-  const pairs: HasanvandParameters[] = []
-
-  const balancedLow =
-    globalThis.Math.floor(degree / 2)
-
-  const balancedHigh =
-    globalThis.Math.ceil(degree / 2)
-
-  for (
-    let q = 0;
-    q <= degree;
-    q += 1
-  ) {
-    for (
-      let p = 0;
-      p < q;
-      p += 1
-    ) {
-      const balancedIntervalFits =
-        p <= balancedLow &&
-        q >= balancedHigh
-
-      const qCondition =
-        2 * q >= degree
-
-      const pCondition =
-        2 * p >= q - 4
-
-      if (
-        balancedIntervalFits &&
-        qCondition &&
-        pCondition
-      ) {
-        pairs.push({
-          p,
-          q,
-        })
-      }
-    }
-  }
-
-  return pairs
-}
-
-type HasanvandCompressionReferenceProps = {
-  target: HasanvandTarget
-  parameters: HasanvandParameters
-}
 
 function getTargetMath(
   target: HasanvandTarget,
@@ -117,24 +28,161 @@ function getTargetMath(
   return 'G'
 }
 
+function latexSet(
+  values:
+    readonly number[],
+) {
+  return (
+    '\\{' +
+    values.join(',') +
+    '\\}'
+  )
+}
+
+function getDegreeRangeLatex(
+  rule:
+    HasanvandDegreeRule,
+) {
+  if (
+    rule.minDegree ===
+    rule.maxDegree
+  ) {
+    return (
+      `d_H(v)=${rule.minDegree}`
+    )
+  }
+
+  return (
+    `${rule.minDegree}`
+    + '\\leq  d_H(v)'
+    + `\\leq${rule.maxDegree}`
+  )
+}
+
+function getRuleLatex(
+  rule:
+    HasanvandDegreeRule,
+) {
+  return (
+    '('
+    + `p(v),q(v)`
+    + ')'
+    + '='
+    + `(${rule.p},${rule.q})`
+  )
+}
+
+function PanelFormula({
+  children,
+}: {
+  children: string
+}) {
+  return (
+    <div
+      style={{
+        textAlign:
+          'center',
+
+        margin:
+          '16px 0',
+
+        padding:
+          '11px 12px',
+
+        border:
+          '1px solid #e2e8f0',
+
+        borderRadius:
+          '8px',
+
+        background:
+          '#f8fafc',
+
+        overflowX:
+          'auto',
+      }}
+    >
+      <Math display>
+        {children}
+      </Math>
+    </div>
+  )
+}
+
+function RuleCard({
+  rule,
+}: {
+  rule:
+    HasanvandDegreeRule
+}) {
+  return (
+    <div
+      style={{
+        marginBottom:
+          '10px',
+
+        padding:
+          '11px 13px',
+
+        border:
+          '1px solid #e2e8f0',
+
+        borderRadius:
+          '8px',
+
+        background:
+          '#f8fafc',
+      }}
+    >
+      <Math>
+        {
+          getDegreeRangeLatex(
+            rule,
+          )
+        }
+      </Math>
+
+      {' '}⇒{' '}
+
+      <Math>
+        {
+          getRuleLatex(
+            rule,
+          )
+        }
+      </Math>
+    </div>
+  )
+}
+
+type HasanvandCompressionReferenceProps = {
+  target: HasanvandTarget
+
+  application:
+    HasanvandApplication | null
+}
+
 export function HasanvandCompressionReference({
   target,
-  parameters,
+  application,
 }: HasanvandCompressionReferenceProps) {
-  const targetMath =
-    getTargetMath(target)
+  const effectiveTarget =
+    application?.target ??
+    target
 
-  const values =
-    getHasanvandValues(
-      parameters.p,
-      parameters.q,
+  const targetMath =
+    getTargetMath(
+      effectiveTarget,
     )
 
   return (
     <>
+      {/* THEOREM */}
+
       <section
         style={{
-          marginBottom: '32px',
+          marginBottom:
+            '32px',
         }}
       >
         <h3
@@ -142,38 +190,48 @@ export function HasanvandCompressionReference({
             marginTop: 0,
           }}
         >
-          Theorem (Hasanvand)
+          Theorem
+          (Hasanvand)
         </h3>
 
         <p>
-          Let <Math>{'H'}</Math> be a simple graph, and let{' '}
-          <Math>
-            {'p,q:V(H)\\to\\mathbb Z'}
-          </Math>{' '}
-          satisfy{' '}
-          <Math>{'p(v)<q(v)'}</Math>{' '}
-          for every vertex. Suppose also that
+          Let{' '}
+          <Math>{'H'}</Math>{' '}
+          be a simple graph,
+          and let
         </p>
 
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '18px 0',
-          }}
-        >
-          <Math display>
-            {
-              'q(v)\\geq \\frac{1}{2}d_H(v)'
-              + '\\qquad\\text{and}\\qquad '
-              + 'p(v)\\geq \\frac{1}{2}q(v)-2'
-            }
-          </Math>
-        </div>
+        <PanelFormula>
+          {
+            'p,q:V(H)'
+            + '\\to\\mathbb Z'
+          }
+        </PanelFormula>
 
         <p>
-          for every{' '}
-          <Math>{'v\\in V(H)'}</Math>.
-          Then the following are equivalent.
+          satisfy, for every
+          vertex{' '}
+          <Math>{'v'}</Math>,
+        </p>
+
+        <PanelFormula>
+          {
+            'p(v)<q(v),'
+            + '\\qquad '
+            + 'q(v)'
+            + '\\geq'
+            + '\\frac12 d_H(v),'
+            + '\\qquad '
+            + 'p(v)'
+            + '\\geq'
+            + '\\frac12 q(v)-2.'
+          }
+        </PanelFormula>
+
+        <p>
+          Then the following
+          two statements are
+          equivalent.
         </p>
 
         <div
@@ -183,225 +241,545 @@ export function HasanvandCompressionReference({
           }}
         >
           <p>
-            1. <Math>{'H'}</Math> has an
-            orientation satisfying
+            1.{' '}
+            <Math>{'H'}</Math>{' '}
+            has an orientation
+            satisfying
           </p>
 
-          <div
-            style={{
-              textAlign: 'center',
-              margin: '14px 0',
-            }}
-          >
-            <Math display>
-              {
-                'p(v)\\leq d_H^+(v)\\leq q(v)'
-              }
-            </Math>
-          </div>
-
-          <p>
-            for every vertex.
-          </p>
-
-          <p>
-            2. <Math>{'H'}</Math> has an
-            orientation satisfying
-          </p>
-
-          <div
-            style={{
-              textAlign: 'center',
-              margin: '14px 0',
-            }}
-          >
-            <Math display>
-              {
-                'd_H^+(v)'
-                + '\\in '
-                + '\\{'
-                + 'p(v),'
-                + 'p(v)+1,'
-                + 'q(v)-1,'
-                + 'q(v)'
-                + '\\}'
-              }
-            </Math>
-          </div>
-
-          <p>
-            for every vertex.
-          </p>
-        </div>
-      </section>
-
-      <section
-        style={{
-          marginBottom: '32px',
-        }}
-      >
-        <h3>How we use it</h3>
-
-        <p>
-          The theorem is a compression
-          principle. We first certify the
-          existence of an orientation whose
-          outdegrees lie in the interval
-        </p>
-
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '18px 0',
-          }}
-        >
-          <Math display>
+          <PanelFormula>
             {
-              'p(v)\\leq d_H^+(v)\\leq q(v).'
+              'p(v)'
+              + '\\leq '
+              + 'd_H^+(v)'
+              + '\\leq '
+              + 'q(v)'
             }
-          </Math>
-        </div>
+          </PanelFormula>
 
-        <p>
-          Hasanvand then replaces that entire
-          interval by only four possible
-          levels:
-        </p>
+          <p>
+            for every vertex.
+          </p>
 
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '18px 0',
-          }}
-        >
-          <Math display>
+          <p>
+            2.{' '}
+            <Math>{'H'}</Math>{' '}
+            has an orientation
+            satisfying
+          </p>
+
+          <PanelFormula>
             {
-              '\\{'
+              'd_H^+(v)'
+              + '\\in'
+              + '\\{'
               + 'p(v),'
               + 'p(v)+1,'
               + 'q(v)-1,'
               + 'q(v)'
-              + '\\}.'
+              + '\\}'
             }
-          </Math>
-        </div>
+          </PanelFormula>
 
-        <p>
-          Thus we do not think of Hasanvand
-          as modifying one particular
-          previously chosen orientation.
-          Instead, an interval orientation
-          serves as a certificate that a new
-          four-level orientation exists.
-        </p>
+          <p>
+            for every vertex.
+          </p>
+        </div>
       </section>
+
+      {/* HOW WE USE IT */}
 
       <section
         style={{
-          marginBottom: '32px',
+          marginBottom:
+            '32px',
         }}
       >
-        <h3>Balanced certificate</h3>
+        <h3>
+          How we use it
+        </h3>
 
         <p>
-          When <Math>{'H'}</Math> is
-          regular, a balanced orientation
-          gives
+          Hasanvand is a
+          compression theorem.
+          We first certify the
+          existence of an
+          orientation whose
+          outdegrees lie in the
+          vertex-dependent
+          interval
         </p>
 
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '18px 0',
-          }}
-        >
-          <Math display>
-            {
-              'd_H^+(v)'
-              + '\\in '
-              + '\\left\\{'
-              + '\\left\\lfloor'
-              + '\\frac{d_H(v)}{2}'
-              + '\\right\\rfloor,'
-              + '\\left\\lceil'
-              + '\\frac{d_H(v)}{2}'
-              + '\\right\\rceil'
-              + '\\right\\}.'
-            }
-          </Math>
-        </div>
+        <PanelFormula>
+          {
+            'p(v)'
+            + '\\leq '
+            + 'd_H^+(v)'
+            + '\\leq '
+            + 'q(v).'
+          }
+        </PanelFormula>
 
         <p>
-          Therefore, if these balanced
-          outdegrees lie inside{' '}
-          <Math>{'[p,q]'}</Math>, the
-          interval-orientation hypothesis is
-          automatically satisfied.
+          Hasanvand then says
+          that another
+          orientation exists
+          in which each vertex
+          uses only the four
+          boundary levels
         </p>
 
+        <PanelFormula>
+          {
+            '\\{'
+            + 'p(v),'
+            + 'p(v)+1,'
+            + 'q(v)-1,'
+            + 'q(v)'
+            + '\\}.'
+          }
+        </PanelFormula>
+
         <p>
-          The playground uses this fact to
-          determine which constant pairs{' '}
-          <Math>{'(p,q)'}</Math> are
-          available on the current regular
-          graph.
+          Thus the tool does
+          not modify a
+          previously chosen
+          orientation. The
+          interval orientation
+          acts as a certificate
+          for the existence of
+          a new compressed
+          orientation.
         </p>
       </section>
+
+      {/* BALANCED CERTIFICATE */}
 
       <section
         style={{
-          marginBottom: '32px',
+          marginBottom:
+            '32px',
         }}
       >
-        <h3>Application here</h3>
+        <h3>
+          Balanced
+          certificate
+        </h3>
 
         <p>
-          We apply the theorem to{' '}
-          <Math>{targetMath}</Math> with
-          constant parameters
+          Every graph has a
+          balanced orientation.
+          At a vertex of degree{' '}
+          <Math>{'r'}</Math>,
+          such an orientation
+          has
         </p>
 
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '18px 0',
-          }}
-        >
-          <Math display>
-            {
-              `p=${parameters.p},`
-              + '\\qquad '
-              + `q=${parameters.q}.`
-            }
-          </Math>
-        </div>
+        <PanelFormula>
+          {
+            'd_H^+(v)'
+            + '\\in'
+            + '\\left\\{'
+            + '\\left\\lfloor'
+            + '\\frac r2'
+            + '\\right\\rfloor,'
+            + '\\left\\lceil'
+            + '\\frac r2'
+            + '\\right\\rceil'
+            + '\\right\\}.'
+          }
+        </PanelFormula>
 
         <p>
-          Once the interval-orientation
-          hypothesis and Hasanvand&apos;s
-          inequalities are certified, the
-          resulting orientation has possible
-          outdegrees
+          Therefore the
+          balanced orientation
+          certifies the
+          required interval
+          orientation whenever
         </p>
 
-        <div
-          style={{
-            textAlign: 'center',
-            margin: '18px 0',
-          }}
-        >
-          <Math display>
-            {
-              '\\{'
-              + values.join(',')
-              + '\\}.'
-            }
-          </Math>
-        </div>
+        <PanelFormula>
+          {
+            'p(v)'
+            + '\\leq'
+            + '\\left\\lfloor'
+            + '\\frac{d_H(v)}2'
+            + '\\right\\rfloor'
+            + '\\qquad\\text{and}\\qquad '
+            + 'q(v)'
+            + '\\geq'
+            + '\\left\\lceil'
+            + '\\frac{d_H(v)}2'
+            + '\\right\\rceil.'
+          }
+        </PanelFormula>
+
+        <p>
+          The playground checks
+          these inequalities
+          separately for every
+          degree that may occur
+          in the target graph.
+          It also checks
+          Hasanvand&apos;s own
+          hypotheses at every
+          such degree.
+        </p>
       </section>
+
+      {/* TARGET */}
+
+      <section
+        style={{
+          marginBottom:
+            application ===
+            null
+              ? '32px'
+              : '28px',
+        }}
+      >
+        <h3>
+          Target
+        </h3>
+
+        <p>
+          The current target
+          is
+        </p>
+
+        <PanelFormula>
+          {targetMath}
+        </PanelFormula>
+
+        {application ===
+          null && (
+          <p>
+            Choose either a
+            uniform pair{' '}
+            <Math>{'(p,q)'}</Math>{' '}
+            or a collection of
+            degree ranges with
+            different pairs.
+            The application can
+            be used only after
+            every possible
+            degree has been
+            certified.
+          </p>
+        )}
+      </section>
+
+      {/* CURRENT APPLICATION */}
+
+      {application !==
+        null && (
+        <>
+          <div
+            style={{
+              margin:
+                '28px 0 0',
+
+              borderTop:
+                '1px solid #cbd5e1',
+
+              paddingTop:
+                '24px',
+            }}
+          />
+
+          <section
+            style={{
+              marginBottom:
+                '32px',
+            }}
+          >
+            <h3
+              style={{
+                marginTop: 0,
+              }}
+            >
+              Current
+              application
+            </h3>
+
+            <p>
+              Mode:{' '}
+              <strong>
+                {application.mode ===
+                'uniform'
+                  ? 'uniform'
+                  : 'by degree'}
+              </strong>
+              .
+            </p>
+
+            <p>
+              The possible
+              degrees in{' '}
+              <Math>
+                {targetMath}
+              </Math>{' '}
+              are
+            </p>
+
+            <PanelFormula>
+              {
+                latexSet(
+                  application
+                    .possibleDegrees,
+                )
+              }
+            </PanelFormula>
+
+            <h4
+              style={{
+                marginTop:
+                  '20px',
+
+                marginBottom:
+                  '9px',
+              }}
+            >
+              Degree rules
+            </h4>
+
+            {application
+              .rules
+              .map(
+                (
+                  rule,
+                  index,
+                ) => (
+                  <RuleCard
+                    key={
+                      [
+                        rule.minDegree,
+                        rule.maxDegree,
+                        rule.p,
+                        rule.q,
+                        index,
+                      ].join('-')
+                    }
+                    rule={
+                      rule
+                    }
+                  />
+                ),
+              )}
+          </section>
+
+          {/* DEGREE-BY-DEGREE CERTIFICATE */}
+
+          <section
+            style={{
+              marginBottom:
+                '32px',
+            }}
+          >
+            <h3>
+              Certification
+            </h3>
+
+            <p>
+              For each possible
+              degree{' '}
+              <Math>{'r'}</Math>,
+              the playground
+              checks both
+              Hasanvand&apos;s
+              hypotheses and
+              the balanced
+              interval
+              certificate.
+            </p>
+
+            {application
+              .certificate
+              .checks
+              .map(
+                (check) => {
+                  const rule =
+                    check.rule
+
+                  if (
+                    rule ===
+                    null
+                  ) {
+                    return null
+                  }
+
+                  const values =
+                    getHasanvandValuesForDegree(
+                      check.degree,
+                      rule.p,
+                      rule.q,
+                    )
+
+                  return (
+                    <div
+                      key={
+                        check.degree
+                      }
+                      style={{
+                        marginBottom:
+                          '12px',
+
+                        padding:
+                          '12px 14px',
+
+                        border:
+                          '1px solid #e2e8f0',
+
+                        borderRadius:
+                          '8px',
+
+                        background:
+                          '#f8fafc',
+                      }}
+                    >
+                      <div
+                        style={{
+                          marginBottom:
+                            '8px',
+
+                          fontWeight:
+                            600,
+                        }}
+                      >
+                        Degree{' '}
+                        <Math>
+                          {
+                            `r=${check.degree}`
+                          }
+                        </Math>
+                      </div>
+
+                      <div
+                        style={{
+                          marginBottom:
+                            '6px',
+                        }}
+                      >
+                        Rule:{' '}
+                        <Math>
+                          {
+                            `(p,q)=(${rule.p},${rule.q})`
+                          }
+                        </Math>
+                      </div>
+
+                      <div
+                        style={{
+                          marginBottom:
+                            '6px',
+                        }}
+                      >
+                        Hasanvand
+                        conditions:{' '}
+                        <span
+                          style={{
+                            color:
+                              check
+                                .theoremConditionsHold
+                                ? '#166534'
+                                : '#b91c1c',
+                          }}
+                        >
+                          {check
+                            .theoremConditionsHold
+                            ? '✓ certified'
+                            : '✗ failed'}
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          marginBottom:
+                            '6px',
+                        }}
+                      >
+                        Balanced
+                        interval
+                        certificate:{' '}
+                        <span
+                          style={{
+                            color:
+                              check
+                                .balancedCertificateHolds
+                                ? '#166534'
+                                : '#b91c1c',
+                          }}
+                        >
+                          {check
+                            .balancedCertificateHolds
+                            ? '✓ certified'
+                            : '✗ failed'}
+                        </span>
+                      </div>
+
+                      <div>
+                        Resulting
+                        internal
+                        outdegrees:{' '}
+
+                        <Math>
+                          {
+                            latexSet(
+                              values,
+                            )
+                          }
+                        </Math>
+                      </div>
+                    </div>
+                  )
+                },
+              )}
+
+            <div
+              style={{
+                marginTop:
+                  '16px',
+
+                padding:
+                  '12px 14px',
+
+                border:
+                  '1px solid #bbf7d0',
+
+                borderRadius:
+                  '9px',
+
+                background:
+                  '#f0fdf4',
+
+                color:
+                  '#166534',
+              }}
+            >
+              <strong>
+                Certified.
+              </strong>{' '}
+              Every possible
+              degree is covered
+              by exactly one
+              rule, Hasanvand&apos;s
+              hypotheses hold,
+              and the balanced
+              orientation
+              certifies the
+              required interval
+              orientation.
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* REFERENCE */}
 
       <section>
-        <h3>Reference</h3>
+        <h3>
+          Reference
+        </h3>
 
         <p
           style={{
@@ -410,12 +788,15 @@ export function HasanvandCompressionReference({
         >
           M. Hasanvand,{' '}
           <em>
-            A necessary and sufficient
-            condition for the existence of{' '}
+            A necessary and
+            sufficient condition
+            for the existence of{' '}
             {'{'}p,p+1,q-1,q{'}'}
-            -orientations in simple graphs
+            -orientations in
+            simple graphs
           </em>
-          , arXiv:2205.10883 (2022).
+          , arXiv:2205.10883
+          (2022).
         </p>
       </section>
     </>

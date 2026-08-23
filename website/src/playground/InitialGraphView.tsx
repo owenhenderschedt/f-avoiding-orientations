@@ -2,6 +2,7 @@ import Math from '../components/Math'
 import BalancedBadge from '../components/BalancedBadge'
 import AvoidCBadge from '../components/AvoidCBadge'
 import MaLuBadge from '../components/MaLuBadge'
+import HasanvandBadge from '../components/HasanvandBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
 import type {
   BalancedTarget,
@@ -10,94 +11,67 @@ import type {
   AvoidCTarget,
 } from '../tools/avoidC'
 import type {
-  HasanvandParameters,
-} from '../tools/hasanvandCompression'
-import type {
   MaLuApplication,
 } from '../tools/maLuApplication'
+import type {
+  HasanvandApplication,
+} from '../tools/hasanvandApplication'
 import type {
   OutdegreeSet,
 } from './outdegreePossibilities'
 
 type InitialGraphViewProps = {
   degree: number
-  workingDegree: number
-  fixedOutdegreeContribution: number
-  orientedTwoFactorCount: number
 
-  forbiddenSet: readonly number[]
-  possibleOutdegrees: OutdegreeSet
+  workingDegree:
+    number
+
+  fixedOutdegreeContribution:
+    number
+
+  orientedTwoFactorCount:
+    number
+
+  forbiddenSet:
+    readonly number[]
+
+  possibleOutdegrees:
+    OutdegreeSet
 
   balancedG: boolean
-  avoidCG: number | null
+
+  avoidCG:
+    number | null
 
   maLuApplicationG:
     MaLuApplication | null
 
-  hasanvandG:
-    HasanvandParameters | null
+  hasanvandApplicationG:
+    HasanvandApplication | null
 
   onOpenBalancedReference: (
-    target: BalancedTarget,
+    target:
+      BalancedTarget,
   ) => void
 
   onOpenAvoidCReference: (
-    target: AvoidCTarget,
+    target:
+      AvoidCTarget,
     c: number,
   ) => void
 
   onOpenMaLuReference: (
-    application: MaLuApplication,
+    application:
+      MaLuApplication,
   ) => void
 
-  onOpenTwoFactorReference: () => void
+  onOpenHasanvandReference: (
+    application:
+      HasanvandApplication,
+  ) => void
 
-  onOpenHasanvandReference: () => void
-}
-
-function HasanvandBadge({
-  parameters,
-  onOpen,
-}: {
-  parameters: HasanvandParameters
-  onOpen: () => void
-}) {
-  return (
-    <foreignObject
-      x="175"
-      y="320"
-      width="250"
-      height="70"
-    >
-      <div
-        style={{
-          width: '100%',
-          textAlign: 'center',
-        }}
-      >
-        <button
-          type="button"
-          onClick={onOpen}
-          style={{
-            font: 'inherit',
-            fontSize: '20px',
-            color: '#475569',
-            background: 'transparent',
-            border: 'none',
-            borderBottom:
-              '1px solid #64748b',
-            padding: '0 2px 2px',
-            cursor: 'pointer',
-          }}
-        >
-          Hasanvand{' '}
-          <Math>
-            {`(${parameters.p},${parameters.q})`}
-          </Math>
-        </button>
-      </div>
-    </foreignObject>
-  )
+  onOpenTwoFactorReference:
+    () => void
 }
 
 function TwoFactorNote({
@@ -110,52 +84,98 @@ function TwoFactorNote({
   return (
     <div
       style={{
-        margin: '4px auto 20px',
-        textAlign: 'center',
-        color: '#64748b',
-        fontSize: '20px',
+        margin:
+          '4px auto 20px',
+
+        textAlign:
+          'center',
+
+        color:
+          '#64748b',
+
+        fontSize:
+          '20px',
       }}
     >
-      {count === 1 ? (
+      {count ===
+      1 ? (
         <>
           removed:{' '}
+
           <button
             type="button"
-            onClick={onOpen}
+            onClick={
+              onOpen
+            }
             style={{
-              font: 'inherit',
-              color: '#475569',
-              background: 'transparent',
-              border: 'none',
+              font:
+                'inherit',
+
+              color:
+                '#475569',
+
+              background:
+                'transparent',
+
+              border:
+                'none',
+
               borderBottom:
                 '1px solid #64748b',
-              padding: '0 1px 2px',
-              cursor: 'pointer',
+
+              padding:
+                '0 1px 2px',
+
+              cursor:
+                'pointer',
             }}
           >
-            oriented 2-factor{' '}
-            <Math>{'C'}</Math>
+            oriented
+            2-factor{' '}
+
+            <Math>
+              {'C'}
+            </Math>
           </button>
         </>
       ) : (
         <>
           removed:{' '}
+
           <button
             type="button"
-            onClick={onOpen}
+            onClick={
+              onOpen
+            }
             style={{
-              font: 'inherit',
-              color: '#475569',
-              background: 'transparent',
-              border: 'none',
+              font:
+                'inherit',
+
+              color:
+                '#475569',
+
+              background:
+                'transparent',
+
+              border:
+                'none',
+
               borderBottom:
                 '1px solid #64748b',
-              padding: '0 1px 2px',
-              cursor: 'pointer',
+
+              padding:
+                '0 1px 2px',
+
+              cursor:
+                'pointer',
             }}
           >
-            <Math>{`${count}`}</Math>{' '}
-            oriented 2-factors
+            <Math>
+              {`${count}`}
+            </Math>{' '}
+
+            oriented
+            2-factors
           </button>
         </>
       )}
@@ -173,40 +193,52 @@ export default function InitialGraphView({
   balancedG,
   avoidCG,
   maLuApplicationG,
-  hasanvandG,
+  hasanvandApplicationG,
   onOpenBalancedReference,
   onOpenAvoidCReference,
   onOpenMaLuReference,
-  onOpenTwoFactorReference,
   onOpenHasanvandReference,
+  onOpenTwoFactorReference,
 }: InitialGraphViewProps) {
   const hasResidualGraph =
-    orientedTwoFactorCount > 0
+    orientedTwoFactorCount >
+    0
 
   return (
     <>
       <div
         style={{
-          fontSize: '1.15rem',
-          marginBottom: '16px',
+          fontSize:
+            '1.15rem',
+
+          marginBottom:
+            '16px',
         }}
       >
         {hasResidualGraph ? (
           <>
             a{' '}
+
             <Math>
-              {`${workingDegree}`}
+              {
+                `${workingDegree}`
+              }
             </Math>
-            -regular residual graph
+            -regular residual
+            graph
           </>
         ) : (
           <>
             a{' '}
+
             <Math>
               {`${degree}`}
             </Math>
             -regular graph{' '}
-            <Math>{'G'}</Math>
+
+            <Math>
+              {'G'}
+            </Math>
           </>
         )}
       </div>
@@ -232,9 +264,14 @@ export default function InitialGraphView({
             : `A ${degree}-regular graph G represented symbolically as a circle`
         }
         style={{
-          display: 'block',
-          maxWidth: '420px',
-          margin: '0 auto',
+          display:
+            'block',
+
+          maxWidth:
+            '420px',
+
+          margin:
+            '0 auto',
         }}
       >
         <defs>
@@ -273,16 +310,27 @@ export default function InitialGraphView({
         >
           <div
             style={{
-              width: '100%',
-              textAlign: 'center',
-              fontSize: '44px',
-              color: '#334155',
+              width:
+                '100%',
+
+              textAlign:
+                'center',
+
+              fontSize:
+                '44px',
+
+              color:
+                '#334155',
             }}
           >
             {hasResidualGraph ? (
-              <Math>{'G-C'}</Math>
+              <Math>
+                {'G-C'}
+              </Math>
             ) : (
-              <Math>{'G'}</Math>
+              <Math>
+                {'G'}
+              </Math>
             )}
           </div>
         </foreignObject>
@@ -298,10 +346,13 @@ export default function InitialGraphView({
           />
         )}
 
-        {avoidCG !== null && (
+        {avoidCG !==
+          null && (
           <AvoidCBadge
             target="G"
-            c={avoidCG}
+            c={
+              avoidCG
+            }
             x={225}
             y={320}
             onOpen={
@@ -310,7 +361,8 @@ export default function InitialGraphView({
           />
         )}
 
-        {maLuApplicationG !== null && (
+        {maLuApplicationG !==
+          null && (
           <MaLuBadge
             application={
               maLuApplicationG
@@ -323,11 +375,14 @@ export default function InitialGraphView({
           />
         )}
 
-        {hasanvandG !== null && (
+        {hasanvandApplicationG !==
+          null && (
           <HasanvandBadge
-            parameters={
-              hasanvandG
+            application={
+              hasanvandApplicationG
             }
+            x={170}
+            y={320}
             onOpen={
               onOpenHasanvandReference
             }
@@ -338,25 +393,40 @@ export default function InitialGraphView({
       {hasResidualGraph && (
         <div
           style={{
-            maxWidth: '620px',
+            maxWidth:
+              '620px',
+
             margin:
               '-4px auto 18px',
-            color: '#64748b',
-            fontSize: '19px',
+
+            color:
+              '#64748b',
+
+            fontSize:
+              '19px',
           }}
         >
-          fixed contribution:{' '}
+          fixed
+          contribution:{' '}
+
           <Math>
-            {`+${fixedOutdegreeContribution}`}
+            {
+              `+${fixedOutdegreeContribution}`
+            }
           </Math>{' '}
-          to every outdegree
+
+          to every
+          outdegree
         </div>
       )}
 
       <div
         style={{
-          maxWidth: '620px',
-          margin: '8px auto 0',
+          maxWidth:
+            '620px',
+
+          margin:
+            '8px auto 0',
         }}
       >
         <PossibleOutdegrees

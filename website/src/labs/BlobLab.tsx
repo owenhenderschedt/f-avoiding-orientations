@@ -25,6 +25,12 @@ import {
   HasanvandCompressionReference,
   hasanvandCompressionTool,
 } from '../tools/hasanvandCompression'
+import type {
+  HasanvandApplication,
+} from '../tools/hasanvandApplication'
+import type {
+  HasanvandTarget,
+} from '../tools/hasanvandMath'
 import {
   AvoidCReference,
   avoidCTool,
@@ -74,6 +80,9 @@ type ActiveReference =
     }
   | {
       type: 'hasanvand-compression'
+      target: HasanvandTarget
+      application:
+        HasanvandApplication | null
     }
   | {
       type: 'avoid-c'
@@ -87,8 +96,7 @@ type ActiveReference =
         MaLuApplication | null
     }
   | {
-      type:
-        'directed-menger'
+      type: 'directed-menger'
       application:
         DirectedMengerApplication | null
     }
@@ -154,6 +162,47 @@ function getMengerRepairLatex(
     .join(',\\ ')
 }
 
+function getHasanvandTargetLatex(
+  target: HasanvandTarget,
+) {
+  if (
+    target === 'L'
+  ) {
+    return 'G[L]'
+  }
+
+  if (
+    target === 'R'
+  ) {
+    return 'G[R]'
+  }
+
+  return 'G'
+}
+
+function getHasanvandRuleLatex(
+  application:
+    HasanvandApplication,
+) {
+  return application.rules
+    .map(
+      (rule) => {
+        const degreeRange =
+          rule.minDegree ===
+          rule.maxDegree
+            ? `d=${rule.minDegree}`
+            : `${rule.minDegree}\\text{--}${rule.maxDegree}`
+
+        return (
+          `${degreeRange}`
+          + '\\mapsto'
+          + `(${rule.p},${rule.q})`
+        )
+      },
+    )
+    .join(',\\ ')
+}
+
 export default function BlobLab({
   degree,
   forbiddenSet,
@@ -191,13 +240,17 @@ export default function BlobLab({
     playground.balancedL ||
     playground.avoidCL !==
       null ||
-    playground.maLuL
+    playground.maLuL ||
+    playground.hasanvandL !==
+      null
 
   const rightInternallyOriented =
     playground.balancedR ||
     playground.avoidCR !==
       null ||
-    playground.maLuR
+    playground.maLuR ||
+    playground.hasanvandR !==
+      null
 
   const orientationStatus =
     getOrientationStatus({
@@ -268,6 +321,36 @@ export default function BlobLab({
   ) {
     setActiveReference({
       type: 'ma-lu',
+
+      target:
+        application.target,
+
+      application,
+    })
+  }
+
+  function openHasanvandSelectorReference(
+    target:
+      HasanvandTarget,
+  ) {
+    setActiveReference({
+      type:
+        'hasanvand-compression',
+
+      target,
+
+      application:
+        null,
+    })
+  }
+
+  function openAppliedHasanvandReference(
+    application:
+      HasanvandApplication,
+  ) {
+    setActiveReference({
+      type:
+        'hasanvand-compression',
 
       target:
         application.target,
@@ -490,6 +573,7 @@ export default function BlobLab({
           }}
         >
           Forbidden set{' '}
+
           <Math>
             {
               `F=${forbiddenSetMath}`
@@ -583,9 +667,17 @@ export default function BlobLab({
               playground
                 .maLuApplicationR
             }
-            hasanvandG={
+            hasanvandApplicationG={
               playground
-                .hasanvandG
+                .hasanvandApplicationG
+            }
+            hasanvandApplicationL={
+              playground
+                .hasanvandApplicationL
+            }
+            hasanvandApplicationR={
+              playground
+                .hasanvandApplicationR
             }
             directedMengerApplication={
               playground
@@ -627,6 +719,9 @@ export default function BlobLab({
             onOpenMaLuReference={
               openAppliedMaLuReference
             }
+            onOpenHasanvandReference={
+              openAppliedHasanvandReference
+            }
             onOpenDirectedMengerReference={
               openAppliedDirectedMengerReference
             }
@@ -634,12 +729,6 @@ export default function BlobLab({
               setActiveReference({
                 type:
                   'oriented-two-factor',
-              })
-            }
-            onOpenHasanvandReference={() =>
-              setActiveReference({
-                type:
-                  'hasanvand-compression',
               })
             }
           />
@@ -722,9 +811,21 @@ export default function BlobLab({
                 playground
                   .hasanvandG
               }
+              hasanvandL={
+                playground
+                  .hasanvandL
+              }
+              hasanvandR={
+                playground
+                  .hasanvandR
+              }
               directedMengerApplied={
                 playground
                   .directedMengerApplied
+              }
+              canApplyDirectedMengerRepair={
+                playground
+                  .canApplyDirectedMengerRepair
               }
               onOpenDirectedMengerWorkspace={
                 openDirectedMengerWorkspace
@@ -771,6 +872,9 @@ export default function BlobLab({
               onApplyHasanvand={
                 playground
                   .applyHasanvandCompression
+              }
+              onOpenHasanvandReference={
+                openHasanvandSelectorReference
               }
             />
 
@@ -857,6 +961,7 @@ export default function BlobLab({
                           }
                         >
                           Lovász{' '}
+
                           <Math>
                             {
                               `(${move.pair.s},${move.pair.t})`
@@ -877,6 +982,7 @@ export default function BlobLab({
                           }
                         >
                           Orient{' '}
+
                           <Math>
                             {
                               move.direction ===
@@ -900,6 +1006,7 @@ export default function BlobLab({
                           }
                         >
                           Balance{' '}
+
                           <Math>
                             {
                               move.part
@@ -920,6 +1027,7 @@ export default function BlobLab({
                           }
                         >
                           Balance{' '}
+
                           <Math>
                             {'G'}
                           </Math>
@@ -938,12 +1046,15 @@ export default function BlobLab({
                           }
                         >
                           Avoid{' '}
+
                           <Math>
                             {
                               `c=${move.c}`
                             }
                           </Math>{' '}
+
                           in{' '}
+
                           <Math>
                             {'G'}
                           </Math>
@@ -962,12 +1073,15 @@ export default function BlobLab({
                           }
                         >
                           Avoid{' '}
+
                           <Math>
                             {
                               `c=${move.c}`
                             }
                           </Math>{' '}
+
                           in{' '}
+
                           <Math>
                             {
                               move.part
@@ -988,6 +1102,7 @@ export default function BlobLab({
                           }
                         >
                           Ma–Lu on{' '}
+
                           <Math>
                             {'G'}
                           </Math>
@@ -999,6 +1114,7 @@ export default function BlobLab({
                             <>
                               , eliminate
                               total{' '}
+
                               <Math>
                                 {
                                   latexSet(
@@ -1012,6 +1128,7 @@ export default function BlobLab({
                           ) : (
                             <>
                               , avoid{' '}
+
                               <Math>
                                 {
                                   latexSet(
@@ -1038,6 +1155,7 @@ export default function BlobLab({
                           }
                         >
                           Ma–Lu on{' '}
+
                           <Math>
                             {
                               move
@@ -1053,6 +1171,7 @@ export default function BlobLab({
                             <>
                               , eliminate
                               total{' '}
+
                               <Math>
                                 {
                                   latexSet(
@@ -1066,6 +1185,7 @@ export default function BlobLab({
                           ) : (
                             <>
                               , avoid{' '}
+
                               <Math>
                                 {
                                   latexSet(
@@ -1075,6 +1195,7 @@ export default function BlobLab({
                                   )
                                 }
                               </Math>{' '}
+
                               internally
                             </>
                           )}
@@ -1102,16 +1223,32 @@ export default function BlobLab({
                       move.type ===
                       'hasanvand-compression'
                     ) {
+                      const application =
+                        move.application
+
                       return (
                         <span
                           key={
                             index
                           }
                         >
-                          Hasanvand{' '}
+                          Hasanvand on{' '}
+
                           <Math>
                             {
-                              `(${move.parameters.p},${move.parameters.q})`
+                              getHasanvandTargetLatex(
+                                application
+                                  .target,
+                              )
+                            }
+                          </Math>
+                          ,{' '}
+
+                          <Math>
+                            {
+                              getHasanvandRuleLatex(
+                                application,
+                              )
                             }
                           </Math>
                         </span>
@@ -1213,17 +1350,18 @@ export default function BlobLab({
         )}
 
         {activeReference?.type ===
-          'hasanvand-compression' &&
-          playground.hasanvandG !==
-            null && (
-            <HasanvandCompressionReference
-              target="G"
-              parameters={
-                playground
-                  .hasanvandG
-              }
-            />
-          )}
+          'hasanvand-compression' && (
+          <HasanvandCompressionReference
+            target={
+              activeReference
+                .target
+            }
+            application={
+              activeReference
+                .application
+            }
+          />
+        )}
 
         {activeReference?.type ===
           'avoid-c' && (

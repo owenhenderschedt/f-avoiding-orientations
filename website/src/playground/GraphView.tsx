@@ -13,11 +13,11 @@ import type {
   AvoidCTarget,
 } from '../tools/avoidC'
 import type {
-  HasanvandParameters,
-} from '../tools/hasanvandCompression'
-import type {
   MaLuApplication,
 } from '../tools/maLuApplication'
+import type {
+  HasanvandApplication,
+} from '../tools/hasanvandApplication'
 import type {
   DirectedMengerApplication,
 } from '../tools/directedMengerApplication'
@@ -28,21 +28,37 @@ import type {
 
 type GraphViewProps = {
   degree: number
-  workingDegree: number
-  fixedOutdegreeContribution: number
-  orientedTwoFactorCount: number
 
-  forbiddenSet: readonly number[]
-  partition: LovaszPair | null
-  acrossDirection: AcrossDirection | null
+  workingDegree:
+    number
+
+  fixedOutdegreeContribution:
+    number
+
+  orientedTwoFactorCount:
+    number
+
+  forbiddenSet:
+    readonly number[]
+
+  partition:
+    LovaszPair | null
+
+  acrossDirection:
+    AcrossDirection | null
 
   balancedG: boolean
   balancedL: boolean
   balancedR: boolean
 
-  avoidCG: number | null
-  avoidCL: number | null
-  avoidCR: number | null
+  avoidCG:
+    number | null
+
+  avoidCL:
+    number | null
+
+  avoidCR:
+    number | null
 
   maLuApplicationG?:
     MaLuApplication | null
@@ -53,8 +69,14 @@ type GraphViewProps = {
   maLuApplicationR?:
     MaLuApplication | null
 
-  hasanvandG:
-    HasanvandParameters | null
+  hasanvandApplicationG?:
+    HasanvandApplication | null
+
+  hasanvandApplicationL?:
+    HasanvandApplication | null
+
+  hasanvandApplicationR?:
+    HasanvandApplication | null
 
   directedMengerApplication?:
     DirectedMengerApplication | null
@@ -62,19 +84,28 @@ type GraphViewProps = {
   outdegreeGuarantees:
     AcrossOutdegreeGuarantees | null
 
-  onOpenLovaszReference: () => void
+  onOpenLovaszReference:
+    () => void
 
   onOpenBalancedReference: (
-    target: BalancedTarget,
+    target:
+      BalancedTarget,
   ) => void
 
   onOpenAvoidCReference: (
-    target: AvoidCTarget,
+    target:
+      AvoidCTarget,
     c: number,
   ) => void
 
   onOpenMaLuReference?: (
-    application: MaLuApplication,
+    application:
+      MaLuApplication,
+  ) => void
+
+  onOpenHasanvandReference?: (
+    application:
+      HasanvandApplication,
   ) => void
 
   onOpenDirectedMengerReference?: (
@@ -82,9 +113,8 @@ type GraphViewProps = {
       DirectedMengerApplication,
   ) => void
 
-  onOpenTwoFactorReference: () => void
-
-  onOpenHasanvandReference: () => void
+  onOpenTwoFactorReference:
+    () => void
 }
 
 export default function GraphView({
@@ -104,19 +134,23 @@ export default function GraphView({
   maLuApplicationG = null,
   maLuApplicationL = null,
   maLuApplicationR = null,
-  hasanvandG,
+  hasanvandApplicationG = null,
+  hasanvandApplicationL = null,
+  hasanvandApplicationR = null,
   directedMengerApplication = null,
   outdegreeGuarantees,
   onOpenLovaszReference,
   onOpenBalancedReference,
   onOpenAvoidCReference,
   onOpenMaLuReference,
+  onOpenHasanvandReference,
   onOpenDirectedMengerReference,
   onOpenTwoFactorReference,
-  onOpenHasanvandReference,
 }: GraphViewProps) {
   const allPossible =
-    allOutdegrees(degree)
+    allOutdegrees(
+      degree,
+    )
 
   const possibleOutdegreesL =
     outdegreeGuarantees?.L ??
@@ -130,14 +164,23 @@ export default function GraphView({
     onOpenMaLuReference ??
     (() => {})
 
+  const openHasanvandReference =
+    onOpenHasanvandReference ??
+    (() => {})
+
   const openDirectedMengerReference =
     onOpenDirectedMengerReference ??
     (() => {})
 
-  if (partition === null) {
+  if (
+    partition ===
+    null
+  ) {
     return (
       <InitialGraphView
-        degree={degree}
+        degree={
+          degree
+        }
         workingDegree={
           workingDegree
         }
@@ -162,8 +205,8 @@ export default function GraphView({
         maLuApplicationG={
           maLuApplicationG
         }
-        hasanvandG={
-          hasanvandG
+        hasanvandApplicationG={
+          hasanvandApplicationG
         }
         onOpenBalancedReference={
           onOpenBalancedReference
@@ -174,11 +217,11 @@ export default function GraphView({
         onOpenMaLuReference={
           openMaLuReference
         }
+        onOpenHasanvandReference={
+          openHasanvandReference
+        }
         onOpenTwoFactorReference={
           onOpenTwoFactorReference
-        }
-        onOpenHasanvandReference={
-          onOpenHasanvandReference
         }
       />
     )
@@ -222,6 +265,12 @@ export default function GraphView({
       maLuApplicationR={
         maLuApplicationR
       }
+      hasanvandApplicationL={
+        hasanvandApplicationL
+      }
+      hasanvandApplicationR={
+        hasanvandApplicationR
+      }
       directedMengerApplication={
         directedMengerApplication
       }
@@ -242,6 +291,9 @@ export default function GraphView({
       }
       onOpenMaLuReference={
         openMaLuReference
+      }
+      onOpenHasanvandReference={
+        openHasanvandReference
       }
       onOpenDirectedMengerReference={
         openDirectedMengerReference
