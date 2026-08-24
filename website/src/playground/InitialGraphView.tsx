@@ -3,6 +3,7 @@ import BalancedBadge from '../components/BalancedBadge'
 import AvoidCBadge from '../components/AvoidCBadge'
 import MaLuBadge from '../components/MaLuBadge'
 import HasanvandBadge from '../components/HasanvandBadge'
+import ParityBoundsBadge from '../components/ParityBoundsBadge'
 import StabilizeOutdegreeClassBadge from '../components/StabilizeOutdegreeClassBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
 import type {
@@ -17,6 +18,9 @@ import type {
 import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
+import type {
+  ParityBoundsApplication,
+} from '../tools/parityBoundsApplication'
 import type {
   StabilizeOutdegreeClassApplication,
 } from '../tools/stabilizeOutdegreeClassApplication'
@@ -55,6 +59,9 @@ type InitialGraphViewProps = {
   hasanvandApplicationG:
     HasanvandApplication | null
 
+  parityBoundsApplicationG?:
+    ParityBoundsApplication | null
+
   stabilizeOutdegreeClassApplication:
     StabilizeOutdegreeClassApplication | null
 
@@ -89,6 +96,12 @@ type InitialGraphViewProps = {
     (
       application:
         HasanvandApplication,
+    ) => void
+
+  onOpenParityBoundsReference?:
+    (
+      application:
+        ParityBoundsApplication,
     ) => void
 
   onOpenStabilizeOutdegreeClassReference:
@@ -257,6 +270,7 @@ export default function InitialGraphView({
   avoidCG,
   maLuApplicationG,
   hasanvandApplicationG,
+  parityBoundsApplicationG = null,
   stabilizeOutdegreeClassApplication,
   directedMengerApplication,
   possibleOutdegrees,
@@ -264,6 +278,7 @@ export default function InitialGraphView({
   onOpenAvoidCReference,
   onOpenMaLuReference,
   onOpenHasanvandReference,
+  onOpenParityBoundsReference,
   onOpenStabilizeOutdegreeClassReference,
   onOpenDirectedMengerReference,
   onOpenTwoFactorReference,
@@ -521,6 +536,24 @@ export default function InitialGraphView({
             y={320}
             onOpen={
               onOpenHasanvandReference
+            }
+          />
+        )}
+
+        {parityBoundsApplicationG !==
+          null &&
+          onOpenParityBoundsReference !==
+            undefined && (
+          <ParityBoundsBadge
+            application={
+              parityBoundsApplicationG
+            }
+            x={205}
+            y={320}
+            onOpen={() =>
+              onOpenParityBoundsReference(
+                parityBoundsApplicationG,
+              )
             }
           />
         )}

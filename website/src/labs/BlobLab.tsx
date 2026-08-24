@@ -47,6 +47,12 @@ import type {
   MaLuTarget,
 } from '../tools/maLuMath'
 import {
+  ParityBoundsReference,
+} from '../tools/parityBounds'
+import type {
+  ParityBoundsApplication,
+} from '../tools/parityBoundsApplication'
+import {
   StabilizeOutdegreeClassReference,
   stabilizeOutdegreeClassTool,
 } from '../tools/stabilizeOutdegreeClass'
@@ -110,6 +116,11 @@ type ActiveReference =
       target: MaLuTarget
       application:
         MaLuApplication | null
+    }
+  | {
+      type: 'parity-bounds'
+      application:
+        ParityBoundsApplication | null
     }
   | {
       type:
@@ -290,7 +301,8 @@ export default function BlobLab({
       null ||
     playground.maLuG ||
     playground.hasanvandG !==
-      null
+      null ||
+    playground.parityBoundsG
 
   const leftInternallyOriented =
     playground.balancedL ||
@@ -382,6 +394,17 @@ export default function BlobLab({
         application.target,
 
       application,
+    })
+  }
+
+  function openParityBoundsReference() {
+    setActiveReference({
+      type:
+        'parity-bounds',
+
+      application:
+        playground
+          .parityBoundsApplication,
     })
   }
 
@@ -554,8 +577,11 @@ export default function BlobLab({
                 'ma-lu'
               ? maLuTool.name
               : activeReference?.type ===
-                  'stabilize-outdegree-class'
-                ? stabilizeOutdegreeClassTool.name
+                  'parity-bounds'
+                ? 'Parity Bounds'
+                : activeReference?.type ===
+                    'stabilize-outdegree-class'
+                  ? stabilizeOutdegreeClassTool.name
                 : activeReference?.type ===
                     'directed-menger-reservoir'
                   ? 'Directed Menger — Reservoir certificate'
@@ -936,6 +962,21 @@ export default function BlobLab({
               hasanvandR={
                 playground
                   .hasanvandR
+              }
+              parityBoundsG={
+                playground
+                  .parityBoundsG
+              }
+              canApplyParityBounds={
+                playground
+                  .canApplyParityBounds
+              }
+              onApplyParityBounds={
+                playground
+                  .applyParityBounds
+              }
+              onOpenParityBoundsReference={
+                openParityBoundsReference
               }
               stabilizeOutdegreeClassApplied={
                 playground
@@ -1413,6 +1454,31 @@ export default function BlobLab({
 
                     if (
                       move.type ===
+                      'parity-bounds'
+                    ) {
+                      return (
+                        <span
+                          key={
+                            index
+                          }
+                        >
+                          Parity Bounds{' '}
+
+                          <Math>
+                            {
+                              `[${move.application.normalInterval.lower},${move.application.normalInterval.upper}]`
+                              +
+                              ',\\ '
+                              +
+                              `[${move.application.exceptionalInterval.lower},${move.application.exceptionalInterval.upper}]_*`
+                            }
+                          </Math>
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
                       'stabilize-outdegree-class'
                     ) {
                       return (
@@ -1623,6 +1689,16 @@ export default function BlobLab({
               playground
                 .acrossDirection
             }
+            application={
+              activeReference
+                .application
+            }
+          />
+        )}
+
+        {activeReference?.type ===
+          'parity-bounds' && (
+          <ParityBoundsReference
             application={
               activeReference
                 .application

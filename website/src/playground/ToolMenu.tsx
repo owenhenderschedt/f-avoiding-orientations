@@ -5,6 +5,9 @@ import {
 import Math from '../components/Math'
 import MaLuSelector from '../components/MaLuSelector'
 import HasanvandSelector from '../components/HasanvandSelector'
+import ParityBoundsSelector, {
+  type ParityBoundsSelection,
+} from '../components/ParityBoundsSelector'
 import StabilizeOutdegreeClassSelector, {
   type StabilizeTargetOption,
 } from '../components/StabilizeOutdegreeClassSelector'
@@ -93,6 +96,23 @@ type ToolMenuProps = {
 
   hasanvandR:
     HasanvandApplication | null
+
+  /*
+   * Parity Bounds is currently a
+   * whole-working-graph constructor.
+   */
+  parityBoundsG?: boolean
+
+  canApplyParityBounds?: boolean
+
+  onApplyParityBounds?:
+    (
+      selection:
+        ParityBoundsSelection,
+    ) => void
+
+  onOpenParityBoundsReference?:
+    () => void
 
   directedMengerApplied?: boolean
 
@@ -523,6 +543,10 @@ export default function ToolMenu({
   hasanvandG,
   hasanvandL,
   hasanvandR,
+  parityBoundsG = false,
+  canApplyParityBounds = false,
+  onApplyParityBounds,
+  onOpenParityBoundsReference,
   directedMengerApplied = false,
   canApplyDirectedMengerRepair = false,
   onOpenDirectedMengerWorkspace,
@@ -602,6 +626,12 @@ export default function ToolMenu({
     )
 
   const [
+    parityBoundsOpen,
+    setParityBoundsOpen,
+  ] =
+    useState(false)
+
+  const [
     stabilizationOpen,
     setStabilizationOpen,
   ] =
@@ -631,7 +661,8 @@ export default function ToolMenu({
       null ||
     maLuG ||
     hasanvandG !==
-      null
+      null ||
+    parityBoundsG
 
   const leftInternallyOriented =
     balancedL ||
@@ -730,6 +761,17 @@ export default function ToolMenu({
 
   const canUseHasanvandInG =
     canOrientG
+
+  const canUseParityBoundsInG =
+    canOrientG &&
+    canApplyParityBounds &&
+    workingDegree >=
+      4 &&
+    workingDegree %
+      2 ===
+      0 &&
+    onApplyParityBounds !==
+      undefined
 
   const canUseHasanvandInL =
     canOrientL
@@ -971,6 +1013,10 @@ export default function ToolMenu({
       null,
     )
 
+    setParityBoundsOpen(
+      false,
+    )
+
     setStabilizationOpen(
       false,
     )
@@ -1048,6 +1094,14 @@ export default function ToolMenu({
 
     setHasanvandTarget(
       target,
+    )
+  }
+
+  function openParityBoundsMenu() {
+    closeSubmenus()
+
+    setParityBoundsOpen(
+      true,
     )
   }
 
@@ -1215,6 +1269,28 @@ export default function ToolMenu({
       mode,
 
       rules,
+    )
+
+    setToolsOpen(
+      false,
+    )
+
+    closeSubmenus()
+  }
+
+  function applyParityBounds(
+    selection:
+      ParityBoundsSelection,
+  ) {
+    if (
+      onApplyParityBounds ===
+      undefined
+    ) {
+      return
+    }
+
+    onApplyParityBounds(
+      selection,
     )
 
     setToolsOpen(
@@ -1480,6 +1556,60 @@ export default function ToolMenu({
                 returnToRoot
               }
             />
+
+          /* PARITY BOUNDS SELECTOR */
+
+          ) : parityBoundsOpen ? (
+            <>
+              <button
+                type="button"
+                onClick={
+                  returnToRoot
+                }
+                style={{
+                  ...menuButtonStyle,
+
+                  marginBottom:
+                    '4px',
+
+                  borderBottom:
+                    '1px solid #e2e8f0',
+
+                  textAlign:
+                    'center',
+                }}
+              >
+                ← Back
+              </button>
+
+              <div
+                style={{
+                  margin:
+                    '0 -6px -6px',
+                }}
+              >
+                <ParityBoundsSelector
+                  workingDegree={
+                    workingDegree
+                  }
+                  fixedOutdegreeContribution={
+                    fixedOutdegreeContribution
+                  }
+                  forbiddenSet={
+                    globalForbiddenSet
+                  }
+                  canApply={
+                    canUseParityBoundsInG
+                  }
+                  onApply={
+                    applyParityBounds
+                  }
+                  onOpenReference={() =>
+                    onOpenParityBoundsReference?.()
+                  }
+                />
+              </div>
+            </>
 
           /* AVOID C SELECTOR */
 
@@ -1787,6 +1917,20 @@ export default function ToolMenu({
                       {'G'}
                     </Math>
                   </button>
+
+                  {canUseParityBoundsInG && (
+                    <button
+                      type="button"
+                      onClick={
+                        openParityBoundsMenu
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Parity Bounds →
+                    </button>
+                  )}
 
                   {canAvoidCInG && (
                     <button

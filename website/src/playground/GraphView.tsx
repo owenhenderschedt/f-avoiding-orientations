@@ -17,6 +17,9 @@ import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
 import type {
+  ParityBoundsApplication,
+} from '../tools/parityBoundsApplication'
+import type {
   StabilizeOutdegreeClassApplication,
 } from '../tools/stabilizeOutdegreeClassApplication'
 import type {
@@ -90,23 +93,15 @@ type GraphViewProps = {
   hasanvandApplicationR:
     HasanvandApplication | null
 
+  parityBoundsApplicationG?:
+    ParityBoundsApplication | null
+
   stabilizeOutdegreeClassApplication:
     StabilizeOutdegreeClassApplication | null
 
   directedMengerApplication:
     DirectedMengerApplication | null
 
-  /*
-   * NEW:
-   * Reservoir Menger only occurs after
-   * a Lovasz partition, so this will
-   * eventually be consumed by
-   * PartitionGraphView.
-   *
-   * Optional for the current staged
-   * wiring step so BlobLab does not
-   * break before we update it.
-   */
   directedMengerReservoirApplication?:
     DirectedMengerReservoirApplication | null
 
@@ -143,6 +138,12 @@ type GraphViewProps = {
         HasanvandApplication,
     ) => void
 
+  onOpenParityBoundsReference?:
+    (
+      application:
+        ParityBoundsApplication,
+    ) => void
+
   onOpenStabilizeOutdegreeClassReference:
     (
       application:
@@ -155,11 +156,6 @@ type GraphViewProps = {
         DirectedMengerApplication,
     ) => void
 
-  /*
-   * NEW:
-   * Clicking the reservoir badge will
-   * reopen its reservoir certificate.
-   */
   onOpenDirectedMengerReservoirReference?:
     (
       application:
@@ -190,6 +186,7 @@ export default function GraphView({
   hasanvandApplicationG,
   hasanvandApplicationL,
   hasanvandApplicationR,
+  parityBoundsApplicationG = null,
   stabilizeOutdegreeClassApplication,
   directedMengerApplication,
   directedMengerReservoirApplication = null,
@@ -199,6 +196,7 @@ export default function GraphView({
   onOpenAvoidCReference,
   onOpenMaLuReference,
   onOpenHasanvandReference,
+  onOpenParityBoundsReference,
   onOpenStabilizeOutdegreeClassReference,
   onOpenDirectedMengerReference,
   onOpenDirectedMengerReservoirReference,
@@ -219,16 +217,6 @@ export default function GraphView({
       ?.R ??
     allPossible
 
-  /*
-   * Before a Lovasz partition there is
-   * only one graph, so use the union of
-   * the two possibility slots.
-   *
-   * In normal whole-graph states they
-   * are identical, but taking the union
-   * makes this layer robust to the
-   * representation.
-   */
   const possibleOutdegreesG =
     Array.from(
       new Set([
@@ -273,6 +261,9 @@ export default function GraphView({
         hasanvandApplicationG={
           hasanvandApplicationG
         }
+        parityBoundsApplicationG={
+          parityBoundsApplicationG
+        }
         stabilizeOutdegreeClassApplication={
           stabilizeOutdegreeClassApplication
         }
@@ -293,6 +284,9 @@ export default function GraphView({
         }
         onOpenHasanvandReference={
           onOpenHasanvandReference
+        }
+        onOpenParityBoundsReference={
+          onOpenParityBoundsReference
         }
         onOpenStabilizeOutdegreeClassReference={
           onOpenStabilizeOutdegreeClassReference
@@ -357,15 +351,9 @@ export default function GraphView({
       directedMengerApplication={
         directedMengerApplication
       }
-
-      /*
-       * NEW reservoir proof-state
-       * plumbing.
-       */
       directedMengerReservoirApplication={
         directedMengerReservoirApplication
       }
-
       possibleOutdegreesL={
         possibleOutdegreesL
       }
@@ -393,16 +381,9 @@ export default function GraphView({
       onOpenDirectedMengerReference={
         onOpenDirectedMengerReference
       }
-
-      /*
-       * PartitionGraphView will use this
-       * for the clickable Reservoir
-       * Menger q->q+1 badge.
-       */
       onOpenDirectedMengerReservoirReference={
         onOpenDirectedMengerReservoirReference
       }
-
       onOpenTwoFactorReference={
         onOpenTwoFactorReference
       }

@@ -48,6 +48,13 @@ import type {
   StabilizeTarget,
 } from '../tools/stabilizeOutdegreeClassMath'
 import {
+  createParityBoundsApplication,
+  type ParityBoundsApplication,
+} from '../tools/parityBoundsApplication'
+import {
+  getParityBoundsOutdegreePossibilities,
+} from './parityBoundsOutdegrees'
+import {
   getStabilizedOutdegreePossibilities,
 } from './stabilizeOutdegreeClassOutdegrees'
 import {
@@ -109,26 +116,23 @@ export type PlaygroundMove =
         MaLuApplication
     }
   | {
+      type: 'parity-bounds'
+      application:
+        ParityBoundsApplication
+    }
+  | {
       type:
         'stabilize-outdegree-class'
       application:
         StabilizeOutdegreeClassApplication
     }
   | {
-      /*
-       * Existing Directed Menger V2
-       * local-alpha application.
-       */
       type:
         'directed-menger-repair'
       application:
         DirectedMengerApplication
     }
   | {
-      /*
-       * New Directed Menger V3
-       * reservoir certificate.
-       */
       type:
         'directed-menger-reservoir-repair'
       application:
@@ -176,21 +180,22 @@ export type PlaygroundState = {
   hasanvandR:
     HasanvandApplication | null
 
+  /*
+   * Parity Bounds is currently a
+   * whole-working-graph constructor.
+   */
+  parityBoundsG:
+    ParityBoundsApplication | null
+
   orientedTwoFactorCount:
     number
 
   stabilizeOutdegreeClass:
     StabilizeOutdegreeClassApplication | null
 
-  /*
-   * Existing local-alpha mode.
-   */
   directedMenger:
     DirectedMengerApplication | null
 
-  /*
-   * New reservoir mode.
-   */
   directedMengerReservoir:
     DirectedMengerReservoirApplication | null
 }
@@ -221,13 +226,17 @@ const initialState:
   hasanvandL: null,
   hasanvandR: null,
 
+  parityBoundsG:
+    null,
+
   orientedTwoFactorCount:
     0,
 
   stabilizeOutdegreeClass:
     null,
 
-  directedMenger: null,
+  directedMenger:
+    null,
 
   directedMengerReservoir:
     null,
@@ -388,6 +397,14 @@ function deriveState(
 
     if (
       move.type ===
+      'parity-bounds'
+    ) {
+      state.parityBoundsG =
+        move.application
+    }
+
+    if (
+      move.type ===
       'oriented-two-factor'
     ) {
       state
@@ -462,10 +479,6 @@ function getAllDegreesThrough(
   )
 }
 
-/*
- * Existing Local-alpha Directed Menger
- * application check.
- */
 function directedMengerApplicationFits(
   application:
     DirectedMengerApplication,
@@ -515,15 +528,6 @@ function directedMengerApplicationFits(
 export default function usePlayground(
   originalDegree: number,
 
-  /*
-   * Optional for incremental wiring.
-   *
-   * BlobLab will pass the real forbidden
-   * set in the next step. Until then,
-   * all existing V2 functionality keeps
-   * working and reservoir mode simply
-   * remains unavailable.
-   */
   forbiddenSet:
     readonly number[] = [],
 ) {
@@ -562,6 +566,8 @@ export default function usePlayground(
     state.maLuG !==
       null ||
     state.hasanvandG !==
+      null ||
+    state.parityBoundsG !==
       null
 
   const leftAlreadyOriented =
@@ -593,21 +599,20 @@ export default function usePlayground(
       rightAlreadyOriented
     )
 
-  /*
-   * The current arc-reversal fixers act
-   * on an explicitly oriented graph.
-   *
-   * After removing an oriented 2-factor
-   * we presently retain only its fixed
-   * outdegree contribution, not enough
-   * edge-level information to run these
-   * repairs safely.
-   */
   const arcReversalFixersCompatibleWithConstruction =
     state
       .orientedTwoFactorCount ===
     0
 
+  /*
+   * This remains the residual possibility
+   * calculation for the existing
+   * constructors.
+   *
+   * Parity Bounds is handled immediately
+   * afterward because it already stores
+   * its certified TOTAL outdegrees.
+   */
   const residualOutdegreePossibilities =
     deriveOutdegreePossibilities(
       {
@@ -661,23 +666,30 @@ export default function usePlayground(
     )
 
   /*
-   * Constructor state -> TOTAL
-   * outdegrees before stabilization.
+   * Constructor state -> TOTAL outdegrees.
+   *
+   * Parity Bounds already contains the
+   * fixed contribution from any removed
+   * oriented 2-factors, so it must NOT be
+   * shifted a second time.
    */
   const preStabilizationOutdegreePossibilities =
-    shiftPartOutdegrees(
-      residualOutdegreePossibilities,
+    state.parityBoundsG !==
+      null
+      ? getParityBoundsOutdegreePossibilities(
+          {
+            application:
+              state
+                .parityBoundsG,
+          },
+        )
+      : shiftPartOutdegrees(
+          residualOutdegreePossibilities,
 
-      residualGraph
-        .fixedOutdegreeContribution,
-    )
+          residualGraph
+            .fixedOutdegreeContribution,
+        )
 
-  /*
-   * Stabilization may create q-1 and
-   * q+1, while preserving q as a
-   * possible class and attaching the
-   * independent-class certificate.
-   */
   const preRepairOutdegreePossibilities =
     state
       .stabilizeOutdegreeClass ===
@@ -694,16 +706,6 @@ export default function usePlayground(
           },
         )
 
-  /*
-   * Reservoir Menger is completely
-   * determined by the current proof
-   * state.
-   *
-   * No demands/capacities are entered by
-   * the user. If all hypotheses are
-   * satisfied, creation succeeds and
-   * gives us the certified candidate.
-   */
   const directedMengerReservoirCandidate =
     !hasAnyDirectedMengerRepair &&
     arcReversalFixersCompatibleWithConstruction
@@ -740,14 +742,6 @@ export default function usePlayground(
         )
       : null
 
-  /*
-   * Only one Directed Menger repair may
-   * be present.
-   *
-   * Reservoir mode has its own numerical
-   * update. Otherwise we preserve the
-   * existing Local-alpha V2 update.
-   */
   const outdegreePossibilities =
     state
       .directedMengerReservoir !==
@@ -788,7 +782,8 @@ export default function usePlayground(
       hasAnyDirectedMengerRepair ||
       state
         .stabilizeOutdegreeClass !==
-        null
+        null ||
+      wholeGraphAlreadyOriented
     ) {
       return
     }
@@ -833,6 +828,8 @@ export default function usePlayground(
       hasAnyDirectedMengerRepair ||
       state
         .stabilizeOutdegreeClass !==
+        null ||
+      state.parityBoundsG !==
         null
     ) {
       return
@@ -856,7 +853,9 @@ export default function usePlayground(
     part: GraphPart,
   ) {
     if (
-      hasAnyDirectedMengerRepair
+      hasAnyDirectedMengerRepair ||
+      state.parityBoundsG !==
+        null
     ) {
       return
     }
@@ -889,7 +888,8 @@ export default function usePlayground(
       hasAnyDirectedMengerRepair ||
       state
         .stabilizeOutdegreeClass !==
-        null
+        null ||
+      wholeGraphAlreadyOriented
     ) {
       return
     }
@@ -913,7 +913,8 @@ export default function usePlayground(
       hasAnyDirectedMengerRepair ||
       state
         .stabilizeOutdegreeClass !==
-        null
+        null ||
+      wholeGraphAlreadyOriented
     ) {
       return
     }
@@ -939,7 +940,9 @@ export default function usePlayground(
     c: number,
   ) {
     if (
-      hasAnyDirectedMengerRepair
+      hasAnyDirectedMengerRepair ||
+      state.parityBoundsG !==
+        null
     ) {
       return
     }
@@ -1102,6 +1105,8 @@ export default function usePlayground(
       hasAnyDirectedMengerRepair ||
       state.partition ===
         null ||
+      state.parityBoundsG !==
+        null ||
       selectedValues.length ===
         0
     ) {
@@ -1247,7 +1252,9 @@ export default function usePlayground(
       readonly HasanvandDegreeRule[],
   ) {
     if (
-      hasAnyDirectedMengerRepair
+      hasAnyDirectedMengerRepair ||
+      state.parityBoundsG !==
+        null
     ) {
       return
     }
@@ -1366,11 +1373,95 @@ export default function usePlayground(
     )
   }
 
+  /*
+   * New whole-working-graph constructor.
+   *
+   * It may be applied after one or more
+   * oriented 2-factor reductions because
+   * createParityBoundsApplication receives
+   * both:
+   *
+   *   - the residual working degree;
+   *   - the already fixed outdegree
+   *     contribution.
+   */
+  function applyParityBounds({
+    normalLower,
+    normalUpper,
+    exceptionalLower,
+    exceptionalUpper,
+  }: {
+    normalLower:
+      number
+
+    normalUpper:
+      number
+
+    exceptionalLower:
+      number
+
+    exceptionalUpper:
+      number
+  }) {
+    if (
+      hasAnyDirectedMengerRepair ||
+      state
+        .stabilizeOutdegreeClass !==
+        null ||
+      state.partition !==
+        null ||
+      wholeGraphAlreadyOriented
+    ) {
+      return
+    }
+
+    const application =
+      createParityBoundsApplication({
+        workingDegree:
+          residualGraph
+            .workingDegree,
+
+        fixedOutdegreeContribution:
+          residualGraph
+            .fixedOutdegreeContribution,
+
+        normalLower,
+
+        normalUpper,
+
+        exceptionalLower,
+
+        exceptionalUpper,
+      })
+
+    if (
+      application ===
+      null
+    ) {
+      return
+    }
+
+    setMoves(
+      (current) => [
+        ...current,
+
+        {
+          type:
+            'parity-bounds',
+
+          application,
+        },
+      ],
+    )
+  }
+
   function takeOrientedTwoFactor() {
     if (
       hasAnyDirectedMengerRepair ||
       state
         .stabilizeOutdegreeClass !==
+        null ||
+      state.parityBoundsG !==
         null
     ) {
       return
@@ -1493,10 +1584,6 @@ export default function usePlayground(
     )
   }
 
-  /*
-   * Existing Local-alpha Directed
-   * Menger V2 application.
-   */
   function applyDirectedMengerRepair(
     application:
       DirectedMengerApplication,
@@ -1535,14 +1622,6 @@ export default function usePlayground(
     )
   }
 
-  /*
-   * New Reservoir Directed Menger V3.
-   *
-   * There are no user-entered parameters:
-   * the current proof state already
-   * determines the certified
-   * application.
-   */
   function applyDirectedMengerReservoirRepair() {
     if (
       hasAnyDirectedMengerRepair ||
@@ -1582,6 +1661,15 @@ export default function usePlayground(
   function reset() {
     setMoves([])
   }
+
+  const canApplyParityBounds =
+    !hasAnyDirectedMengerRepair &&
+    state
+      .stabilizeOutdegreeClass ===
+      null &&
+    state.partition ===
+      null &&
+    !wholeGraphAlreadyOriented
 
   const canStabilizeCommon =
     !hasAnyDirectedMengerRepair &&
@@ -1715,6 +1803,18 @@ export default function usePlayground(
     hasanvandApplicationR:
       state.hasanvandR,
 
+    /*
+     * New Parity Bounds state.
+     */
+    parityBoundsG:
+      state.parityBoundsG !==
+      null,
+
+    parityBoundsApplication:
+      state.parityBoundsG,
+
+    canApplyParityBounds,
+
     stabilizeOutdegreeClassApplied:
       state
         .stabilizeOutdegreeClass !==
@@ -1736,24 +1836,12 @@ export default function usePlayground(
 
     canStabilizeR,
 
-    /*
-     * True after EITHER Directed Menger
-     * certificate mode has been applied.
-     */
     directedMengerApplied:
       hasAnyDirectedMengerRepair,
 
-    /*
-     * Backward-compatible Local-alpha
-     * application for the files that
-     * have not yet been upgraded.
-     */
     directedMengerApplication:
       state.directedMenger,
 
-    /*
-     * New reservoir state.
-     */
     directedMengerReservoirApplication:
       state
         .directedMengerReservoir,
@@ -1794,6 +1882,11 @@ export default function usePlayground(
     applyMaLuPart,
 
     applyHasanvandCompression,
+
+    /*
+     * New action.
+     */
+    applyParityBounds,
 
     takeOrientedTwoFactor,
 
