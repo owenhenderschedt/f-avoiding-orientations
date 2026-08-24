@@ -12,8 +12,23 @@ import {
   getAuditTwoFactorTransitions,
 } from './auditTwoFactor'
 import {
+  getAuditHasanvandTransitions,
+} from './auditHasanvand'
+import {
+  getAuditBoundedDegreeTransitions,
+} from './auditBoundedDegree'
+import {
   getAuditLocalMengerTransitions,
 } from './auditDirectedMengerLocal'
+import {
+  getAuditReservoirMengerTransitions,
+} from './auditDirectedMengerReservoir'
+import {
+  getAuditIntervalReductionTransitions,
+} from './auditIntervalReduction'
+import {
+  getAuditStabilizationTransitions,
+} from './auditStabilization'
 import type {
   AuditCaseResult,
   AuditProofRecipe,
@@ -52,31 +67,72 @@ function solvedStateToRecipe(
   }
 }
 
-/*
- * Every proof move currently known to
- * the symbolic audit.
- *
- * Constructor/reduction moves come
- * first.
- *
- * Directed Menger is then allowed to
- * act once a complete starting
- * orientation has been built.
- */
+function hasBoundedConstructor(
+  state:
+    AuditSearchState,
+) {
+  return (
+    state.boundedDegreeG !==
+      null ||
+    state.boundedDegreeL !==
+      null ||
+    state.boundedDegreeR !==
+      null
+  )
+}
+
 function getAuditTransitions(
   state:
     AuditSearchState,
 ) {
-  return [
-    ...getBasicAuditTransitions(
+  /*
+   * Bounded-degree constructors are
+   * canonicalized as the FINAL constructor
+   * stage.
+   *
+   * Once one appears, we stop generating
+   * alternative starting constructors and
+   * move only to structural fixers/repairs.
+   */
+  const startingTransitions =
+    hasBoundedConstructor(
       state,
-    ),
+    )
+      ? []
+      : [
+          ...getBasicAuditTransitions(
+            state,
+          ),
 
-    ...getAuditTwoFactorTransitions(
-      state,
-    ),
+          ...getAuditTwoFactorTransitions(
+            state,
+          ),
+
+          ...getAuditHasanvandTransitions(
+            state,
+          ),
+
+          ...getAuditIntervalReductionTransitions(
+            state,
+          ),
+
+          ...getAuditBoundedDegreeTransitions(
+            state,
+          ),
+        ]
+
+  return [
+    ...startingTransitions,
 
     ...getAuditLocalMengerTransitions(
+      state,
+    ),
+
+    ...getAuditStabilizationTransitions(
+      state,
+    ),
+
+    ...getAuditReservoirMengerTransitions(
       state,
     ),
   ]

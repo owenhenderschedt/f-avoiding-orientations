@@ -21,19 +21,6 @@ import type {
   MengerRepairDirection,
 } from '../tools/directedMengerMath'
 
-/*
- * A proof recipe is deliberately smaller
- * than PlaygroundMove.
- *
- * The playground stores full theorem
- * applications and certificates.
- *
- * The audit only needs enough information
- * to reconstruct and display the sequence
- * of mathematical moves that proved the
- * case.
- */
-
 export type AuditProofStep =
   | {
       type:
@@ -97,7 +84,31 @@ export type AuditProofStep =
     }
   | {
       type:
+        'bounded-degree-constructor'
+
+      target:
+        'G' | 'L' | 'R'
+
+      theorem:
+        'delta-5-0125'
+        | 'delta-6-avoid-356'
+
+      reversed:
+        boolean
+    }
+  | {
+      type:
         'oriented-two-factor'
+    }
+  | {
+      type:
+        'interval-reduction'
+
+      mode:
+        'p' | 'q'
+
+      parameter:
+        number
     }
   | {
       type:
@@ -133,13 +144,6 @@ export type AuditProofStep =
         number
     }
 
-/*
- * A successful audit result.
- *
- * We store the actual forbidden set rather
- * than only an ID such as "34689", so the
- * audit engine remains degree-independent.
- */
 export type AuditProofRecipe = {
   degree:
     number
@@ -150,15 +154,6 @@ export type AuditProofRecipe = {
   steps:
     readonly AuditProofStep[]
 
-  /*
-   * Final possible total outdegrees after
-   * the proof recipe has been executed.
-   *
-   * Keeping these makes the result itself
-   * easy to verify:
-   *
-   *   finalOutdegrees ∩ F = empty.
-   */
   finalOutdegreesL:
     readonly number[]
 
@@ -166,9 +161,6 @@ export type AuditProofRecipe = {
     readonly number[]
 }
 
-/*
- * The result for one forbidden set.
- */
 export type AuditCaseResult =
   | {
       status:
@@ -194,17 +186,6 @@ export type AuditCaseResult =
         readonly number[]
     }
 
-/*
- * Result of auditing an entire degree.
- *
- * elapsedMs records the actual runtime of
- * the census. The UI can decide whether to
- * display it in milliseconds or seconds.
- *
- * For example:
- *
- *   651 / 651 proved · completed in 0.42 s
- */
 export type AuditDegreeResult = {
   degree:
     number
@@ -224,11 +205,6 @@ export type AuditDegreeResult = {
   cases:
     readonly AuditCaseResult[]
 }
-
-/*
- * Basic helpers used both by the search
- * engine and later by the UI.
- */
 
 export function uniqueSorted(
   values:

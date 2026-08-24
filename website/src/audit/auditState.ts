@@ -28,14 +28,33 @@ import type {
   AuditProofStep,
 } from './proofRecipes'
 
+export type AuditBoundedDegreeKind =
+  | 'delta-5-0125'
+  | 'delta-6-avoid-356'
+
+export type AuditBoundedDegreeApplication = {
+  kind:
+    AuditBoundedDegreeKind
+
+  target:
+    'G' | 'L' | 'R'
+
+  theoremMaxDegree:
+    5 | 6
+
+  targetMaxDegree:
+    number
+
+  reversed:
+    boolean
+
+  totalOutdegrees:
+    readonly number[]
+}
+
 /*
- * This is the non-React state explored by
- * the completeness audit.
- *
- * It intentionally mirrors the important
- * mathematical information in the
- * playground, but it has no UI state,
- * menus, panels, or callbacks.
+ * Non-React mathematical state explored
+ * by the completeness audit.
  */
 export type AuditSearchState = {
   degree:
@@ -44,9 +63,6 @@ export type AuditSearchState = {
   forbiddenSet:
     readonly number[]
 
-  /*
-   * Lovasz / cut structure.
-   */
   partition:
     LovaszPair | null
 
@@ -56,9 +72,6 @@ export type AuditSearchState = {
   acrossDirection:
     AcrossDirection | null
 
-  /*
-   * Constructor state.
-   */
   balancedG:
     boolean
 
@@ -96,8 +109,17 @@ export type AuditSearchState = {
     HasanvandApplication | null
 
   /*
-   * Reduction state.
+   * Special bounded-degree constructors.
    */
+  boundedDegreeG:
+    AuditBoundedDegreeApplication | null
+
+  boundedDegreeL:
+    AuditBoundedDegreeApplication | null
+
+  boundedDegreeR:
+    AuditBoundedDegreeApplication | null
+
   orientedTwoFactorCount:
     number
 
@@ -107,9 +129,6 @@ export type AuditSearchState = {
   fixedOutdegreeContribution:
     number
 
-  /*
-   * Structural / repair state.
-   */
   stabilization:
     StabilizeOutdegreeClassApplication | null
 
@@ -119,19 +138,9 @@ export type AuditSearchState = {
   directedMengerReservoir:
     DirectedMengerReservoirApplication | null
 
-  /*
-   * CURRENT possible TOTAL outdegrees.
-   *
-   * These are the values against which F
-   * is tested.
-   */
   outdegreePossibilities:
     PartOutdegreePossibilities
 
-  /*
-   * Compact proof recipe accumulated by
-   * the audit.
-   */
   steps:
     readonly AuditProofStep[]
 }
@@ -172,17 +181,6 @@ function sameValues(
   )
 }
 
-/*
- * Initial audit state.
- *
- * Before any construction is chosen, every
- * total outdegree from 0 through d is
- * possible.
- *
- * We store that same set in L and R. This
- * matches the playground representation of
- * an unpartitioned graph.
- */
 export function createInitialAuditState({
   degree,
   forbiddenSet,
@@ -251,6 +249,15 @@ export function createInitialAuditState({
     hasanvandR:
       null,
 
+    boundedDegreeG:
+      null,
+
+    boundedDegreeL:
+      null,
+
+    boundedDegreeR:
+      null,
+
     orientedTwoFactorCount:
       0,
 
@@ -281,16 +288,6 @@ export function createInitialAuditState({
   }
 }
 
-/*
- * A state is solved exactly when every
- * currently possible total outdegree avoids
- * F.
- *
- * We test both L and R even when they are
- * identical, which keeps this function
- * independent of whether a Lovasz partition
- * has already been introduced.
- */
 export function isAuditStateSolved(
   state:
     AuditSearchState,
@@ -322,10 +319,6 @@ export function isAuditStateSolved(
   )
 }
 
-/*
- * A convenient helper for the search and
- * eventual audit UI.
- */
 export function getAuditStateBadOutdegrees(
   state:
     AuditSearchState,
@@ -358,20 +351,6 @@ export function getAuditStateBadOutdegrees(
   ])
 }
 
-/*
- * Breadth-first proof search will encounter
- * the same mathematical state by different
- * sequences of moves.
- *
- * This key lets us keep only the first
- * occurrence. With BFS, the first occurrence
- * is also a shortest recipe in number of
- * proof steps.
- *
- * We include the theorem-application details
- * that materially affect what moves can be
- * performed later.
- */
 export function getAuditStateKey(
   state:
     AuditSearchState,
@@ -415,6 +394,24 @@ export function getAuditStateKey(
                 rule.q,
               ].join(','),
           ),
+        ].join(':')
+
+  const boundedKey = (
+    application:
+      AuditBoundedDegreeApplication | null,
+  ) =>
+    application ===
+      null
+      ? '-'
+      : [
+          application.kind,
+          application.target,
+          application.reversed
+            ? 'rev'
+            : 'forward',
+          application
+            .totalOutdegrees
+            .join(','),
         ].join(':')
 
   const stabilizationKey =
@@ -503,6 +500,12 @@ export function getAuditStateKey(
 
     `hasR=${hasanvandKey(state.hasanvandR)}`,
 
+    `boundedG=${boundedKey(state.boundedDegreeG)}`,
+
+    `boundedL=${boundedKey(state.boundedDegreeL)}`,
+
+    `boundedR=${boundedKey(state.boundedDegreeR)}`,
+
     `stab=${stabilizationKey}`,
 
     `localMenger=${localMengerKey}`,
@@ -523,10 +526,6 @@ export function getAuditStateKey(
   ].join('|')
 }
 
-/*
- * Useful later when turning a solved search
- * state into an AuditProofRecipe.
- */
 export function getAuditFinalOutdegrees(
   state:
     AuditSearchState,
@@ -548,11 +547,6 @@ export function getAuditFinalOutdegrees(
   }
 }
 
-/*
- * Mainly useful for debugging the search:
- * before partitioning, L and R should carry
- * the same abstract possibility set.
- */
 export function auditStateHasSharedOutdegrees(
   state:
     AuditSearchState,
