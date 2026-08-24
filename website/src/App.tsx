@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Math from './components/Math'
 import BlobLab from './labs/BlobLab'
+import CompletenessAudit from './audit/CompletenessAudit'
 import ForbiddenSetFilter, {
   emptyForbiddenSetFilter,
   type ForbiddenSetFilterState,
@@ -16,6 +17,7 @@ type AppScreen =
   | 'degree'
   | 'cases'
   | 'playground'
+  | 'audit'
 
 type SelectedCase = {
   degree: PlaygroundDegree
@@ -148,6 +150,26 @@ function App() {
     setScreen('playground')
   }
 
+  /*
+   * COMPLETENESS AUDIT
+   */
+
+  if (
+    screen === 'audit'
+  ) {
+    return (
+      <CompletenessAudit
+        onHome={
+          goHome
+        }
+      />
+    )
+  }
+
+  /*
+   * PLAYGROUND
+   */
+
   if (
     screen === 'playground' &&
     selectedCase !== null
@@ -168,6 +190,10 @@ function App() {
       />
     )
   }
+
+  /*
+   * FORBIDDEN-SET SELECTION
+   */
 
   if (
     screen === 'cases' &&
@@ -632,7 +658,13 @@ function App() {
     )
   }
 
-  if (screen === 'degree') {
+  /*
+   * DEGREE SELECTION
+   */
+
+  if (
+    screen === 'degree'
+  ) {
     return (
       <main
         style={{
@@ -651,9 +683,7 @@ function App() {
         >
           <button
             type="button"
-            onClick={() =>
-              setScreen('home')
-            }
+            onClick={goHome}
             style={{
               display: 'block',
               font: 'inherit',
@@ -744,6 +774,10 @@ function App() {
     )
   }
 
+  /*
+   * HOME
+   */
+
   return (
     <main
       style={{
@@ -804,6 +838,8 @@ function App() {
           outdegrees evolve.
         </p>
 
+        {/* PRIMARY ENTRY POINT */}
+
         <button
           type="button"
           onClick={() =>
@@ -826,6 +862,36 @@ function App() {
           <Math>{'d'}</Math>-regular
           playground →
         </button>
+
+        {/* SECONDARY ENTRY POINT */}
+
+        <div
+          style={{
+            marginTop: '22px',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() =>
+              setScreen('audit')
+            }
+            style={{
+              font: 'inherit',
+              fontSize: '19px',
+              padding: '11px 20px',
+              border:
+                '1px solid #cbd5e1',
+              borderRadius: '10px',
+              background: '#ffffff',
+              color: '#475569',
+              cursor: 'pointer',
+              boxShadow:
+                '0 4px 12px rgba(15, 23, 42, 0.05)',
+            }}
+          >
+            Completeness Audit →
+          </button>
+        </div>
       </div>
     </main>
   )
