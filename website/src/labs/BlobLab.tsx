@@ -203,6 +203,23 @@ function getMengerRepairLatex(
     .join(',\\ ')
 }
 
+function getReservoirRepairLatex(
+  application:
+    DirectedMengerReservoirApplication,
+) {
+  return application.qs
+    .map(
+      (
+        q,
+        index,
+      ) =>
+        `${q}`
+        + '\\to'
+        + `${application.repairedOutdegrees[index]}`,
+    )
+    .join(',\\ ')
+}
+
 function getHasanvandTargetLatex(
   target: HasanvandTarget,
 ) {
@@ -1491,10 +1508,14 @@ export default function BlobLab({
 
                           <Math>
                             {
-                              `${move.application.q}`
+                              `Q=${latexSet(
+                                move
+                                  .application
+                                  .qs,
+                              )}`
                             }
-                          </Math>
-                          -class in{' '}
+                          </Math>{' '}
+                          in{' '}
 
                           <Math>
                             {
@@ -1549,9 +1570,10 @@ export default function BlobLab({
 
                           <Math>
                             {
-                              `${move.application.q}`
-                              + '\\to'
-                              + `${move.application.repairedOutdegree}`
+                              getReservoirRepairLatex(
+                                move
+                                  .application,
+                              )
                             }
                           </Math>
                         </span>

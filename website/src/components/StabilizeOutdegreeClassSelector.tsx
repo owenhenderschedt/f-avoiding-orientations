@@ -2,8 +2,9 @@ import {
   useState,
 } from 'react'
 import Math from './Math'
-import type {
-  StabilizeTarget,
+import {
+  hasNoConsecutiveOutdegreeClasses,
+  type StabilizeTarget,
 } from '../tools/stabilizeOutdegreeClassMath'
 
 export type StabilizeTargetOption = {
@@ -22,7 +23,8 @@ type StabilizeOutdegreeClassSelectorProps = {
     target:
       StabilizeTarget,
 
-    q: number,
+    qs:
+      readonly number[],
   ) => void
 
   onOpenReference: (
@@ -65,6 +67,17 @@ function uniqueSorted(
   )
 }
 
+function latexSet(
+  values:
+    readonly number[],
+) {
+  return (
+    '\\{' +
+    values.join(',') +
+    '\\}'
+  )
+}
+
 export default function StabilizeOutdegreeClassSelector({
   targets,
   onApply,
@@ -88,14 +101,12 @@ export default function StabilizeOutdegreeClassSelector({
     )
 
   const [
-    selectedQ,
-    setSelectedQ,
+    selectedQs,
+    setSelectedQs,
   ] =
     useState<
-      number | null
-    >(
-      null,
-    )
+      number[]
+    >([])
 
   const selectedTargetOption =
     selectedTarget ===
@@ -119,6 +130,18 @@ export default function StabilizeOutdegreeClassSelector({
             .possibleOutdegrees,
         )
 
+  const normalizedQ =
+    uniqueSorted(
+      selectedQs,
+    )
+
+  const selectionValid =
+    normalizedQ.length >
+      0 &&
+    hasNoConsecutiveOutdegreeClasses(
+      normalizedQ,
+    )
+
   function chooseTarget(
     target:
       StabilizeTarget,
@@ -128,13 +151,56 @@ export default function StabilizeOutdegreeClassSelector({
     )
 
     /*
-     * q belongs to a particular
-     * target's current outdegree state.
-     * Changing target therefore clears
-     * the previous choice.
+     * Q belongs to a particular target's
+     * current outdegree state. Changing
+     * target therefore clears the old Q.
      */
-    setSelectedQ(
-      null,
+    setSelectedQs([])
+  }
+
+  function toggleQ(
+    q: number,
+  ) {
+    if (
+      selectedQs.includes(
+        q,
+      )
+    ) {
+      setSelectedQs(
+        (
+          current,
+        ) =>
+          current.filter(
+            (value) =>
+              value !== q,
+          ),
+      )
+
+      return
+    }
+
+    const candidate =
+      uniqueSorted([
+        ...selectedQs,
+        q,
+      ])
+
+    /*
+     * The arc-reversal lemma requires Q
+     * to contain no two consecutive
+     * integers. Invalid additions are
+     * rejected immediately.
+     */
+    if (
+      !hasNoConsecutiveOutdegreeClasses(
+        candidate,
+      )
+    ) {
+      return
+    }
+
+    setSelectedQs(
+      candidate,
     )
   }
 
@@ -142,15 +208,14 @@ export default function StabilizeOutdegreeClassSelector({
     if (
       selectedTarget ===
         null ||
-      selectedQ ===
-        null
+      !selectionValid
     ) {
       return
     }
 
     onApply(
       selectedTarget,
-      selectedQ,
+      normalizedQ,
     )
   }
 
@@ -271,12 +336,11 @@ export default function StabilizeOutdegreeClassSelector({
               '0 0 1px',
           }}
         >
-          Stabilize{' '}
+          Stabilize classes{' '}
 
           <Math>
-            {'q'}
+            {'Q'}
           </Math>
-          -class
         </button>
       </div>
 
@@ -375,7 +439,7 @@ export default function StabilizeOutdegreeClassSelector({
         </div>
       </div>
 
-      {/* q SELECTION */}
+      {/* Q SELECTION */}
 
       {selectedTargetOption !==
         null && (
@@ -394,11 +458,11 @@ export default function StabilizeOutdegreeClassSelector({
                 '#475569',
             }}
           >
-            Choose the outdegree
-            class{' '}
+            Choose outdegree
+            classes{' '}
 
             <Math>
-              {'q'}
+              {'Q'}
             </Math>
           </div>
 
@@ -417,9 +481,8 @@ export default function StabilizeOutdegreeClassSelector({
                 1.35,
             }}
           >
-            These are the currently
-            possible total outdegrees
-            on{' '}
+            Select one or more currently
+            possible total outdegrees on{' '}
 
             <Math>
               {
@@ -429,7 +492,8 @@ export default function StabilizeOutdegreeClassSelector({
                 )
               }
             </Math>
-            .
+            . No two selected values may
+            be consecutive.
           </div>
 
           <div
@@ -449,8 +513,20 @@ export default function StabilizeOutdegreeClassSelector({
                 q,
               ) => {
                 const selected =
-                  q ===
-                  selectedQ
+                  selectedQs.includes(
+                    q,
+                  )
+
+                const blocked =
+                  !selected &&
+                  (
+                    selectedQs.includes(
+                      q - 1,
+                    ) ||
+                    selectedQs.includes(
+                      q + 1,
+                    )
+                  )
 
                 return (
                   <button
@@ -459,9 +535,17 @@ export default function StabilizeOutdegreeClassSelector({
                     }
                     type="button"
                     onClick={() =>
-                      setSelectedQ(
+                      toggleQ(
                         q,
                       )
+                    }
+                    disabled={
+                      blocked
+                    }
+                    title={
+                      blocked
+                        ? 'Q cannot contain consecutive outdegree classes.'
+                        : undefined
                     }
                     style={{
                       font:
@@ -487,10 +571,14 @@ export default function StabilizeOutdegreeClassSelector({
                           : '#ffffff',
 
                       color:
-                        '#334155',
+                        blocked
+                          ? '#cbd5e1'
+                          : '#334155',
 
                       cursor:
-                        'pointer',
+                        blocked
+                          ? 'default'
+                          : 'pointer',
 
                       display:
                         'flex',
@@ -517,8 +605,7 @@ export default function StabilizeOutdegreeClassSelector({
 
       {selectedTarget !==
         null &&
-        selectedQ !==
-          null && (
+        selectionValid && (
           <div
             style={{
               marginBottom:
@@ -559,15 +646,19 @@ export default function StabilizeOutdegreeClassSelector({
             >
               <Math>
                 {
-                  `P_{${selectedQ}}`
-                  + '='
+                  'Q='
+                  + latexSet(
+                    normalizedQ,
+                  )
+                  + ',\\qquad '
+                  + 'P_Q='
                   + '\\{'
                   + 'v\\in '
                   + getTargetLatex(
                     selectedTarget,
                   )
                   + ':'
-                  + `d^+(v)=${selectedQ}`
+                  + 'd^+(v)\\in Q'
                   + '\\}'
                 }
               </Math>
@@ -587,8 +678,7 @@ export default function StabilizeOutdegreeClassSelector({
         disabled={
           selectedTarget ===
             null ||
-          selectedQ ===
-            null
+          !selectionValid
         }
         style={{
           width:
@@ -609,24 +699,21 @@ export default function StabilizeOutdegreeClassSelector({
           background:
             selectedTarget !==
               null &&
-            selectedQ !==
-              null
+            selectionValid
               ? '#f8fafc'
               : '#f1f5f9',
 
           color:
             selectedTarget !==
               null &&
-            selectedQ !==
-              null
+            selectionValid
               ? '#334155'
               : '#94a3b8',
 
           cursor:
             selectedTarget !==
               null &&
-            selectedQ !==
-              null
+            selectionValid
               ? 'pointer'
               : 'default',
         }}

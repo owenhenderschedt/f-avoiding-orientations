@@ -8,7 +8,6 @@ type DirectedMengerReservoirBadgeProps = {
     DirectedMengerReservoirApplication
 
   x: number
-
   y: number
 
   onOpenReference:
@@ -16,6 +15,23 @@ type DirectedMengerReservoirBadgeProps = {
       application:
         DirectedMengerReservoirApplication,
     ) => void
+}
+
+function getRepairLatex(
+  application:
+    DirectedMengerReservoirApplication,
+) {
+  return application.qs
+    .map(
+      (
+        q,
+        index,
+      ) =>
+        `${q}`
+        + '\\to'
+        + `${application.repairedOutdegrees[index]}`,
+    )
+    .join(',\\ ')
 }
 
 export default function DirectedMengerReservoirBadge({
@@ -28,13 +44,17 @@ export default function DirectedMengerReservoirBadge({
     <foreignObject
       x={x}
       y={y}
-      width="280"
+      width="320"
       height="58"
+      style={{
+        overflow:
+          'visible',
+      }}
     >
       <div
         style={{
           width:
-            '100%',
+            '320px',
 
           height:
             '100%',
@@ -95,9 +115,9 @@ export default function DirectedMengerReservoirBadge({
 
           <Math>
             {
-              `${application.q}`
-              + '\\to'
-              + `${application.repairedOutdegree}`
+              getRepairLatex(
+                application,
+              )
             }
           </Math>
         </button>

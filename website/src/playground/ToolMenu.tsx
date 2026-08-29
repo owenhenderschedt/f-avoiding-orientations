@@ -155,7 +155,8 @@ type ToolMenuProps = {
       target:
         StabilizeTarget,
 
-      q: number,
+      qs:
+        readonly number[],
     ) => void
 
   onOpenStabilizeOutdegreeClassReference?:
@@ -1097,14 +1098,6 @@ export default function ToolMenu({
     )
   }
 
-  function openParityBoundsMenu() {
-    closeSubmenus()
-
-    setParityBoundsOpen(
-      true,
-    )
-  }
-
   function openStabilizationMenu() {
     closeSubmenus()
 
@@ -1304,8 +1297,8 @@ export default function ToolMenu({
     target:
       StabilizeTarget,
 
-    q:
-      number,
+    qs:
+      readonly number[],
   ) {
     if (
       onApplyStabilizeOutdegreeClass ===
@@ -1317,7 +1310,7 @@ export default function ToolMenu({
     onApplyStabilizeOutdegreeClass(
       target,
 
-      q,
+      qs,
     )
 
     setToolsOpen(
@@ -1918,20 +1911,6 @@ export default function ToolMenu({
                     </Math>
                   </button>
 
-                  {canUseParityBoundsInG && (
-                    <button
-                      type="button"
-                      onClick={
-                        openParityBoundsMenu
-                      }
-                      style={
-                        menuButtonStyle
-                      }
-                    >
-                      Parity Bounds →
-                    </button>
-                  )}
-
                   {canAvoidCInG && (
                     <button
                       type="button"
@@ -2378,7 +2357,7 @@ export default function ToolMenu({
                     mutedMessageStyle
                   }
                 >
-                  An outdegree class has
+                  Outdegree classes have
                   been stabilized.
                 </div>
               ) : anyStabilizationAvailable ? (
@@ -2391,12 +2370,12 @@ export default function ToolMenu({
                     menuButtonStyle
                   }
                 >
-                  Stabilize{' '}
+                  Stabilize classes{' '}
 
                   <Math>
-                    {'q'}
-                  </Math>
-                  -class →
+                    {'Q'}
+                  </Math>{' '}
+                  →
 
                 </button>
               ) : null}

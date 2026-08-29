@@ -3,6 +3,23 @@ import type {
   DirectedMengerReservoirApplication,
 } from '../tools/directedMengerReservoirApplication'
 
+function getReservoirRepairLatex(
+  application:
+    DirectedMengerReservoirApplication,
+) {
+  return application.qs
+    .map(
+      (
+        q,
+        index,
+      ) =>
+        `${q}`
+        + '\\to'
+        + `${application.repairedOutdegrees[index]}`,
+    )
+    .join(',\\ ')
+}
+
 type DirectedMengerModeSelectorProps = {
   canUseLocalAlpha:
     boolean
@@ -314,9 +331,9 @@ export default function DirectedMengerModeSelector({
             >
               <Math>
                 {
-                  `${reservoirCandidate.q}`
-                  + '\\to'
-                  + `${reservoirCandidate.repairedOutdegree}`
+                  getReservoirRepairLatex(
+                    reservoirCandidate,
+                  )
                 }
               </Math>
             </div>

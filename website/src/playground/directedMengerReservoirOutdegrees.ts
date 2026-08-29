@@ -1,5 +1,6 @@
 import type {
   DirectedMengerReservoirApplication,
+  DirectedMengerReservoirClassesApplication,
 } from '../tools/directedMengerReservoirApplication'
 import type {
   PartOutdegreePossibilities,
@@ -21,31 +22,23 @@ function uniqueSorted(
  * Numerical effect of a certified
  * reservoir Menger repair.
  *
- * The application repairs every
- * remaining vertex in the independent
- * q-class P_q subset L by one unit:
+ * Let Q be the independent set of bad
+ * TOTAL outdegree classes on L.  Every
+ * remaining vertex in P_Q is repaired by
+ * exactly one unit:
  *
- *      q -> q+1.
+ *     q -> q+1  for every q in Q.
  *
- * Thus q disappears from the possible
- * outdegrees on L.
+ * Hence every selected class disappears
+ * from the abstract L-possibility set and
+ * the corresponding repaired classes are
+ * added.
  *
  * The repair paths begin at reservoir
- * vertices in R. Each path reversal
- * decreases the outdegree of its start
- * vertex by one, while internal
- * vertices of the path keep the same
- * outdegree.
+ * vertices in R.  The certificate ensures
+ * that every such vertex finishes inside
  *
- * The reservoir certificate guarantees
- * that every R-vertex remains inside
- *
- *      d-k, d-k+1, ..., d.
- *
- * Therefore the safest abstract
- * possibility set for R after the
- * repair is the entire certified
- * reservoir interval.
+ *     d-k, d-k+1, ..., d.
  */
 export function getDirectedMengerReservoirRepairedOutdegrees({
   possibilities,
@@ -57,16 +50,22 @@ export function getDirectedMengerReservoirRepairedOutdegrees({
   application:
     DirectedMengerReservoirApplication
 }): PartOutdegreePossibilities {
+  const selectedClasses =
+    new Set(
+      application.qs,
+    )
+
   const repairedL =
     uniqueSorted([
       ...possibilities.L.filter(
         (outdegree) =>
-          outdegree !==
-          application.q,
+          !selectedClasses.has(
+            outdegree,
+          ),
       ),
 
-      application
-        .repairedOutdegree,
+      ...application
+        .repairedOutdegrees,
     ])
 
   const repairedR =
@@ -83,6 +82,25 @@ export function getDirectedMengerReservoirRepairedOutdegrees({
     R:
       repairedR,
   }
+}
+
+/*
+ * Generalized-name alias for audit code.
+ */
+export function getDirectedMengerReservoirClassesRepairedOutdegrees({
+  possibilities,
+  application,
+}: {
+  possibilities:
+    PartOutdegreePossibilities
+
+  application:
+    DirectedMengerReservoirClassesApplication
+}): PartOutdegreePossibilities {
+  return getDirectedMengerReservoirRepairedOutdegrees({
+    possibilities,
+    application,
+  })
 }
 
 export default

@@ -41,7 +41,7 @@ import {
   type DirectedMengerReservoirApplication,
 } from '../tools/directedMengerReservoirApplication'
 import {
-  createStabilizeOutdegreeClassApplication,
+  createStabilizeOutdegreeClassesApplication,
   type StabilizeOutdegreeClassApplication,
 } from '../tools/stabilizeOutdegreeClassApplication'
 import type {
@@ -1483,7 +1483,8 @@ export default function usePlayground(
     target:
       StabilizeTarget,
 
-    q: number,
+    qs:
+      readonly number[],
   ) {
     if (
       hasAnyDirectedMengerRepair ||
@@ -1550,11 +1551,11 @@ export default function usePlayground(
     }
 
     const application =
-      createStabilizeOutdegreeClassApplication(
+      createStabilizeOutdegreeClassesApplication(
         {
           target,
 
-          q,
+          qs,
 
           degree:
             originalDegree,

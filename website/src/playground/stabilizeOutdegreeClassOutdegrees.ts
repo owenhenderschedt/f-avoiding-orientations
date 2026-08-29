@@ -1,44 +1,108 @@
 import type {
   StabilizeOutdegreeClassApplication,
+  StabilizeOutdegreeClassesApplication,
 } from '../tools/stabilizeOutdegreeClassApplication'
 import type {
   PartOutdegreePossibilities,
 } from './outdegreePossibilities'
 
 function uniqueSorted(
-  values:
-    readonly number[],
+  values: readonly number[],
 ) {
   return Array.from(
     new Set(values),
   ).sort(
-    (a, b) =>
-      a - b,
+    (a, b) => a - b,
   )
 }
 
-function stabilizedChoices(
-  startingOutdegrees:
-    readonly number[],
-
+function stabilizedClassSetChoices(
+  startingOutdegrees: readonly number[],
   application:
-    StabilizeOutdegreeClassApplication,
+    StabilizeOutdegreeClassesApplication,
 ) {
   /*
-   * Stabilization does NOT eliminate q.
+   * Stabilization does not eliminate Q.
+   * It only makes the remaining union
    *
-   * It only guarantees that the
-   * vertices which remain in the
-   * q-class form an independent set.
+   *   P_Q = {v : d_D^+(v) in Q}
    *
-   * Reversing an arc between two
-   * q-vertices can additionally create
-   *
-   *   q-1 and q+1.
+   * independent. Neighboring classes may be created.
    */
   return uniqueSorted([
     ...startingOutdegrees,
+    ...application
+      .certificate
+      .createdOutdegrees,
+  ])
+}
 
+export function getStabilizedClassesOutdegreePossibilities({
+  possibilities,
+  application,
+}: {
+  possibilities:
+    PartOutdegreePossibilities
+  application:
+    StabilizeOutdegreeClassesApplication
+}): PartOutdegreePossibilities {
+  if (
+    application.target === 'G'
+  ) {
+    const combined =
+      uniqueSorted([
+        ...possibilities.L,
+        ...possibilities.R,
+      ])
+
+    const stabilized =
+      stabilizedClassSetChoices(
+        combined,
+        application,
+      )
+
+    return {
+      L: stabilized,
+      R: stabilized,
+    }
+  }
+
+  if (
+    application.target === 'L'
+  ) {
+    return {
+      L:
+        stabilizedClassSetChoices(
+          possibilities.L,
+          application,
+        ),
+      R:
+        possibilities.R,
+    }
+  }
+
+  return {
+    L:
+      possibilities.L,
+    R:
+      stabilizedClassSetChoices(
+        possibilities.R,
+        application,
+      ),
+  }
+}
+
+/*
+ * Backwards-compatible single-q updater.
+ */
+
+function stabilizedChoices(
+  startingOutdegrees: readonly number[],
+  application:
+    StabilizeOutdegreeClassApplication,
+) {
+  return uniqueSorted([
+    ...startingOutdegrees,
     ...application
       .certificate
       .createdOutdegrees,
@@ -51,20 +115,12 @@ export function getStabilizedOutdegreePossibilities({
 }: {
   possibilities:
     PartOutdegreePossibilities
-
   application:
     StabilizeOutdegreeClassApplication
 }): PartOutdegreePossibilities {
   if (
-    application.target ===
-    'G'
+    application.target === 'G'
   ) {
-    /*
-     * Before a whole-graph stabilization,
-     * L and R are just two copies of the
-     * same whole-graph possibility set in
-     * our existing representation.
-     */
     const combined =
       uniqueSorted([
         ...possibilities.L,
@@ -84,8 +140,7 @@ export function getStabilizedOutdegreePossibilities({
   }
 
   if (
-    application.target ===
-    'L'
+    application.target === 'L'
   ) {
     return {
       L:
@@ -93,7 +148,6 @@ export function getStabilizedOutdegreePossibilities({
           possibilities.L,
           application,
         ),
-
       R:
         possibilities.R,
     }
@@ -102,7 +156,6 @@ export function getStabilizedOutdegreePossibilities({
   return {
     L:
       possibilities.L,
-
     R:
       stabilizedChoices(
         possibilities.R,

@@ -17,12 +17,31 @@ type StabilizeOutdegreeClassBadgeProps = {
     ) => void
 }
 
+function latexSet(
+  values:
+    readonly number[],
+) {
+  return (
+    '\\{' +
+    values.join(',') +
+    '\\}'
+  )
+}
+
 export default function StabilizeOutdegreeClassBadge({
   application,
   x,
   y,
   onOpen,
 }: StabilizeOutdegreeClassBadgeProps) {
+  const classSubscript =
+    application.qs.length ===
+    1
+      ? `${application.qs[0]}`
+      : latexSet(
+          application.qs,
+        )
+
   return (
     <foreignObject
       x={x}
@@ -85,7 +104,7 @@ export default function StabilizeOutdegreeClassBadge({
         >
           <Math>
             {
-              `P_{${application.q}}`
+              `P_{${classSubscript}}`
               + '\\text{ independent}'
             }
           </Math>

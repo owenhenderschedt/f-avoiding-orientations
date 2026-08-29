@@ -6,118 +6,95 @@ import type {
 } from './orientAcrossPartition'
 import type {
   StabilizeOutdegreeClassApplication,
+  StabilizeOutdegreeClassesApplication,
 } from './stabilizeOutdegreeClassApplication'
 
 export type ReservoirMengerChecks = {
-  validDegree:
-    boolean
+  validDegree: boolean
+  hasLovaszCertificate: boolean
+  lovaszCertificateMatchesDegree: boolean
+  correctCertificateSides: boolean
+  hasIndependentClassCertificate: boolean
+  independentClassOnL: boolean
+  stabilizationMatchesDegree: boolean
+  cutPointsFromRToL: boolean
+  reservoirIsBalanced: boolean
+  qCanIncrease: boolean
+  qCurrentlyPossible: boolean
+  qIsForbidden: boolean
+  repairedValueIsSafe: boolean
+  allOtherLClassesAreSafe: boolean
+  reservoirSafeIntervalIsSafe: boolean
+  currentRClassesLieInReservoirInterval: boolean
+}
 
-  hasLovaszCertificate:
-    boolean
-
-  lovaszCertificateMatchesDegree:
-    boolean
-
-  correctCertificateSides:
-    boolean
-
-  hasIndependentClassCertificate:
-    boolean
-
-  independentClassOnL:
-    boolean
-
-  stabilizationMatchesDegree:
-    boolean
-
-  cutPointsFromRToL:
-    boolean
-
-  reservoirIsBalanced:
-    boolean
-
-  qCanIncrease:
-    boolean
-
-  qCurrentlyPossible:
-    boolean
-
-  qIsForbidden:
-    boolean
-
-  repairedValueIsSafe:
-    boolean
-
-  allOtherLClassesAreSafe:
-    boolean
-
-  reservoirSafeIntervalIsSafe:
-    boolean
-
-  currentRClassesLieInReservoirInterval:
-    boolean
+export type ReservoirMengerClassesChecks = {
+  validDegree: boolean
+  hasLovaszCertificate: boolean
+  lovaszCertificateMatchesDegree: boolean
+  correctCertificateSides: boolean
+  hasIndependentClassesCertificate: boolean
+  independentClassesOnL: boolean
+  stabilizationMatchesDegree: boolean
+  cutPointsFromRToL: boolean
+  reservoirIsBalanced: boolean
+  everySelectedClassCanIncrease: boolean
+  everySelectedClassCurrentlyPossible: boolean
+  everySelectedClassIsForbidden: boolean
+  everyRepairedValueIsSafe: boolean
+  allOtherLClassesAreSafe: boolean
+  reservoirSafeIntervalIsSafe: boolean
+  currentRClassesLieInReservoirInterval: boolean
 }
 
 export type DirectedMengerReservoirCertificate = {
+  type: 'lovasz-independent-reservoir'
+  degree: number
+  s: number
+  t: number
+  demandPart: 'L'
+  reservoirPart: 'R'
+  q: number
+  repairedOutdegree: number
+  k: number
+  reservoirSafeFloor: number
+  reservoirSafeOutdegrees: readonly number[]
+  startingOutdegreesL: readonly number[]
+  startingOutdegreesR: readonly number[]
+}
+
+export type DirectedMengerReservoirClassesCertificate = {
   type:
-    'lovasz-independent-reservoir'
+    'lovasz-independent-class-set-reservoir'
 
-  degree:
-    number
+  degree: number
+  s: number
+  t: number
 
-  s:
-    number
-
-  t:
-    number
+  demandPart: 'L'
+  reservoirPart: 'R'
 
   /*
-   * The strengthened Lovasz certificate
-   * is asymmetric:
-   *
-   *   L = independent bad-class side,
-   *   R = reservoir side.
+   * P_Q is the independent union of
+   * selected bad outdegree classes.
    */
-  demandPart:
-    'L'
+  qs: readonly number[]
 
-  reservoirPart:
-    'R'
-
-  /*
-   * P_q is the independent class being
-   * repaired.
-   */
-  q:
-    number
-
-  repairedOutdegree:
-    number
-
-  /*
-   * General reservoir parameter
-   *
-   *       k = ceil((t+1)/2).
-   *
-   * The t=3 proof has k=2.
-   */
-  k:
-    number
-
-  /*
-   * Every reservoir vertex will finish
-   * with outdegree at least this value.
-   */
-  reservoirSafeFloor:
-    number
-
-  reservoirSafeOutdegrees:
+  repairedOutdegrees:
     readonly number[]
 
   /*
-   * Exact TOTAL-outdegree state on which
-   * this certificate was verified.
+   * Every q in Q is repaired by
+   *
+   *   q -> q+1.
    */
+  repairShift: 1
+
+  k: number
+  reservoirSafeFloor: number
+  reservoirSafeOutdegrees:
+    readonly number[]
+
   startingOutdegreesL:
     readonly number[]
 
@@ -126,50 +103,50 @@ export type DirectedMengerReservoirCertificate = {
 }
 
 export type DirectedMengerReservoirAnalysis = {
-  applicable:
-    boolean
-
-  checks:
-    ReservoirMengerChecks
-
-  q:
-    number | null
-
+  applicable: boolean
+  checks: ReservoirMengerChecks
+  q: number | null
   repairedOutdegree:
     number | null
-
-  t:
-    number | null
-
-  k:
-    number | null
-
+  t: number | null
+  k: number | null
   reservoirSafeFloor:
     number | null
-
   reservoirSafeOutdegrees:
     readonly number[]
-
   certificate:
     DirectedMengerReservoirCertificate | null
 }
 
+export type DirectedMengerReservoirClassesAnalysis = {
+  applicable: boolean
+  checks:
+    ReservoirMengerClassesChecks
+  qs: readonly number[]
+  repairedOutdegrees:
+    readonly number[]
+  t: number | null
+  k: number | null
+  reservoirSafeFloor:
+    number | null
+  reservoirSafeOutdegrees:
+    readonly number[]
+  certificate:
+    DirectedMengerReservoirClassesCertificate | null
+}
+
 function uniqueSorted(
-  values:
-    readonly number[],
+  values: readonly number[],
 ) {
   return Array.from(
     new Set(values),
   ).sort(
-    (a, b) =>
-      a - b,
+    (a, b) => a - b,
   )
 }
 
 function everyValueSafe(
-  values:
-    readonly number[],
-
+  values: readonly number[],
   forbiddenSet:
     readonly number[],
 ) {
@@ -182,15 +159,11 @@ function everyValueSafe(
 }
 
 function integerRange(
-  minimum:
-    number,
-
-  maximum:
-    number,
+  minimum: number,
+  maximum: number,
 ) {
   if (
-    maximum <
-    minimum
+    maximum < minimum
   ) {
     return []
   }
@@ -202,12 +175,8 @@ function integerRange(
         minimum +
         1,
     },
-    (
-      _,
-      index,
-    ) =>
-      minimum +
-      index,
+    (_, index) =>
+      minimum + index,
   )
 }
 
@@ -218,16 +187,13 @@ function integerRange(
  *   e_{G[R]}(S)+|Q_P(S)|
  *       <= ((t+1)/2)|S|.
  *
- * Capacities must be integral, so a
- * convenient uniform coefficient is
+ * We use the integral uniform
+ * coefficient
  *
  *   k = ceil((t+1)/2).
- *
- * For t=3 this is k=2.
  */
 export function getReservoirMengerK(
-  t:
-    number,
+  t: number,
 ) {
   if (
     !Number.isInteger(t) ||
@@ -237,8 +203,7 @@ export function getReservoirMengerK(
   }
 
   return globalThis.Math.ceil(
-    (t + 1) /
-      2,
+    (t + 1) / 2,
   )
 }
 
@@ -246,20 +211,14 @@ export function getReservoirSafeFloor({
   degree,
   t,
 }: {
-  degree:
-    number
-
-  t:
-    number
+  degree: number
+  t: number
 }) {
   const k =
-    getReservoirMengerK(
-      t,
-    )
+    getReservoirMengerK(t)
 
   if (
-    k ===
-    null
+    k === null
   ) {
     return null
   }
@@ -271,11 +230,8 @@ export function getReservoirSafeOutdegrees({
   degree,
   t,
 }: {
-  degree:
-    number
-
-  t:
-    number
+  degree: number
+  t: number
 }) {
   const floor =
     getReservoirSafeFloor({
@@ -284,8 +240,7 @@ export function getReservoirSafeOutdegrees({
     })
 
   if (
-    floor ===
-      null ||
+    floor === null ||
     floor < 0
   ) {
     return []
@@ -298,21 +253,304 @@ export function getReservoirSafeOutdegrees({
 }
 
 /*
- * Analyze whether the CURRENT proof
- * state satisfies the general Lovasz
- * reservoir-repair hypotheses.
+ * General Q-class reservoir analysis.
  *
- * This mode deliberately does not ask
- * the user to invent demands or
- * capacities.
+ * The cut proof does not use that all
+ * demand vertices have the same
+ * outdegree. It uses only that:
  *
- * The proof state already determines:
+ *   - P_Q subset L is independent;
+ *   - every p in P_Q needs one unit of
+ *     increase;
+ *   - L\P_Q is already safe;
+ *   - R is the certified reservoir.
  *
- *   - the independent class P_q,
- *   - the repair q -> q+1,
- *   - the reservoir side R,
- *   - the coefficient k,
- *   - the safe reservoir floor.
+ * Therefore all selected classes may
+ * be repaired simultaneously:
+ *
+ *   q -> q+1 for every q in Q.
+ */
+export function analyzeDirectedMengerReservoirClasses({
+  degree,
+  forbiddenSet,
+  lovaszApplication,
+  acrossDirection,
+  balancedR,
+  stabilizationApplication,
+  currentOutdegreesL,
+  currentOutdegreesR,
+}: {
+  degree: number
+  forbiddenSet:
+    readonly number[]
+  lovaszApplication:
+    LovaszApplication | null
+  acrossDirection:
+    AcrossDirection | null
+  balancedR: boolean
+  stabilizationApplication:
+    StabilizeOutdegreeClassesApplication | null
+  currentOutdegreesL:
+    readonly number[]
+  currentOutdegreesR:
+    readonly number[]
+}): DirectedMengerReservoirClassesAnalysis {
+  const validDegree =
+    Number.isInteger(degree) &&
+    degree >= 0
+
+  const hasLovaszCertificate =
+    lovaszApplication !== null
+
+  const lovaszCertificateMatchesDegree =
+    lovaszApplication !== null &&
+    lovaszApplication
+      .certificate
+      .degree === degree
+
+  const correctCertificateSides =
+    lovaszApplication !== null &&
+    lovaszApplication
+      .certificate
+      .stablePart === 'L' &&
+    lovaszApplication
+      .certificate
+      .reservoirPart === 'R'
+
+  const hasIndependentClassesCertificate =
+    stabilizationApplication !==
+    null
+
+  const independentClassesOnL =
+    stabilizationApplication !==
+      null &&
+    stabilizationApplication
+      .target === 'L' &&
+    stabilizationApplication
+      .certificate
+      .conclusion ===
+      'selected-classes-independent'
+
+  const stabilizationMatchesDegree =
+    stabilizationApplication !==
+      null &&
+    stabilizationApplication
+      .degree === degree
+
+  const cutPointsFromRToL =
+    acrossDirection ===
+    'R-to-L'
+
+  const reservoirIsBalanced =
+    balancedR
+
+  const qs =
+    stabilizationApplication ===
+      null
+      ? []
+      : uniqueSorted(
+          stabilizationApplication
+            .qs,
+        )
+
+  const everySelectedClassCanIncrease =
+    qs.length > 0 &&
+    qs.every(
+      (q) =>
+        q >= 0 &&
+        q < degree,
+    )
+
+  const normalizedL =
+    uniqueSorted(
+      currentOutdegreesL,
+    )
+
+  const normalizedR =
+    uniqueSorted(
+      currentOutdegreesR,
+    )
+
+  const everySelectedClassCurrentlyPossible =
+    qs.length > 0 &&
+    qs.every(
+      (q) =>
+        normalizedL.includes(
+          q,
+        ),
+    )
+
+  const everySelectedClassIsForbidden =
+    qs.length > 0 &&
+    qs.every(
+      (q) =>
+        forbiddenSet.includes(
+          q,
+        ),
+    )
+
+  const repairedOutdegrees =
+    everySelectedClassCanIncrease
+      ? uniqueSorted(
+          qs.map(
+            (q) => q + 1,
+          ),
+        )
+      : []
+
+  const everyRepairedValueIsSafe =
+    repairedOutdegrees.length ===
+      qs.length &&
+    everyValueSafe(
+      repairedOutdegrees,
+      forbiddenSet,
+    )
+
+  const selectedClassSet =
+    new Set(qs)
+
+  const otherLClasses =
+    normalizedL.filter(
+      (value) =>
+        !selectedClassSet.has(
+          value,
+        ),
+    )
+
+  const allOtherLClassesAreSafe =
+    everyValueSafe(
+      otherLClasses,
+      forbiddenSet,
+    )
+
+  const t =
+    lovaszApplication
+      ?.pair
+      .t ??
+    null
+
+  const k =
+    t === null
+      ? null
+      : getReservoirMengerK(t)
+
+  const reservoirSafeFloor =
+    t === null
+      ? null
+      : getReservoirSafeFloor({
+          degree,
+          t,
+        })
+
+  const reservoirSafeOutdegrees =
+    t === null
+      ? []
+      : getReservoirSafeOutdegrees({
+          degree,
+          t,
+        })
+
+  const reservoirSafeIntervalIsSafe =
+    reservoirSafeOutdegrees
+      .length > 0 &&
+    everyValueSafe(
+      reservoirSafeOutdegrees,
+      forbiddenSet,
+    )
+
+  const currentRClassesLieInReservoirInterval =
+    reservoirSafeFloor !==
+      null &&
+    normalizedR.every(
+      (value) =>
+        value >=
+          reservoirSafeFloor &&
+        value <= degree,
+    )
+
+  const checks:
+    ReservoirMengerClassesChecks = {
+    validDegree,
+    hasLovaszCertificate,
+    lovaszCertificateMatchesDegree,
+    correctCertificateSides,
+    hasIndependentClassesCertificate,
+    independentClassesOnL,
+    stabilizationMatchesDegree,
+    cutPointsFromRToL,
+    reservoirIsBalanced,
+    everySelectedClassCanIncrease,
+    everySelectedClassCurrentlyPossible,
+    everySelectedClassIsForbidden,
+    everyRepairedValueIsSafe,
+    allOtherLClassesAreSafe,
+    reservoirSafeIntervalIsSafe,
+    currentRClassesLieInReservoirInterval,
+  }
+
+  const applicable =
+    Object.values(
+      checks,
+    ).every(Boolean)
+
+  if (
+    !applicable ||
+    t === null ||
+    k === null ||
+    reservoirSafeFloor ===
+      null ||
+    lovaszApplication === null
+  ) {
+    return {
+      applicable: false,
+      checks,
+      qs,
+      repairedOutdegrees,
+      t,
+      k,
+      reservoirSafeFloor,
+      reservoirSafeOutdegrees,
+      certificate: null,
+    }
+  }
+
+  return {
+    applicable: true,
+    checks,
+    qs,
+    repairedOutdegrees,
+    t,
+    k,
+    reservoirSafeFloor,
+    reservoirSafeOutdegrees,
+    certificate: {
+      type:
+        'lovasz-independent-class-set-reservoir',
+      degree,
+      s:
+        lovaszApplication
+          .pair
+          .s,
+      t,
+      demandPart: 'L',
+      reservoirPart: 'R',
+      qs,
+      repairedOutdegrees,
+      repairShift: 1,
+      k,
+      reservoirSafeFloor,
+      reservoirSafeOutdegrees,
+      startingOutdegreesL:
+        normalizedL,
+      startingOutdegreesR:
+        normalizedR,
+    },
+  }
+}
+
+/*
+ * Backwards-compatible single-q
+ * analysis.
  */
 export function analyzeDirectedMengerReservoir({
   degree,
@@ -324,59 +562,42 @@ export function analyzeDirectedMengerReservoir({
   currentOutdegreesL,
   currentOutdegreesR,
 }: {
-  degree:
-    number
-
+  degree: number
   forbiddenSet:
     readonly number[]
-
   lovaszApplication:
     LovaszApplication | null
-
   acrossDirection:
     AcrossDirection | null
-
-  balancedR:
-    boolean
-
+  balancedR: boolean
   stabilizationApplication:
     StabilizeOutdegreeClassApplication | null
-
   currentOutdegreesL:
     readonly number[]
-
   currentOutdegreesR:
     readonly number[]
 }): DirectedMengerReservoirAnalysis {
   const validDegree =
-    Number.isInteger(
-      degree,
-    ) &&
+    Number.isInteger(degree) &&
     degree >= 0
 
   const hasLovaszCertificate =
-    lovaszApplication !==
-    null
+    lovaszApplication !== null
 
   const lovaszCertificateMatchesDegree =
-    lovaszApplication !==
-      null &&
+    lovaszApplication !== null &&
     lovaszApplication
       .certificate
-      .degree ===
-      degree
+      .degree === degree
 
   const correctCertificateSides =
-    lovaszApplication !==
-      null &&
+    lovaszApplication !== null &&
     lovaszApplication
       .certificate
-      .stablePart ===
-      'L' &&
+      .stablePart === 'L' &&
     lovaszApplication
       .certificate
-      .reservoirPart ===
-      'R'
+      .reservoirPart === 'R'
 
   const hasIndependentClassCertificate =
     stabilizationApplication !==
@@ -386,8 +607,7 @@ export function analyzeDirectedMengerReservoir({
     stabilizationApplication !==
       null &&
     stabilizationApplication
-      .target ===
-      'L' &&
+      .target === 'L' &&
     stabilizationApplication
       .certificate
       .conclusion ===
@@ -397,8 +617,7 @@ export function analyzeDirectedMengerReservoir({
     stabilizationApplication !==
       null &&
     stabilizationApplication
-      .degree ===
-      degree
+      .degree === degree
 
   const cutPointsFromRToL =
     acrossDirection ===
@@ -413,11 +632,9 @@ export function analyzeDirectedMengerReservoir({
     null
 
   const qCanIncrease =
-    q !==
-      null &&
+    q !== null &&
     q >= 0 &&
-    q <
-      degree
+    q < degree
 
   const normalizedL =
     uniqueSorted(
@@ -430,51 +647,31 @@ export function analyzeDirectedMengerReservoir({
     )
 
   const qCurrentlyPossible =
-    q !==
-      null &&
-    normalizedL.includes(
-      q,
-    )
+    q !== null &&
+    normalizedL.includes(q)
 
   const qIsForbidden =
-    q !==
-      null &&
-    forbiddenSet.includes(
-      q,
-    )
+    q !== null &&
+    forbiddenSet.includes(q)
 
   const repairedOutdegree =
     qCanIncrease &&
-    q !==
-      null
+    q !== null
       ? q + 1
       : null
 
   const repairedValueIsSafe =
-    repairedOutdegree !==
-      null &&
+    repairedOutdegree !== null &&
     !forbiddenSet.includes(
       repairedOutdegree,
     )
 
-  /*
-   * The Menger network contains only
-   *
-   *     R union P_q.
-   *
-   * Thus vertices of L\P_q are never
-   * internal vertices of a repair path.
-   *
-   * They must already be safe.
-   */
   const otherLClasses =
-    q ===
-    null
+    q === null
       ? normalizedL
       : normalizedL.filter(
           (value) =>
-            value !==
-            q,
+            value !== q,
         )
 
   const allOtherLClassesAreSafe =
@@ -490,75 +687,34 @@ export function analyzeDirectedMengerReservoir({
     null
 
   const k =
-    t ===
-    null
+    t === null
       ? null
-      : getReservoirMengerK(
-          t,
-        )
+      : getReservoirMengerK(t)
 
   const reservoirSafeFloor =
-    t ===
-    null
+    t === null
       ? null
-      : getReservoirSafeFloor(
-          {
-            degree,
-            t,
-          },
-        )
+      : getReservoirSafeFloor({
+          degree,
+          t,
+        })
 
   const reservoirSafeOutdegrees =
-    t ===
-    null
+    t === null
       ? []
-      : getReservoirSafeOutdegrees(
-          {
-            degree,
-            t,
-          },
-        )
+      : getReservoirSafeOutdegrees({
+          degree,
+          t,
+        })
 
-  /*
-   * A reservoir vertex b starts with
-   *
-   *     d_G^+(b)=d-i(b),
-   *
-   * where i(b)=d^-_{G[R]}(b).
-   *
-   * We give it capacity
-   *
-   *     c(b)=k-i(b).
-   *
-   * Hence after all paths begin there,
-   * it still has outdegree at least
-   *
-   *     d-k.
-   *
-   * Therefore the entire interval
-   *
-   *     d-k,...,d
-   *
-   * must be safe.
-   */
   const reservoirSafeIntervalIsSafe =
     reservoirSafeOutdegrees
-      .length >
-      0 &&
+      .length > 0 &&
     everyValueSafe(
       reservoirSafeOutdegrees,
       forbiddenSet,
     )
 
-  /*
-   * This is mainly a consistency check
-   * on the abstract playground state.
-   *
-   * Under R->L plus a balanced
-   * orientation of G[R], these current
-   * classes should automatically lie in
-   * the reservoir interval.
-   */
   const currentRClassesLieInReservoirInterval =
     reservoirSafeFloor !==
       null &&
@@ -566,140 +722,84 @@ export function analyzeDirectedMengerReservoir({
       (value) =>
         value >=
           reservoirSafeFloor &&
-        value <=
-          degree,
+        value <= degree,
     )
 
   const checks:
     ReservoirMengerChecks = {
     validDegree,
-
     hasLovaszCertificate,
-
     lovaszCertificateMatchesDegree,
-
     correctCertificateSides,
-
     hasIndependentClassCertificate,
-
     independentClassOnL,
-
     stabilizationMatchesDegree,
-
     cutPointsFromRToL,
-
     reservoirIsBalanced,
-
     qCanIncrease,
-
     qCurrentlyPossible,
-
     qIsForbidden,
-
     repairedValueIsSafe,
-
     allOtherLClassesAreSafe,
-
     reservoirSafeIntervalIsSafe,
-
     currentRClassesLieInReservoirInterval,
   }
 
   const applicable =
     Object.values(
       checks,
-    ).every(
-      Boolean,
-    )
+    ).every(Boolean)
 
   if (
     !applicable ||
-    q ===
-      null ||
-    repairedOutdegree ===
-      null ||
-    t ===
-      null ||
-    k ===
-      null ||
+    q === null ||
+    repairedOutdegree === null ||
+    t === null ||
+    k === null ||
     reservoirSafeFloor ===
       null ||
-    lovaszApplication ===
-      null
+    lovaszApplication === null
   ) {
     return {
-      applicable:
-        false,
-
+      applicable: false,
       checks,
-
       q,
-
       repairedOutdegree,
-
       t,
-
       k,
-
       reservoirSafeFloor,
-
       reservoirSafeOutdegrees,
-
-      certificate:
-        null,
+      certificate: null,
     }
   }
 
   return {
-    applicable:
-      true,
-
+    applicable: true,
     checks,
-
     q,
-
     repairedOutdegree,
-
     t,
-
     k,
-
     reservoirSafeFloor,
-
     reservoirSafeOutdegrees,
-
     certificate: {
       type:
         'lovasz-independent-reservoir',
-
       degree,
-
       s:
         lovaszApplication
           .pair
           .s,
-
       t,
-
-      demandPart:
-        'L',
-
-      reservoirPart:
-        'R',
-
+      demandPart: 'L',
+      reservoirPart: 'R',
       q,
-
       repairedOutdegree,
-
       k,
-
       reservoirSafeFloor,
-
       reservoirSafeOutdegrees,
-
       startingOutdegreesL:
         normalizedL,
-
       startingOutdegreesR:
         normalizedR,
     },

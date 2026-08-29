@@ -11,10 +11,10 @@ export const stabilizeOutdegreeClassTool = {
     'stabilize-outdegree-class',
 
   name:
-    'Stabilize Outdegree Class',
+    'Stabilize Outdegree Classes',
 
   menuLabel:
-    'Stabilize q-class',
+    'Stabilize classes Q',
 } as const
 
 type StabilizeOutdegreeClassReferenceProps = {
@@ -123,21 +123,24 @@ export function StabilizeOutdegreeClassReference({
           Let{' '}
           <Math>{'D'}</Math>{' '}
           be an orientation of a
-          graph, and let{' '}
+          graph, let{' '}
           <Math>{'X'}</Math>{' '}
-          be a set of vertices.
-          Fix an integer{' '}
-          <Math>{'q'}</Math>{' '}
-          and define
+          be a set of vertices, and
+          let{' '}
+          <Math>{'Q'}</Math>{' '}
+          be a nonempty set of
+          outdegrees containing no
+          two consecutive integers.
+          Define
         </p>
 
         <PanelFormula>
           {
-            'P_q'
+            'P_Q'
             + '='
             + '\\{'
             + 'v\\in X:'
-            + 'd_D^+(v)=q'
+            + 'd_D^+(v)\\in Q'
             + '\\}.'
           }
         </PanelFormula>
@@ -145,33 +148,13 @@ export function StabilizeOutdegreeClassReference({
         <p>
           By repeatedly reversing
           arcs whose two endpoints
-          lie in{' '}
-          <Math>{'P_q'}</Math>,
+          currently lie in{' '}
+          <Math>{'P_Q'}</Math>,
           we may obtain an
           orientation in which{' '}
-          <Math>{'P_q'}</Math>{' '}
+          <Math>{'P_Q'}</Math>{' '}
           is independent.
         </p>
-
-        <p>
-          During this process,
-          vertices outside the
-          current{' '}
-          <Math>{'q'}</Math>
-          -class are never used as
-          endpoints of a reversal.
-          Consequently, the only
-          new outdegrees that can
-          be created are
-        </p>
-
-        <PanelFormula>
-          {
-            'q-1'
-            + '\\qquad\\text{and}\\qquad '
-            + 'q+1.'
-          }
-        </PanelFormula>
       </section>
 
       {/* PROOF */}
@@ -188,92 +171,90 @@ export function StabilizeOutdegreeClassReference({
 
         <p>
           If{' '}
-          <Math>{'P_q'}</Math>{' '}
+          <Math>{'P_Q'}</Math>{' '}
           is already independent,
           there is nothing to do.
-          Otherwise there are
-          adjacent vertices{' '}
-          <Math>{'x,y\\in P_q'}</Math>.
-          Their edge has one of
-          the two orientations;
-          say
+          Otherwise choose an arc
         </p>
 
         <PanelFormula>
           {
-            'x\\to y.'
-          }
-        </PanelFormula>
-
-        <p>
-          Reverse this arc. The
-          outdegree of{' '}
-          <Math>{'x'}</Math>{' '}
-          decreases by one and the
-          outdegree of{' '}
-          <Math>{'y'}</Math>{' '}
-          increases by one:
-        </p>
-
-        <PanelFormula>
-          {
-            'd_D^+(x):'
-            + 'q\\to q-1,'
+            'x\\to y'
             + '\\qquad '
-            + 'd_D^+(y):'
-            + 'q\\to q+1.'
+            + 'x,y\\in P_Q.'
           }
         </PanelFormula>
 
         <p>
-          Thus both{' '}
-          <Math>{'x'}</Math>{' '}
-          and{' '}
-          <Math>{'y'}</Math>{' '}
-          leave the{' '}
-          <Math>{'q'}</Math>
-          -class.
+          Write
         </p>
 
+        <PanelFormula>
+          {
+            'd_D^+(x)=a\\in Q,'
+            + '\\qquad '
+            + 'd_D^+(y)=b\\in Q.'
+          }
+        </PanelFormula>
+
         <p>
-          Moreover, no vertex
-          outside the current{' '}
-          <Math>{'q'}</Math>
-          -class changes
-          outdegree. Hence the
-          reversal creates no new
-          vertex of outdegree{' '}
-          <Math>{'q'}</Math>.
+          Reverse the arc. Then
+        </p>
+
+        <PanelFormula>
+          {
+            'a\\to a-1'
+            + '\\qquad\\text{and}\\qquad '
+            + 'b\\to b+1.'
+          }
+        </PanelFormula>
+
+        <p>
+          Since{' '}
+          <Math>{'Q'}</Math>{' '}
+          contains no consecutive
+          integers,
+        </p>
+
+        <PanelFormula>
+          {
+            'a-1\\notin Q'
+            + '\\qquad\\text{and}\\qquad '
+            + 'b+1\\notin Q.'
+          }
+        </PanelFormula>
+
+        <p>
+          Thus both endpoints leave
+          the current set{' '}
+          <Math>{'P_Q'}</Math>.
+          No other vertex changes
+          outdegree, so no new
+          vertex enters{' '}
+          <Math>{'P_Q'}</Math>.
           Therefore
         </p>
 
         <PanelFormula>
           {
-            '|P_q|'
-            + '\\text{ decreases by }'
-            + '2.'
+            '|P_Q|'
+            + '\\text{ decreases by }2.'
           }
         </PanelFormula>
 
         <p>
-          Repeating this operation
-          must terminate. At
-          termination there is no
-          edge with both endpoints
-          in the remaining{' '}
-          <Math>{'q'}</Math>
-          -class, so
+          Repeating must terminate,
+          and at termination no edge
+          has both endpoints in the
+          remaining{' '}
+          <Math>{'P_Q'}</Math>.
+          Hence{' '}
+          <Math>{'P_Q'}</Math>{' '}
+          is independent.
         </p>
-
-        <PanelFormula>
-          {
-            'P_q'
-            + '\\text{ is independent}.'
-          }
-        </PanelFormula>
       </section>
 
-      {/* WHY THIS IS A FIXER */}
+      {/* WHAT CHANGES */}
 
       <section
         style={{
@@ -288,50 +269,36 @@ export function StabilizeOutdegreeClassReference({
         <p>
           Stabilization does{' '}
           <strong>not</strong>{' '}
-          eliminate the outdegree{' '}
-          <Math>{'q'}</Math>.
-          Some vertices may remain
-          in the{' '}
-          <Math>{'q'}</Math>
-          -class.
-        </p>
-
-        <p>
+          eliminate the selected
+          outdegree classes. Some
+          vertices may remain in{' '}
+          <Math>{'P_Q'}</Math>.
           Its conclusion is
           structural:
         </p>
 
         <PanelFormula>
           {
-            'P_q'
+            'P_Q'
             + '='
             + '\\{'
             + 'v\\in X:'
-            + 'd_D^+(v)=q'
+            + 'd_D^+(v)\\in Q'
             + '\\}'
             + '\\text{ is independent}.'
           }
         </PanelFormula>
 
         <p>
-          The orientation may now
-          contain the additional
-          outdegrees{' '}
+          A reversal may create the
+          neighboring outdegrees{' '}
           <Math>{'q-1'}</Math>{' '}
           and{' '}
-          <Math>{'q+1'}</Math>.
-          Whether those values are
-          useful or forbidden is a
-          separate question.
-        </p>
-
-        <p>
-          This is why the operation
-          belongs among the
-          <strong> fixers</strong>,
-          rather than among the
-          starting-orientation
-          constructors.
+          <Math>{'q+1'}</Math>{' '}
+          for selected values{' '}
+          <Math>{'q\\in Q'}</Math>.
+          The application records all
+          such possible new classes.
         </p>
       </section>
 
@@ -356,25 +323,12 @@ export function StabilizeOutdegreeClassReference({
               <Math>
                 {targetLatex}
               </Math>
-              .
-            </p>
-
-            <p>
-              Choose a currently
-              possible total
-              outdegree{' '}
-
-              <Math>{'q'}</Math>
-              . The fixer will
-              reverse arcs between
-              pairs of current{' '}
-
-              <Math>{'q'}</Math>
-              -vertices until the
-              remaining{' '}
-
-              <Math>{'q'}</Math>
-              -class is independent.
+              . Choose one or more
+              currently possible total
+              outdegrees forming a set{' '}
+              <Math>{'Q'}</Math>{' '}
+              with no two consecutive
+              values.
             </p>
           </>
         ) : (
@@ -397,7 +351,11 @@ export function StabilizeOutdegreeClassReference({
 
             <PanelFormula>
               {
-                `q=${application.q}.`
+                'Q='
+                + latexSet(
+                  application.qs,
+                )
+                + '.'
               }
             </PanelFormula>
 
@@ -422,24 +380,23 @@ export function StabilizeOutdegreeClassReference({
 
             <p>
               After the arc
-              reversals, the
-              remaining class
+              reversals,
             </p>
 
             <PanelFormula>
               {
-                `P_{${application.q}}`
+                'P_Q'
                 + '='
                 + '\\{'
                 + 'v:'
-                + `d_D^+(v)=${application.q}`
+                + 'd_D^+(v)\\in '
+                + latexSet(
+                  application.qs,
+                )
                 + '\\}'
+                + '\\text{ is independent}.'
               }
             </PanelFormula>
-
-            <p>
-              is independent.
-            </p>
 
             {application
               .certificate
@@ -466,19 +423,17 @@ export function StabilizeOutdegreeClassReference({
               </>
             ) : (
               <p>
-                This extreme
-                outdegree class is
-                already independent,
-                so no neighboring
-                outdegrees need to
-                be created.
+                No neighboring
+                outdegree class needs
+                to be added in this
+                application.
               </p>
             )}
           </>
         )}
       </section>
 
-      {/* ROLE IN RESERVOIR REPAIR */}
+      {/* RESERVOIR ROLE */}
 
       <section
         style={{
@@ -487,53 +442,50 @@ export function StabilizeOutdegreeClassReference({
         }}
       >
         <h3>
-          Why the certificate
-          matters
+          Why the certificate matters
         </h3>
 
         <p>
-          Later repair arguments
-          may need an independent
-          set of bad vertices.
-          Stabilization provides
-          exactly that certificate.
-        </p>
-
-        <p>
-          In particular, when the
-          target is{' '}
-
-          <Math>{'G[L]'}</Math>{' '}
-
-          after a strengthened
-          Lovász partition, the
-          independent set{' '}
-
-          <Math>{'P_q\\subseteq L'}</Math>{' '}
-
-          can be inserted into the
-          Lovász reservoir
-          inequality through
+          The strengthened Lovász
+          reservoir inequality works
+          for an arbitrary independent
+          set{' '}
+          <Math>{'P\\subseteq L'}</Math>,
+          not merely for one outdegree
+          class. Thus after stabilizing
         </p>
 
         <PanelFormula>
           {
-            'Q_{P_q}(S)'
+            'P_Q'
             + '='
             + '\\{'
-            + 'p\\in P_q:'
-            + 'N(p)\\cap R'
-            + '\\subseteq S'
-            + '\\}.'
+            + 'v\\in L:'
+            + 'd_D^+(v)\\in Q'
+            + '\\},'
           }
         </PanelFormula>
 
         <p>
-          Thus stabilization is
-          the bridge between a
-          starting orientation and
-          the later reservoir
-          Menger repair.
+          the whole union{' '}
+          <Math>{'P_Q'}</Math>{' '}
+          may be used as the demand set
+          in a reservoir Menger repair.
+          In particular, when every
+          selected bad class can be
+          repaired upward by one, the
+          same cut argument can repair
+        </p>
+
+        <PanelFormula>
+          {
+            'q\\to q+1'
+            + '\\qquad(q\\in Q)'
+          }
+        </PanelFormula>
+
+        <p>
+          simultaneously.
         </p>
       </section>
 
@@ -550,10 +502,9 @@ export function StabilizeOutdegreeClassReference({
           }}
         >
           This is the elementary
-          arc-reversal lemma used
-          in the current proof
-          framework. Its proof is
-          included above.
+          arc-reversal lemma used in
+          the current proof framework.
+          Its proof is included above.
         </p>
       </section>
     </>
