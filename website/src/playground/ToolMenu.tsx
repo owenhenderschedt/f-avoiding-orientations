@@ -1600,6 +1600,9 @@ export default function ToolMenu({
                   onOpenReference={() =>
                     onOpenParityBoundsReference?.()
                   }
+                  onBack={
+                    returnToRoot
+                  }
                 />
               </div>
             </>
@@ -1968,6 +1971,21 @@ export default function ToolMenu({
                       →
                     </button>
                   )}
+                  {canUseParityBoundsInG && (
+  <button
+    type="button"
+    onClick={() =>
+      setParityBoundsOpen(
+        true,
+      )
+    }
+    style={
+      menuButtonStyle
+    }
+  >
+    Parity Bounds →
+  </button>
+)}
                 </>
               )}
 
@@ -2389,7 +2407,11 @@ export default function ToolMenu({
                   Directed Menger
                   repair applied.
                 </div>
-              ) : canApplyDirectedMengerRepair ? (
+              ) : (
+                canApplyDirectedMengerRepair ||
+                directedMengerReservoirCandidate !==
+                  null
+              ) ? (
                 <button
                   type="button"
                   onClick={
@@ -2409,7 +2431,7 @@ export default function ToolMenu({
                     mutedMessageStyle
                   }
                 >
-                  Complete a starting
+                  Complete a starti
                   orientation first.
                 </div>
               ) : null}
@@ -2420,3 +2442,4 @@ export default function ToolMenu({
     </div>
   )
 }
+

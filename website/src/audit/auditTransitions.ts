@@ -154,6 +154,8 @@ function wholeGraphAlreadyOriented(
     state.maLuG !==
       null ||
     state.hasanvandG !==
+      null ||
+    state.parityBoundsG !==
       null
   )
 }

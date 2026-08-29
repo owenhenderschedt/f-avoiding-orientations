@@ -9,36 +9,41 @@ import type {
   StabilizeOutdegreeClassesApplication,
 } from './stabilizeOutdegreeClassApplication'
 import {
-  analyzeDirectedMengerReservoir,
-  analyzeDirectedMengerReservoirClasses,
+  analyzeDirectedMengerReservoirV4,
   type DirectedMengerReservoirCertificate,
-  type DirectedMengerReservoirClassesCertificate,
+  type ReservoirIndependenceSource,
   type ReservoirMengerChecks,
-  type ReservoirMengerClassesChecks,
 } from './directedMengerReservoirMath'
 
 export type DirectedMengerReservoirApplication = {
-  /*
-   * One live reservoir mode handles both
-   * singleton and multi-class demand sets.
-   */
   mode:
     'reservoir'
 
   direction:
     'increase'
 
+  /*
+   * degree remains the original degree for
+   * backwards compatibility.
+   */
   degree:
     number
 
+  originalDegree:
+    number
+
+  workingDegree:
+    number
+
+  fixedOutdegreeContribution:
+    number
+
+  independenceSource:
+    ReservoirIndependenceSource
+
   /*
-   * Compatibility fields for the original
-   * single-q plumbing.
-   *
-   * When |Q|=1 these are exactly the old
-   * q and q+1 fields.  When |Q|>1 they are
-   * the first repair pair and should not be
-   * used to describe the full certificate.
+   * Compatibility fields for old
+   * single-q consumers.
    */
   q:
     number
@@ -47,10 +52,7 @@ export type DirectedMengerReservoirApplication = {
     number
 
   /*
-   * Full set of independent bad classes
-   * repaired simultaneously:
-   *
-   *     q -> q+1  for every q in Q.
+   * Full simultaneous repair.
    */
   qs:
     readonly number[]
@@ -68,20 +70,12 @@ export type DirectedMengerReservoirApplication = {
     readonly number[]
 
   checks:
-    | ReservoirMengerChecks
-    | ReservoirMengerClassesChecks
+    ReservoirMengerChecks
 
   certificate:
-    | DirectedMengerReservoirCertificate
-    | DirectedMengerReservoirClassesCertificate
+    DirectedMengerReservoirCertificate
 }
 
-/*
- * The generalized name remains available
- * for audit/search code that wants to say
- * explicitly that several classes may be
- * repaired at once.
- */
 export type DirectedMengerReservoirClassesApplication =
   DirectedMengerReservoirApplication
 
@@ -97,42 +91,28 @@ function uniqueSorted(
   )
 }
 
-function getSelectedClasses(
-  application:
-    StabilizeOutdegreeClassApplication | null,
-) {
-  if (
-    application ===
-    null
-  ) {
-    return []
-  }
-
-  if (
-    application.qs.length >
-    0
-  ) {
-    return uniqueSorted(
-      application.qs,
-    )
-  }
-
-  return [
-    application.q,
-  ]
-}
-
 /*
- * Live creator.
+ * Reservoir Menger V4.
  *
- * For a singleton Q={q}, retain the
- * original single-q certificate.  For a
- * genuine multi-class selection, use the
- * generalized independent-set reservoir
- * certificate.
+ * Existing callers may still pass only
+ *
+ *   degree
+ *
+ * in which case we recover the original
+ * no-2-factor frame:
+ *
+ *   workingDegree = degree,
+ *   fixed contribution = 0.
+ *
+ * The live playground also passes the
+ * residual frame explicitly.
  */
 export function createDirectedMengerReservoirApplication({
   degree,
+  workingDegree =
+    degree,
+  fixedOutdegreeContribution =
+    0,
   forbiddenSet,
   lovaszApplication,
   acrossDirection,
@@ -142,6 +122,12 @@ export function createDirectedMengerReservoirApplication({
   currentOutdegreesR,
 }: {
   degree:
+    number
+
+  workingDegree?:
+    number
+
+  fixedOutdegreeContribution?:
     number
 
   forbiddenSet:
@@ -175,102 +161,13 @@ export function createDirectedMengerReservoirApplication({
       currentOutdegreesR,
     )
 
-  const qs =
-    getSelectedClasses(
-      stabilizationApplication,
-    )
-
-  if (
-    qs.length ===
-    0
-  ) {
-    return null
-  }
-
-  if (
-    qs.length ===
-    1
-  ) {
-    const analysis =
-      analyzeDirectedMengerReservoir({
-        degree,
-
-        forbiddenSet,
-
-        lovaszApplication,
-
-        acrossDirection,
-
-        balancedR,
-
-        stabilizationApplication,
-
-        currentOutdegreesL:
-          normalizedL,
-
-        currentOutdegreesR:
-          normalizedR,
-      })
-
-    if (
-      !analysis.applicable ||
-      analysis.certificate ===
-        null ||
-      analysis.q ===
-        null ||
-      analysis.repairedOutdegree ===
-        null
-    ) {
-      return null
-    }
-
-    return {
-      mode:
-        'reservoir',
-
-      direction:
-        'increase',
-
+  const analysis =
+    analyzeDirectedMengerReservoirV4({
       degree,
 
-      q:
-        analysis.q,
+      workingDegree,
 
-      repairedOutdegree:
-        analysis
-          .repairedOutdegree,
-
-      qs: [
-        analysis.q,
-      ],
-
-      repairedOutdegrees: [
-        analysis
-          .repairedOutdegree,
-      ],
-
-      forbiddenSet:
-        uniqueSorted(
-          forbiddenSet,
-        ),
-
-      startingOutdegreesL:
-        normalizedL,
-
-      startingOutdegreesR:
-        normalizedR,
-
-      checks:
-        analysis.checks,
-
-      certificate:
-        analysis.certificate,
-    }
-  }
-
-  const classAnalysis =
-    analyzeDirectedMengerReservoirClasses({
-      degree,
+      fixedOutdegreeContribution,
 
       forbiddenSet,
 
@@ -280,8 +177,7 @@ export function createDirectedMengerReservoirApplication({
 
       balancedR,
 
-      stabilizationApplication:
-        stabilizationApplication as StabilizeOutdegreeClassesApplication,
+      stabilizationApplication,
 
       currentOutdegreesL:
         normalizedL,
@@ -291,12 +187,14 @@ export function createDirectedMengerReservoirApplication({
     })
 
   if (
-    !classAnalysis.applicable ||
-    classAnalysis.certificate ===
+    !analysis.applicable ||
+    analysis.certificate ===
       null ||
-    classAnalysis.qs.length ===
+    analysis.qs.length ===
       0 ||
-    classAnalysis.repairedOutdegrees.length ===
+    analysis
+      .repairedOutdegrees
+      .length ===
       0
   ) {
     return null
@@ -311,18 +209,29 @@ export function createDirectedMengerReservoirApplication({
 
     degree,
 
+    originalDegree:
+      degree,
+
+    workingDegree,
+
+    fixedOutdegreeContribution,
+
+    independenceSource:
+      analysis
+        .independenceSource,
+
     q:
-      classAnalysis.qs[0],
+      analysis.qs[0],
 
     repairedOutdegree:
-      classAnalysis
+      analysis
         .repairedOutdegrees[0],
 
     qs:
-      classAnalysis.qs,
+      analysis.qs,
 
     repairedOutdegrees:
-      classAnalysis
+      analysis
         .repairedOutdegrees,
 
     forbiddenSet:
@@ -337,22 +246,23 @@ export function createDirectedMengerReservoirApplication({
       normalizedR,
 
     checks:
-      classAnalysis.checks,
+      analysis.checks,
 
     certificate:
-      classAnalysis.certificate,
+      analysis.certificate,
   }
 }
 
 /*
- * Explicit generalized creator retained
- * as a convenience for the completeness
- * audit.  It uses the same live creator,
- * so the audit and playground share the
- * same certificate logic.
+ * Generalized-name alias retained for
+ * audit/search code.
  */
 export function createDirectedMengerReservoirClassesApplication({
   degree,
+  workingDegree =
+    degree,
+  fixedOutdegreeContribution =
+    0,
   forbiddenSet,
   lovaszApplication,
   acrossDirection,
@@ -362,6 +272,12 @@ export function createDirectedMengerReservoirClassesApplication({
   currentOutdegreesR,
 }: {
   degree:
+    number
+
+  workingDegree?:
+    number
+
+  fixedOutdegreeContribution?:
     number
 
   forbiddenSet:
@@ -387,6 +303,10 @@ export function createDirectedMengerReservoirClassesApplication({
 }): DirectedMengerReservoirClassesApplication | null {
   return createDirectedMengerReservoirApplication({
     degree,
+
+    workingDegree,
+
+    fixedOutdegreeContribution,
 
     forbiddenSet,
 

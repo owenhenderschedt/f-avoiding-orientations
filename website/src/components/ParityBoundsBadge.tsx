@@ -1,88 +1,100 @@
+import Math from './Math'
 import type {
   ParityBoundsApplication,
 } from '../tools/parityBoundsApplication'
 
 type ParityBoundsBadgeProps = {
-  x:
-    number
-
-  y:
-    number
-
   application:
     ParityBoundsApplication
+
+  x: number
+  y: number
 
   onOpen:
     () => void
 }
 
 export default function ParityBoundsBadge({
+  application,
   x,
   y,
-  application,
   onOpen,
 }: ParityBoundsBadgeProps) {
   const normal =
-    application
-      .normalInterval
+    application.normalInterval
+
+  const exceptional =
+    application.exceptionalInterval
 
   return (
     <foreignObject
-      x={
-        x
-      }
-      y={
-        y
-      }
-      width={
-        190
-      }
-      height={
-        40
-      }
+      x={x}
+      y={y}
+      width={280}
+      height={58}
+      style={{
+        overflow:
+          'visible',
+      }}
     >
-      <button
-        type="button"
-        onClick={
-          onOpen
-        }
-        title={
-          `Ordinary parity interval [${normal.lower}, ${normal.upper}]`
-        }
+      <div
         style={{
           width:
-            '100%',
+            '280px',
 
-          height:
-            '32px',
+          display:
+            'flex',
 
-          border:
-            '1px solid #cbd5e1',
+          justifyContent:
+            'center',
 
-          borderRadius:
-            '8px',
-
-          background:
-            '#ffffff',
-
-          color:
-            '#334155',
-
-          font:
-            'inherit',
-
-          fontSize:
-            '15px',
-
-          cursor:
-            'pointer',
-
-          boxShadow:
-            '0 3px 8px rgba(15, 23, 42, 0.07)',
+          alignItems:
+            'center',
         }}
       >
-        Parity Bounds
-      </button>
+        <button
+          type="button"
+          onClick={
+            onOpen
+          }
+          style={{
+            font:
+              'inherit',
+
+            border:
+              'none',
+
+            background:
+              'transparent',
+
+            color:
+              '#475569',
+
+            cursor:
+              'pointer',
+
+            padding:
+              '3px 5px',
+
+            borderBottom:
+              '1px solid #94a3b8',
+
+            lineHeight:
+              1.2,
+          }}
+          title="Open Parity Bounds certificate"
+        >
+          Parity{' '}
+
+          <Math>
+            {
+              `[${normal.lower},${normal.upper}],`
+              +
+              `\ [${exceptional.lower},${exceptional.upper}]`
+            }
+          </Math>
+        </button>
+      </div>
     </foreignObject>
   )
 }

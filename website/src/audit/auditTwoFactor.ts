@@ -58,6 +58,9 @@ function constructionIsPristine(
     state.hasanvandR ===
       null &&
 
+    state.parityBoundsG ===
+      null &&
+
     state.stabilization ===
       null &&
 

@@ -548,7 +548,7 @@ export default function InitialGraphView({
             application={
               parityBoundsApplicationG
             }
-            x={205}
+            x={160}
             y={320}
             onOpen={() =>
               onOpenParityBoundsReference(

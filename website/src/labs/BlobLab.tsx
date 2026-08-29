@@ -425,6 +425,18 @@ export default function BlobLab({
     })
   }
 
+  function openAppliedParityBoundsReference(
+    application:
+      ParityBoundsApplication,
+  ) {
+    setActiveReference({
+      type:
+        'parity-bounds',
+
+      application,
+    })
+  }
+
   function openHasanvandSelectorReference(
     target:
       HasanvandTarget,
@@ -826,6 +838,10 @@ export default function BlobLab({
               playground
                 .hasanvandApplicationR
             }
+            parityBoundsApplicationG={
+              playground
+                .parityBoundsApplication
+            }
             stabilizeOutdegreeClassApplication={
               playground
                 .stabilizeOutdegreeClassApplication
@@ -876,6 +892,9 @@ export default function BlobLab({
             }
             onOpenHasanvandReference={
               openAppliedHasanvandReference
+            }
+            onOpenParityBoundsReference={
+              openAppliedParityBoundsReference
             }
             onOpenStabilizeOutdegreeClassReference={
               openAppliedStabilizeReference

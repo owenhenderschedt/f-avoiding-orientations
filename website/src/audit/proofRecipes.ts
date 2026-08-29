@@ -84,6 +84,27 @@ export type AuditProofStep =
     }
   | {
       type:
+        'parity-bounds'
+
+      normalLower:
+        number
+
+      normalUpper:
+        number
+
+      exceptionalLower:
+        number
+
+      exceptionalUpper:
+        number
+    }
+
+  /*
+   * Legacy audit-only recipe variants.
+   * proofSearch does not generate these.
+   */
+  | {
+      type:
         'bounded-degree-constructor'
 
       target:
@@ -117,8 +138,8 @@ export type AuditProofStep =
       target:
         StabilizeTarget
 
-      q:
-        number
+      qs:
+        readonly number[]
     }
   | {
       type:
@@ -137,11 +158,11 @@ export type AuditProofStep =
       type:
         'directed-menger-reservoir'
 
-      q:
-        number
+      qs:
+        readonly number[]
 
-      repairedOutdegree:
-        number
+      repairedOutdegrees:
+        readonly number[]
     }
 
 export type AuditProofRecipe = {
@@ -161,30 +182,59 @@ export type AuditProofRecipe = {
     readonly number[]
 }
 
+type AuditSearchStatistics = {
+  expandedStates:
+    number
+
+  generatedStates:
+    number
+}
+
 export type AuditCaseResult =
-  | {
-      status:
-        'proved'
+  | (
+      {
+        status:
+          'proved'
 
-      degree:
-        number
+        degree:
+          number
 
-      forbiddenSet:
-        readonly number[]
+        forbiddenSet:
+          readonly number[]
 
-      recipe:
-        AuditProofRecipe
-    }
-  | {
-      status:
-        'unresolved'
+        recipe:
+          AuditProofRecipe
+      } &
+      AuditSearchStatistics
+    )
+  | (
+      {
+        status:
+          'unresolved'
 
-      degree:
-        number
+        /*
+         * exhausted:
+         *   every reachable encoded state
+         *   was searched and no proof was
+         *   found.
+         *
+         * search-limit:
+         *   the frontier was still nonempty
+         *   when the expansion budget was
+         *   reached.
+         */
+        reason:
+          | 'exhausted'
+          | 'search-limit'
 
-      forbiddenSet:
-        readonly number[]
-    }
+        degree:
+          number
+
+        forbiddenSet:
+          readonly number[]
+      } &
+      AuditSearchStatistics
+    )
 
 export type AuditDegreeResult = {
   degree:
@@ -196,7 +246,20 @@ export type AuditDegreeResult = {
   provedCases:
     number
 
+  /*
+   * Genuine exhaustive failures.
+   */
   unresolvedCases:
+    number
+
+  /*
+   * Not a mathematical failure: the
+   * search budget was reached.
+   */
+  searchLimitedCases:
+    number
+
+  uncertifiedCases:
     number
 
   elapsedMs:

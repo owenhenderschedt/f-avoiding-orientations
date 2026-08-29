@@ -40,7 +40,8 @@ export default function CompletenessAudit({
     )
 
   const caseGroups =
-    selectedDegree === null
+    selectedDegree ===
+    null
       ? []
       : getCaseGroupsForDegree(
           selectedDegree,
@@ -54,11 +55,6 @@ export default function CompletenessAudit({
       degree,
     )
 
-    /*
-     * Results belong to a specific degree,
-     * so changing d clears the previous
-     * census.
-     */
     setAuditResult(
       null,
     )
@@ -88,6 +84,9 @@ export default function CompletenessAudit({
       null &&
     auditResult
       .unresolvedCases ===
+      0 &&
+    auditResult
+      .searchLimitedCases ===
       0
 
   return (
@@ -142,8 +141,6 @@ export default function CompletenessAudit({
           ⌂ Home
         </button>
 
-        {/* PAGE HEADER */}
-
         <div
           style={{
             textAlign:
@@ -186,7 +183,7 @@ export default function CompletenessAudit({
           <p
             style={{
               maxWidth:
-                '690px',
+                '720px',
 
               margin:
                 '0 auto',
@@ -214,11 +211,11 @@ export default function CompletenessAudit({
             <Math>
               {'d\\leq 12'}
             </Math>
-            .
+            . Search-limited cases are kept
+            separate from genuinely
+            exhausted cases.
           </p>
         </div>
-
-        {/* DEGREE SELECTOR */}
 
         <div
           style={{
@@ -330,14 +327,12 @@ export default function CompletenessAudit({
           </div>
         </div>
 
-        {/* SELECTED DEGREE */}
-
         {selectedDegree !==
           null && (
           <div
             style={{
               maxWidth:
-                '760px',
+                '820px',
 
               margin:
                 '42px auto 0',
@@ -402,8 +397,6 @@ export default function CompletenessAudit({
                 reversal classes to audit
               </div>
             </div>
-
-            {/* RUN BUTTON */}
 
             {auditResult ===
               null && (
@@ -471,13 +464,12 @@ export default function CompletenessAudit({
                       '16px',
                   }}
                 >
-                  Search the current encoded
-                  proof toolkit.
+                  Best-first search through
+                  the current encoded proof
+                  toolkit.
                 </div>
               </div>
             )}
-
-            {/* RESULTS */}
 
             {auditResult !==
               null && (
@@ -499,7 +491,7 @@ export default function CompletenessAudit({
                       'grid',
 
                     gridTemplateColumns:
-                      'repeat(3, 1fr)',
+                      'repeat(4, 1fr)',
 
                     gap:
                       '12px',
@@ -508,8 +500,6 @@ export default function CompletenessAudit({
                       '24px',
                   }}
                 >
-                  {/* PROVED */}
-
                   <div
                     style={{
                       padding:
@@ -558,8 +548,6 @@ export default function CompletenessAudit({
                       Proved
                     </div>
                   </div>
-
-                  {/* UNRESOLVED */}
 
                   <div
                     style={{
@@ -622,11 +610,74 @@ export default function CompletenessAudit({
                           '16px',
                       }}
                     >
-                      Unresolved
+                      Exhausted
                     </div>
                   </div>
 
-                  {/* TIME */}
+                  <div
+                    style={{
+                      padding:
+                        '16px 10px',
+
+                      border:
+                        auditResult
+                          .searchLimitedCases >
+                        0
+                          ? '1px solid #e7c98d'
+                          : '1px solid #bbd7c7',
+
+                      borderRadius:
+                        '10px',
+
+                      background:
+                        auditResult
+                          .searchLimitedCases >
+                        0
+                          ? '#fffdf7'
+                          : '#f7fbf8',
+
+                      textAlign:
+                        'center',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize:
+                          '28px',
+
+                        color:
+                          auditResult
+                            .searchLimitedCases >
+                          0
+                            ? '#8a6723'
+                            : '#2f6f4e',
+
+                        marginBottom:
+                          '4px',
+                      }}
+                    >
+                      {
+                        auditResult
+                          .searchLimitedCases
+                      }
+                    </div>
+
+                    <div
+                      style={{
+                        color:
+                          auditResult
+                            .searchLimitedCases >
+                          0
+                            ? '#8a7448'
+                            : '#52705f',
+
+                        fontSize:
+                          '16px',
+                      }}
+                    >
+                      Search-limited
+                    </div>
+                  </div>
 
                   <div
                     style={{
@@ -680,8 +731,6 @@ export default function CompletenessAudit({
                   </div>
                 </div>
 
-                {/* MAIN STATUS */}
-
                 <div
                   style={{
                     padding:
@@ -690,7 +739,11 @@ export default function CompletenessAudit({
                     border:
                       auditComplete
                         ? '1px solid #9fc7af'
-                        : '1px solid #e0b2b2',
+                        : auditResult
+                            .searchLimitedCases >
+                          0
+                          ? '1px solid #e7c98d'
+                          : '1px solid #e0b2b2',
 
                     borderRadius:
                       '10px',
@@ -698,7 +751,11 @@ export default function CompletenessAudit({
                     background:
                       auditComplete
                         ? '#f5faf7'
-                        : '#fffafa',
+                        : auditResult
+                            .searchLimitedCases >
+                          0
+                          ? '#fffdf7'
+                          : '#fffafa',
 
                     textAlign:
                       'center',
@@ -706,7 +763,11 @@ export default function CompletenessAudit({
                     color:
                       auditComplete
                         ? '#2f6f4e'
-                        : '#8b4545',
+                        : auditResult
+                            .searchLimitedCases >
+                          0
+                          ? '#8a6723'
+                          : '#8b4545',
 
                     fontSize:
                       '20px',
@@ -729,6 +790,29 @@ export default function CompletenessAudit({
                       certified by the current
                       toolkit.
                     </>
+                  ) : auditResult
+                      .searchLimitedCases >
+                    0 ? (
+                    <>
+                      <Math>
+                        {
+                          `${auditResult.provedCases}`
+                        }
+                      </Math>{' '}
+
+                      of{' '}
+
+                      <Math>
+                        {
+                          `${auditResult.totalCases}`
+                        }
+                      </Math>{' '}
+
+                      classes are certified.
+                      The remaining search-limited
+                      cases are not being called
+                      mathematically unresolved.
+                    </>
                   ) : (
                     <>
                       <Math>
@@ -746,45 +830,26 @@ export default function CompletenessAudit({
                       </Math>{' '}
 
                       reversal classes are
-                      currently certified.
+                      certified; the remaining{' '}
+
+                      <Math>
+                        {
+                          `${auditResult.unresolvedCases}`
+                        }
+                      </Math>{' '}
+
+                      were exhaustively searched
+                      by the current encoded
+                      toolkit.
                     </>
                   )}
                 </div>
-
-                {!auditComplete && (
-                  <div
-                    style={{
-                      marginTop:
-                        '15px',
-
-                      textAlign:
-                        'center',
-
-                      color:
-                        '#64748b',
-
-                      fontSize:
-                        '16px',
-
-                      lineHeight:
-                        1.5,
-                    }}
-                  >
-                    “Unresolved” means only that
-                    the current encoded search
-                    did not find a proof.
-                  </div>
-                )}
-
-                {/* CASE-BY-CASE RESULTS */}
 
                 <AuditCaseResults
                   cases={
                     auditResult.cases
                   }
                 />
-
-                {/* RERUN */}
 
                 <div
                   style={{

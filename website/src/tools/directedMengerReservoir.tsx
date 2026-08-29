@@ -11,7 +11,8 @@ type DirectedMengerReservoirReferenceProps = {
 function PanelFormula({
   children,
 }: {
-  children: string
+  children:
+    string
 }) {
   return (
     <div
@@ -95,62 +96,70 @@ export function DirectedMengerReservoirReference({
         </h3>
 
         <p>
-          Suppose{' '}
+          Reservoir Menger works in the
+          current regular working graph,
+          even after cyclically oriented
+          spanning 2-factors have been
+          removed.
+        </p>
+
+        <p>
+          Suppose the original graph{' '}
           <Math>{'G'}</Math>{' '}
           is{' '}
           <Math>{'d'}</Math>
-          -regular and we have a
-          strengthened Lovász
-          partition
+          -regular.  If{' '}
+          <Math>{'r'}</Math>{' '}
+          oriented 2-factors have already
+          been removed, write{' '}
+          <Math>{'H'}</Math>{' '}
+          for the residual graph. Then
         </p>
 
         <PanelFormula>
           {
-            'V(G)=L\\cup R,'
+            'd_H=d-2r,'
             + '\\qquad '
-            + '\\Delta(G[L])\\leq s,'
-            + '\\qquad '
-            + '\\Delta(G[R])\\leq t.'
+            + 'd_G^+(v)=r+d_H^+(v).'
           }
         </PanelFormula>
 
         <p>
-          Orient every cut edge from{' '}
+          Apply the strengthened Lovász
+          partition to{' '}
+          <Math>{'H'}</Math>:
+        </p>
+
+        <PanelFormula>
+          {
+            'V(H)=L\\cup R,'
+            + '\\qquad '
+            + '\\Delta(H[L])\\leq s,'
+            + '\\qquad '
+            + '\\Delta(H[R])\\leq t.'
+          }
+        </PanelFormula>
+
+        <p>
+          Orient every residual cut edge
+          from{' '}
           <Math>{'R'}</Math>{' '}
           to{' '}
           <Math>{'L'}</Math>{' '}
           and orient{' '}
-          <Math>{'G[R]'}</Math>{' '}
+          <Math>{'H[R]'}</Math>{' '}
           in a balanced way.
         </p>
 
         <p>
-          Let{' '}
-          <Math>{'Q'}</Math>{' '}
-          be a set of bad total
-          outdegree classes in{' '}
-          <Math>{'L'}</Math>, and define
-        </p>
-
-        <PanelFormula>
-          {
-            'P_Q'
-            + '='
-            + '\\{'
-            + 'v\\in L:'
-            + 'd_D^+(v)\\in Q'
-            + '\\}.'
-          }
-        </PanelFormula>
-
-        <p>
-          Assume that{' '}
+          If{' '}
+          <Math>{'P_Q\\subseteq L'}</Math>{' '}
+          is an independent union of bad
+          TOTAL outdegree classes and every
+          vertex of{' '}
           <Math>{'P_Q'}</Math>{' '}
-          is independent.  The reservoir
-          repair increases every vertex of{' '}
-          <Math>{'P_Q'}</Math>{' '}
-          by exactly one, so every selected
-          class is repaired simultaneously:
+          needs one unit of increase, the
+          repair simultaneously performs
         </p>
 
         <PanelFormula>
@@ -162,7 +171,73 @@ export function DirectedMengerReservoirReference({
         </PanelFormula>
       </section>
 
-      {/* RESERVOIR CAPACITIES */}
+      {/* TWO INDEPENDENCE SOURCES */}
+
+      <section
+        style={{
+          marginBottom:
+            '32px',
+        }}
+      >
+        <h3>
+          Where independence comes from
+        </h3>
+
+        <p>
+          The live tool recognizes two
+          certificates.
+        </p>
+
+        <p>
+          First, Stabilize classes{' '}
+          <Math>{'Q'}</Math>{' '}
+          can explicitly certify that{' '}
+          <Math>{'P_Q'}</Math>{' '}
+          is independent.
+        </p>
+
+        <p>
+          Second, there is an automatic
+          certificate which is especially
+          useful after 2-factor removal.
+          Because the cut points{' '}
+          <Math>{'R\\to L'}</Math>, a vertex
+          of{' '}
+          <Math>{'L'}</Math>{' '}
+          with TOTAL outdegree exactly{' '}
+          <Math>{'r'}</Math>{' '}
+          has no outgoing residual edge:
+        </p>
+
+        <PanelFormula>
+          {
+            'd_G^+(v)=r'
+            + '\\quad\\Longleftrightarrow\\quad'
+            + 'd_{H[L]}^+(v)=0.'
+          }
+        </PanelFormula>
+
+        <p>
+          The zero-outdegree vertices in
+          any orientation of{' '}
+          <Math>{'H[L]'}</Math>{' '}
+          form an independent set: an edge
+          between two such vertices would
+          have to point out of one of them.
+          Thus
+        </p>
+
+        <PanelFormula>
+          {
+            'P_r'
+            + '='
+            + '\\{v\\in L:d_G^+(v)=r\\}'
+            + '\\text{ is automatically independent}.'
+          }
+        </PanelFormula>
+      </section>
+
+      {/* RESERVOIR CAPACITY */}
 
       <section
         style={{
@@ -189,94 +264,50 @@ export function DirectedMengerReservoirReference({
         </PanelFormula>
 
         <p>
-          For{' '}
-          <Math>{'b\\in R'}</Math>,
-          let
+          If{' '}
+          <Math>{'i(b)=d^-_{H[R]}(b)'}</Math>,
+          then before repair the TOTAL
+          outdegree of{' '}
+          <Math>{'b\\in R'}</Math>{' '}
+          is
         </p>
 
         <PanelFormula>
           {
-            'i(b)'
-            + '='
-            + 'd^-_{D[R]}(b).'
-          }
-        </PanelFormula>
-
-        <p>
-          Since{' '}
-          <Math>{'D[R]'}</Math>{' '}
-          is balanced and{' '}
-          <Math>{'d_{G[R]}(b)\\leq t'}</Math>,
-          we have
-        </p>
-
-        <PanelFormula>
-          {
-            'i(b)'
-            + '\\leq '
-            + '\\left\\lceil'
-            + '\\frac{t}{2}'
-            + '\\right\\rceil'
-            + '\\leq k.'
+            'd_G^+(b)=r+d_H-i(b).'
           }
         </PanelFormula>
 
         <p>
           Give{' '}
           <Math>{'b'}</Math>{' '}
-          capacity
-        </p>
-
-        <PanelFormula>
-          {
-            'c(b)=k-i(b).'
-          }
-        </PanelFormula>
-
-        <p>
-          Because every cut edge points
-          from{' '}
-          <Math>{'R'}</Math>{' '}
-          to{' '}
-          <Math>{'L'}</Math>, the total
-          outdegree of{' '}
+          capacity{' '}
+          <Math>{'c(b)=k-i(b)'}</Math>.
+          Starting at most this many repair
+          paths at{' '}
           <Math>{'b'}</Math>{' '}
-          before repair is
+          leaves its TOTAL outdegree at
+          least
         </p>
 
         <PanelFormula>
           {
-            'd_D^+(b)=d-i(b).'
-          }
-        </PanelFormula>
-
-        <p>
-          If at most{' '}
-          <Math>{'c(b)'}</Math>{' '}
-          repair paths begin at{' '}
-          <Math>{'b'}</Math>, its final
-          outdegree is at least
-        </p>
-
-        <PanelFormula>
-          {
-            'd-i(b)-c(b)'
+            'r+d_H-i(b)-c(b)'
             + '='
-            + 'd-k.'
+            + 'r+d_H-k.'
           }
         </PanelFormula>
 
         <p>
-          Therefore the whole reservoir
+          Hence the TOTAL reservoir
           interval
         </p>
 
         <PanelFormula>
           {
-            'd-k,'
-            + 'd-k+1,'
+            'r+d_H-k,'
             + '\\ldots,'
-            + 'd'
+            + 'r+d_H'
           }
         </PanelFormula>
 
@@ -285,7 +316,7 @@ export function DirectedMengerReservoirReference({
         </p>
       </section>
 
-      {/* CUT ARGUMENT */}
+      {/* CUT */}
 
       <section
         style={{
@@ -298,31 +329,18 @@ export function DirectedMengerReservoirReference({
         </h3>
 
         <p>
-          Apply the directed Menger repair
-          theorem to the digraph induced by
-        </p>
-
-        <PanelFormula>
-          {
-            'R\\cup P_Q.'
-          }
-        </PanelFormula>
-
-        <p>
-          Every vertex of{' '}
-          <Math>{'P_Q'}</Math>{' '}
-          has demand one.  Notice that the
-          cut argument uses only the fact
-          that{' '}
-          <Math>{'P_Q'}</Math>{' '}
-          is independent; its vertices do
-          not need to have the same
-          outdegree.
+          Directed Menger is applied only
+          inside the residual graph{' '}
+          <Math>{'H'}</Math>; the already
+          oriented 2-factors are never
+          changed. Every demand vertex has
+          demand one.
         </p>
 
         <p>
           For{' '}
-          <Math>{'S\\subseteq R'}</Math>, put
+          <Math>{'S\\subseteq R'}</Math>,
+          let
         </p>
 
         <PanelFormula>
@@ -331,90 +349,48 @@ export function DirectedMengerReservoirReference({
             + '='
             + '\\{'
             + 'p\\in P_Q:'
-            + 'N_G(p)\\cap R'
-            + '\\subseteq S'
+            + 'N_H(p)\\cap R\\subseteq S'
             + '\\}.'
           }
         </PanelFormula>
 
         <p>
-          The directed cut condition reduces
+          The Menger cut condition reduces
           to
         </p>
 
         <PanelFormula>
           {
-            '|Q_{P_Q}(S)|'
-            + '\\leq '
-            + 'e_D(R\\setminus S,S)'
-            + '+'
-            + '\\sum_{b\\in S}'
-            + 'c(b).'
-          }
-        </PanelFormula>
-
-        <p>
-          Since
-        </p>
-
-        <PanelFormula>
-          {
-            '\\sum_{b\\in S}i(b)'
-            + '='
-            + 'e_D(R\\setminus S,S)'
-            + '+'
-            + 'e_{G[R]}(S),'
-          }
-        </PanelFormula>
-
-        <p>
-          the right-hand side is
-        </p>
-
-        <PanelFormula>
-          {
-            'k|S|-e_{G[R]}(S).'
-          }
-        </PanelFormula>
-
-        <p>
-          Thus it is enough to have
-        </p>
-
-        <PanelFormula>
-          {
-            'e_{G[R]}(S)'
+            'e_{H[R]}(S)'
             + '+'
             + '|Q_{P_Q}(S)|'
-            + '\\leq '
-            + 'k|S|.'
+            + '\\leq k|S|.'
           }
         </PanelFormula>
 
         <p>
           The strengthened Lovász
-          certificate gives the stronger
-          inequality
+          certificate gives
         </p>
 
         <PanelFormula>
           {
-            'e_{G[R]}(S)'
+            'e_{H[R]}(S)'
             + '+'
             + '|Q_{P_Q}(S)|'
             + '\\leq '
             + '\\frac{t+1}{2}|S|'
-            + '\\leq '
-            + 'k|S|.'
+            + '\\leq k|S|.'
           }
         </PanelFormula>
 
         <p>
-          Therefore the required directed
-          paths exist.  Reversing them
-          raises every demand vertex by one,
-          while every reservoir vertex stays
-          inside the certified safe interval.
+          Therefore the required
+          arc-disjoint repair paths exist.
+          Reversing them increases every
+          demand vertex by one and keeps
+          every reservoir vertex in its
+          safe TOTAL interval.
         </p>
       </section>
 
@@ -433,53 +409,80 @@ export function DirectedMengerReservoirReference({
         {application ===
         null ? (
           <p>
-            Reservoir mode is available when
-            the current proof state supplies
-            a strengthened Lovász partition,
-            an independent set{' '}
-            <Math>{'P_Q\\subseteq L'}</Math>,
-            the cut orientation{' '}
-            <Math>{'R\\to L'}</Math>, and a
-            balanced orientation of{' '}
-            <Math>{'G[R]'}</Math>.
+            Reservoir mode becomes
+            available once the current
+            proof state supplies a
+            strengthened Lovász partition,
+            the cut{' '}
+            <Math>{'R\\to L'}</Math>,
+            a balanced orientation of the
+            reservoir, and one of the two
+            independence certificates
+            above.
           </p>
         ) : (
           <>
             <p>
-              Here the selected bad classes
-              are
+              The current degree frame is
             </p>
 
             <PanelFormula>
               {
-                'Q='
-                + latexSet(
-                  application.qs,
-                )
-                + '.'
+                `d=${application.originalDegree},`
+                + '\\qquad '
+                + `d_H=${application.workingDegree},`
+                + '\\qquad '
+                + `r=${application.fixedOutdegreeContribution}.`
               }
             </PanelFormula>
 
-            <p>
-              The stabilization certificate
-              says that
-            </p>
+            {application
+              .independenceSource ===
+            'zero-internal' ? (
+              <>
+                <p>
+                  No stabilization step is
+                  needed. The demand class
+                  is the automatic
+                  zero-internal class:
+                </p>
 
-            <PanelFormula>
-              {
-                'P_Q'
-                + '='
-                + '\\{'
-                + 'v\\in L:'
-                + 'd_D^+(v)\\in Q'
-                + '\\}'
-                + '\\text{ is independent}.'
-              }
-            </PanelFormula>
+                <PanelFormula>
+                  {
+                    `P_{${application.q}}`
+                    + '='
+                    + '\\{'
+                    + 'v\\in L:'
+                    + `d_G^+(v)=${application.q}`
+                    + '\\}'
+                    + '\\text{ is independent}.'
+                  }
+                </PanelFormula>
+              </>
+            ) : (
+              <>
+                <p>
+                  The stabilization
+                  certificate gives
+                </p>
+
+                <PanelFormula>
+                  {
+                    'Q='
+                    + latexSet(
+                      application.qs,
+                    )
+                    + ','
+                    + '\\qquad '
+                    + 'P_Q'
+                    + '\\text{ independent}.'
+                  }
+                </PanelFormula>
+              </>
+            )}
 
             <p>
-              Reservoir Menger repairs all
-              selected classes at once:
+              Reservoir Menger repairs
             </p>
 
             <PanelFormula>
@@ -492,7 +495,8 @@ export function DirectedMengerReservoirReference({
             </PanelFormula>
 
             <p>
-              The Lovász parameters are
+              The Lovász parameters and
+              reservoir coefficient are
             </p>
 
             <PanelFormula>
@@ -504,13 +508,14 @@ export function DirectedMengerReservoirReference({
             </PanelFormula>
 
             <p>
-              Thus every reservoir vertex
-              remains in
+              Every reservoir vertex
+              finishes with TOTAL
+              outdegree in
             </p>
 
             <PanelFormula>
               {
-                'd_D^+(v)'
+                'd_G^+(v)'
                 + '\\in '
                 + latexSet(
                   application
@@ -522,8 +527,8 @@ export function DirectedMengerReservoirReference({
             </PanelFormula>
 
             <p>
-              Before the repair, the possible
-              total outdegrees were
+              Before repair, the possible
+              TOTAL outdegrees were
             </p>
 
             <PanelFormula>
@@ -545,11 +550,42 @@ export function DirectedMengerReservoirReference({
                 + '.'
               }
             </PanelFormula>
+
+            {application
+              .certificate
+              .t ===
+            1 && (
+              <>
+                <h3>
+                  The{' '}
+                  <Math>{'t=1'}</Math>{' '}
+                  picture
+                </h3>
+
+                <p>
+                  Here every component of{' '}
+                  <Math>{'H[R]'}</Math>{' '}
+                  is a single vertex or a
+                  single edge. The same
+                  Lovász cut inequality is
+                  exactly Hall's condition
+                  saying that the
+                  independent demand set
+                  can be matched to
+                  distinct components of{' '}
+                  <Math>{'H[R]'}</Math>.
+                  Thus the reservoir
+                  certificate specializes
+                  to the component-matching
+                  argument.
+                </p>
+              </>
+            )}
           </>
         )}
       </section>
 
-      {/* RELATION TO DIRECTED MENGER */}
+      {/* RELATION */}
 
       <section>
         <h3>
@@ -563,15 +599,13 @@ export function DirectedMengerReservoirReference({
         >
           Reservoir mode is a specialized
           certificate for the same directed
-          Menger path-reversal mechanism as
-          the local{' '}
+          path-reversal mechanism as the
+          local{' '}
           <Math>{'\\alpha'}</Math>
-          -certificate mode.  The
-          strengthened Lovász partition
-          supplies the cut inequality
-          automatically, so the user does
-          not need to enter demands or
-          capacities by hand.
+          -certificate. The difference is
+          that the strengthened Lovász
+          structure supplies the global cut
+          inequalities automatically.
         </p>
       </section>
     </>

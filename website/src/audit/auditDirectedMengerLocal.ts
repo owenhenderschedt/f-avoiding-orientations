@@ -65,6 +65,8 @@ function wholeGraphOriented(
     state.maLuG !==
       null ||
     state.hasanvandG !==
+      null ||
+    state.parityBoundsG !==
       null
   )
 }

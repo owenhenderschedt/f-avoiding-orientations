@@ -1,11 +1,11 @@
 import {
-  createStabilizeOutdegreeClassApplication,
+  createStabilizeOutdegreeClassesApplication,
 } from '../tools/stabilizeOutdegreeClassApplication'
 import type {
   StabilizeTarget,
 } from '../tools/stabilizeOutdegreeClassMath'
 import {
-  getStabilizedOutdegreePossibilities,
+  getStabilizedClassesOutdegreePossibilities,
 } from '../playground/stabilizeOutdegreeClassOutdegrees'
 import type {
   AuditSearchState,
@@ -35,7 +35,7 @@ function wholeGraphOriented(
       null ||
     state.hasanvandG !==
       null ||
-    state.boundedDegreeG !==
+    state.parityBoundsG !==
       null
   )
 }
@@ -51,8 +51,6 @@ function leftInternallyOriented(
     state.maLuL !==
       null ||
     state.hasanvandL !==
-      null ||
-    state.boundedDegreeL !==
       null
   )
 }
@@ -68,8 +66,6 @@ function rightInternallyOriented(
     state.maLuR !==
       null ||
     state.hasanvandR !==
-      null ||
-    state.boundedDegreeR !==
       null
   )
 }
@@ -77,16 +73,6 @@ function rightInternallyOriented(
 /*
  * Stabilization acts on an already
  * oriented graph.
- *
- * Whole graph:
- *
- *   one constructor on G is enough.
- *
- * Partitioned graph:
- *
- *   - the cut must be oriented;
- *   - L must be internally oriented;
- *   - R must be internally oriented.
  */
 function startingOrientationComplete(
   state:
@@ -110,6 +96,27 @@ function startingOrientationComplete(
     rightInternallyOriented(
       state,
     )
+  )
+}
+
+/*
+ * Match the LIVE playground exactly.
+ *
+ * Stabilize Q is still restricted to the
+ * original graph orientation.  After an
+ * oriented 2-factor has been removed, the
+ * new Reservoir Menger V4 may operate in
+ * the residual graph, but Stabilize Q does
+ * not.
+ */
+function stabilizationCompatible(
+  state:
+    AuditSearchState,
+) {
+  return (
+    state
+      .orientedTwoFactorCount ===
+    0
   )
 }
 
@@ -142,11 +149,6 @@ function targetIsAvailable(
     return false
   }
 
-  /*
-   * Stabilizing either L or R is only
-   * meaningful after the full partitioned
-   * starting orientation has been built.
-   */
   return (
     leftInternallyOriented(
       state,
@@ -201,24 +203,159 @@ function isForbidden(
     )
 }
 
+function hasNoConsecutiveValues(
+  values:
+    readonly number[],
+) {
+  const normalized =
+    uniqueSorted(
+      values,
+    )
+
+  return normalized.every(
+    (
+      value,
+      index,
+    ) =>
+      index === 0 ||
+      value -
+        normalized[
+          index - 1
+        ] >
+        1,
+  )
+}
+
 /*
- * Apply stabilization to one q-class.
+ * Enumerate every nonempty
+ * nonconsecutive subset of the currently
+ * bad classes on one target.
  *
- * The audit does not recreate the
- * stabilization theorem.
+ * We do NOT include safe classes in Q.
  *
- * It passes the proposed target and q to
+ * This loses no proof in the CURRENT
+ * toolkit:
  *
- *   createStabilizeOutdegreeClassApplication
+ * - stabilization itself never removes a
+ *   selected outdegree class;
  *
- * and lets the existing playground
- * certificate decide whether the move is
- * valid.
+ * - the reservoir certificate requires
+ *   every selected class to be forbidden;
+ *
+ * - the local-alpha Menger certificate
+ *   does not use the independence
+ *   certificate at all.
+ *
+ * Thus stabilizing a safe class cannot
+ * create a new proof route with the tools
+ * currently available after stabilization.
+ */
+function getCandidateClassSets(
+  state:
+    AuditSearchState,
+
+  target:
+    StabilizeTarget,
+) {
+  const badClasses =
+    getTargetOutdegrees(
+      state,
+
+      target,
+    ).filter(
+      (q) =>
+        isForbidden(
+          state,
+
+          q,
+        ),
+    )
+
+  const candidates:
+    number[][] = []
+
+  const count =
+    1 <<
+    badClasses.length
+
+  for (
+    let mask = 1;
+    mask < count;
+    mask += 1
+  ) {
+    const qs:
+      number[] = []
+
+    for (
+      let index = 0;
+      index <
+        badClasses.length;
+      index += 1
+    ) {
+      if (
+        (
+          mask &
+          (
+            1 <<
+            index
+          )
+        ) !==
+        0
+      ) {
+        qs.push(
+          badClasses[
+            index
+          ],
+        )
+      }
+    }
+
+    if (
+      hasNoConsecutiveValues(
+        qs,
+      )
+    ) {
+      candidates.push(
+        qs,
+      )
+    }
+  }
+
+  /*
+   * Larger Q first.  In particular, if
+   * all currently bad L-classes can be
+   * stabilized together, the reservoir
+   * candidate that can actually finish
+   * the state is generated immediately.
+   */
+  candidates.sort(
+    (
+      a,
+      b,
+    ) =>
+      b.length -
+        a.length ||
+      a.join(',')
+        .localeCompare(
+          b.join(','),
+        ),
+  )
+
+  return candidates
+}
+
+/*
+ * Apply the exact LIVE Q-class
+ * stabilization creator.
+ *
+ * The audit proposes only target and Q;
+ * the playground certificate remains the
+ * mathematical gatekeeper.
  */
 export function applyAuditStabilization({
   state,
   target,
-  q,
+  qs,
 }: {
   state:
     AuditSearchState
@@ -226,8 +363,8 @@ export function applyAuditStabilization({
   target:
     StabilizeTarget
 
-  q:
-    number
+  qs:
+    readonly number[]
 }): AuditSearchState | null {
   if (
     state.stabilization !==
@@ -237,6 +374,9 @@ export function applyAuditStabilization({
     state
       .directedMengerReservoir !==
       null ||
+    !stabilizationCompatible(
+      state,
+    ) ||
     !startingOrientationComplete(
       state,
     ) ||
@@ -255,24 +395,12 @@ export function applyAuditStabilization({
       target,
     )
 
-  if (
-    !currentOutdegrees.includes(
-      q,
-    )
-  ) {
-    return null
-  }
-
   const application =
-    createStabilizeOutdegreeClassApplication({
+    createStabilizeOutdegreeClassesApplication({
       target,
 
-      q,
+      qs,
 
-      /*
-       * q is a TOTAL outdegree class in
-       * the original graph.
-       */
       degree:
         state.degree,
 
@@ -287,7 +415,7 @@ export function applyAuditStabilization({
   }
 
   const stabilizedPossibilities =
-    getStabilizedOutdegreePossibilities({
+    getStabilizedClassesOutdegreePossibilities({
       possibilities:
         state
           .outdegreePossibilities,
@@ -313,31 +441,14 @@ export function applyAuditStabilization({
 
         target,
 
-        q,
+        qs: [
+          ...application.qs,
+        ],
       },
     ],
   }
 }
 
-/*
- * Stabilization is useful to the audit as
- * a structural fixer for a currently bad
- * class.
- *
- * It does NOT eliminate q.
- *
- * Instead it guarantees that the remaining
- *
- *     P_q
- *
- * is independent, while q-1 and q+1 may
- * also appear.
- *
- * Therefore the meaningful search targets
- * are currently forbidden q-classes that
- * may later be repaired by a Menger-style
- * argument.
- */
 function getTargetTransitions(
   state:
     AuditSearchState,
@@ -354,29 +465,16 @@ function getTargetTransitions(
     return []
   }
 
-  const currentOutdegrees =
-    getTargetOutdegrees(
-      state,
-
-      target,
-    )
-
-  const badClasses =
-    currentOutdegrees.filter(
-      (q) =>
-        isForbidden(
-          state,
-
-          q,
-        ),
-    )
-
   const transitions:
     AuditSearchState[] = []
 
   for (
-    const q
-    of badClasses
+    const qs
+    of getCandidateClassSets(
+      state,
+
+      target,
+    )
   ) {
     const next =
       applyAuditStabilization({
@@ -384,7 +482,7 @@ function getTargetTransitions(
 
         target,
 
-        q,
+        qs,
       })
 
     if (
@@ -401,21 +499,14 @@ function getTargetTransitions(
 }
 
 /*
- * Generate every currently meaningful
- * stabilization.
+ * Generate every meaningful generalized
+ * stabilization available to the current
+ * audit.
  *
- * We permit at most one stabilization
- * certificate in the present state model.
- *
- * That is enough for the current reservoir
- * Menger architecture, where one bad class
- * P_q is made independent and then repaired.
- *
- * If we later develop proofs requiring
- * several independent bad classes
- * simultaneously, the state model should
- * be generalized from one certificate to
- * an array of stabilization certificates.
+ * One certificate is enough: the live
+ * tool itself now permits an arbitrary
+ * nonconsecutive set Q in a single
+ * stabilization step.
  */
 export function getAuditStabilizationTransitions(
   state:
@@ -429,6 +520,9 @@ export function getAuditStabilizationTransitions(
     state
       .directedMengerReservoir !==
       null ||
+    !stabilizationCompatible(
+      state,
+    ) ||
     !startingOrientationComplete(
       state,
     )

@@ -22,6 +22,56 @@ function latexSet(
   )
 }
 
+function CaseChip({
+  result,
+  border,
+  color,
+}: {
+  result:
+    AuditCaseResult
+
+  border:
+    string
+
+  color:
+    string
+}) {
+  return (
+    <div
+      style={{
+        padding:
+          '8px 12px',
+
+        border,
+
+        borderRadius:
+          '8px',
+
+        background:
+          '#ffffff',
+
+        color,
+
+        fontSize:
+          '18px',
+      }}
+      title={
+        `${result.expandedStates.toLocaleString()} expanded, `
+        + `${result.generatedStates.toLocaleString()} generated`
+      }
+    >
+      <Math>
+        {
+          latexSet(
+            result
+              .forbiddenSet,
+          )
+        }
+      </Math>
+    </div>
+  )
+}
+
 export default function AuditCaseResults({
   cases,
 }: AuditCaseResultsProps) {
@@ -29,7 +79,18 @@ export default function AuditCaseResults({
     cases.filter(
       (result) =>
         result.status ===
-        'unresolved',
+          'unresolved' &&
+        result.reason ===
+          'exhausted',
+    )
+
+  const searchLimited =
+    cases.filter(
+      (result) =>
+        result.status ===
+          'unresolved' &&
+        result.reason ===
+          'search-limit',
     )
 
   const proved =
@@ -46,6 +107,12 @@ export default function AuditCaseResults({
     useState(false)
 
   const [
+    searchLimitedOpen,
+    setSearchLimitedOpen,
+  ] =
+    useState(false)
+
+  const [
     provedOpen,
     setProvedOpen,
   ] =
@@ -58,7 +125,178 @@ export default function AuditCaseResults({
           '28px',
       }}
     >
-      {/* UNRESOLVED */}
+      {/* SEARCH-LIMITED */}
+
+      {searchLimited.length >
+        0 && (
+        <section
+          style={{
+            marginBottom:
+              '16px',
+
+            border:
+              '1px solid #e7c98d',
+
+            borderRadius:
+              '10px',
+
+            background:
+              '#fffdf7',
+
+            overflow:
+              'hidden',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() =>
+              setSearchLimitedOpen(
+                (open) =>
+                  !open,
+              )
+            }
+            style={{
+              width:
+                '100%',
+
+              display:
+                'flex',
+
+              alignItems:
+                'center',
+
+              justifyContent:
+                'space-between',
+
+              gap:
+                '16px',
+
+              padding:
+                '14px 16px',
+
+              border:
+                'none',
+
+              background:
+                'transparent',
+
+              font:
+                'inherit',
+
+              cursor:
+                'pointer',
+
+              color:
+                '#8a6723',
+            }}
+          >
+            <span
+              style={{
+                fontSize:
+                  '19px',
+
+                fontWeight:
+                  600,
+              }}
+            >
+              Search limit reached{' '}
+
+              <span
+                style={{
+                  color:
+                    '#a28448',
+
+                  fontWeight:
+                    400,
+                }}
+              >
+                ({searchLimited.length})
+              </span>
+            </span>
+
+            <span
+              style={{
+                color:
+                  '#a28448',
+
+                fontSize:
+                  '18px',
+              }}
+            >
+              {searchLimitedOpen
+                ? '▾'
+                : '▸'}
+            </span>
+          </button>
+
+          {searchLimitedOpen && (
+            <>
+              <div
+                style={{
+                  padding:
+                    '0 16px 12px',
+
+                  color:
+                    '#8a7448',
+
+                  fontSize:
+                    '15px',
+
+                  lineHeight:
+                    1.45,
+                }}
+              >
+                These are not mathematical
+                failures. Their search
+                frontiers were still nonempty
+                when the per-case expansion
+                budget was reached.
+              </div>
+
+              <div
+                style={{
+                  display:
+                    'flex',
+
+                  flexWrap:
+                    'wrap',
+
+                  gap:
+                    '9px',
+
+                  padding:
+                    '2px 16px 16px',
+                }}
+              >
+                {searchLimited.map(
+                  (
+                    result,
+                  ) => (
+                    <CaseChip
+                      key={
+                        result
+                          .forbiddenSet
+                          .join('-')
+                      }
+                      result={
+                        result
+                      }
+                      border={
+                        '1px solid #e7c98d'
+                      }
+                      color={
+                        '#8a6723'
+                      }
+                    />
+                  ),
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      )}
+
+      {/* GENUINELY EXHAUSTED */}
 
       {unresolved.length >
         0 && (
@@ -132,7 +370,7 @@ export default function AuditCaseResults({
                   600,
               }}
             >
-              Unresolved by the current toolkit{' '}
+              Unresolved after exhaustive search{' '}
 
               <span
                 style={{
@@ -182,41 +420,22 @@ export default function AuditCaseResults({
                 (
                   result,
                 ) => (
-                  <div
+                  <CaseChip
                     key={
                       result
                         .forbiddenSet
                         .join('-')
                     }
-                    style={{
-                      padding:
-                        '8px 12px',
-
-                      border:
-                        '1px solid #e3b8b8',
-
-                      borderRadius:
-                        '8px',
-
-                      background:
-                        '#ffffff',
-
-                      color:
-                        '#8b4545',
-
-                      fontSize:
-                        '18px',
-                    }}
-                  >
-                    <Math>
-                      {
-                        latexSet(
-                          result
-                            .forbiddenSet,
-                        )
-                      }
-                    </Math>
-                  </div>
+                    result={
+                      result
+                    }
+                    border={
+                      '1px solid #e3b8b8'
+                    }
+                    color={
+                      '#8b4545'
+                    }
+                  />
                 ),
               )}
             </div>
@@ -345,41 +564,22 @@ export default function AuditCaseResults({
                 (
                   result,
                 ) => (
-                  <div
+                  <CaseChip
                     key={
                       result
                         .forbiddenSet
                         .join('-')
                     }
-                    style={{
-                      padding:
-                        '8px 12px',
-
-                      border:
-                        '1px solid #bbd7c7',
-
-                      borderRadius:
-                        '8px',
-
-                      background:
-                        '#ffffff',
-
-                      color:
-                        '#2f6f4e',
-
-                      fontSize:
-                        '18px',
-                    }}
-                  >
-                    <Math>
-                      {
-                        latexSet(
-                          result
-                            .forbiddenSet,
-                        )
-                      }
-                    </Math>
-                  </div>
+                    result={
+                      result
+                    }
+                    border={
+                      '1px solid #bbd7c7'
+                    }
+                    color={
+                      '#2f6f4e'
+                    }
+                  />
                 ),
               )}
             </div>

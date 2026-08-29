@@ -12,6 +12,9 @@ import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
 import type {
+  ParityBoundsApplication,
+} from '../tools/parityBoundsApplication'
+import type {
   StabilizeOutdegreeClassApplication,
 } from '../tools/stabilizeOutdegreeClassApplication'
 import type {
@@ -109,7 +112,21 @@ export type AuditSearchState = {
     HasanvandApplication | null
 
   /*
-   * Special bounded-degree constructors.
+   * Whole-working-graph Parity Bounds
+   * constructor.
+   */
+  parityBoundsG:
+    ParityBoundsApplication | null
+
+  /*
+   * Legacy audit-only fields.
+   *
+   * The corresponding bounded-degree
+   * transition file remains in the repo
+   * for now, but proofSearch no longer
+   * exposes it to the completeness audit.
+   * These fields therefore remain null in
+   * an honest current-toolkit search.
    */
   boundedDegreeG:
     AuditBoundedDegreeApplication | null
@@ -129,12 +146,20 @@ export type AuditSearchState = {
   fixedOutdegreeContribution:
     number
 
+  /*
+   * One LIVE stabilization application
+   * now stores the entire selected set Q.
+   */
   stabilization:
     StabilizeOutdegreeClassApplication | null
 
   directedMenger:
     DirectedMengerApplication | null
 
+  /*
+   * One LIVE reservoir application stores
+   * all simultaneous repairs q -> q+1.
+   */
   directedMengerReservoir:
     DirectedMengerReservoirApplication | null
 
@@ -247,6 +272,9 @@ export function createInitialAuditState({
       null,
 
     hasanvandR:
+      null,
+
+    parityBoundsG:
       null,
 
     boundedDegreeG:
@@ -396,6 +424,32 @@ export function getAuditStateKey(
           ),
         ].join(':')
 
+  const parityBoundsKey =
+    state.parityBoundsG ===
+      null
+      ? '-'
+      : [
+          state
+            .parityBoundsG
+            .normalInterval
+            .lower,
+
+          state
+            .parityBoundsG
+            .normalInterval
+            .upper,
+
+          state
+            .parityBoundsG
+            .exceptionalInterval
+            .lower,
+
+          state
+            .parityBoundsG
+            .exceptionalInterval
+            .upper,
+        ].join(',')
+
   const boundedKey = (
     application:
       AuditBoundedDegreeApplication | null,
@@ -425,7 +479,8 @@ export function getAuditStateKey(
 
           state
             .stabilization
-            .q,
+            .qs
+            .join(','),
         ].join(':')
 
   const localMengerKey =
@@ -464,11 +519,15 @@ export function getAuditStateKey(
       : [
           state
             .directedMengerReservoir
-            .q,
+            .qs
+            .join(','),
+
+          '->',
 
           state
             .directedMengerReservoir
-            .repairedOutdegree,
+            .repairedOutdegrees
+            .join(','),
         ].join(':')
 
   return [
@@ -500,6 +559,14 @@ export function getAuditStateKey(
 
     `hasR=${hasanvandKey(state.hasanvandR)}`,
 
+    `parity=${parityBoundsKey}`,
+
+    /*
+     * These stay "-" in the honest live
+     * toolkit search because proofSearch
+     * no longer generates bounded-degree
+     * transitions.
+     */
     `boundedG=${boundedKey(state.boundedDegreeG)}`,
 
     `boundedL=${boundedKey(state.boundedDegreeL)}`,

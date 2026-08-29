@@ -51,6 +51,23 @@ export default function DirectedMengerModeSelector({
   onOpenReservoirReference,
   onBack,
 }: DirectedMengerModeSelectorProps) {
+  const reservoirExplanation =
+    reservoirCandidate
+      ?.independenceSource ===
+      'zero-internal'
+      ? (
+          'The zero-internal L-class is '
+          + 'automatically independent, '
+          + 'and the Lovász reservoir '
+          + 'certificate supplies the paths.'
+        )
+      : (
+          'The current Lovász, '
+          + 'stabilization, cut, and '
+          + 'balanced-reservoir '
+          + 'certificates supply the paths.'
+        )
+
   return (
     <div
       style={{
@@ -182,10 +199,9 @@ export default function DirectedMengerModeSelector({
               1.4,
           }}
         >
-          Choose demand and
-          capacity classes and
-          certify the repair using
-          the local imbalance
+          Choose demand and capacity
+          classes and certify the repair
+          using the local imbalance
           inequalities.
         </div>
 
@@ -309,12 +325,9 @@ export default function DirectedMengerModeSelector({
                   1.4,
               }}
             >
-              The current Lovász,
-              independence, cut
-              orientation, and
-              balanced-reservoir
-              certificates automatically
-              certify
+              {
+                reservoirExplanation
+              }
             </div>
 
             <div
@@ -353,11 +366,11 @@ export default function DirectedMengerModeSelector({
                   '0.84rem',
               }}
             >
-              reservoir floor{' '}
+              total reservoir floor{' '}
 
               <Math>
                 {
-                  `d^+\\geq ${reservoirCandidate.certificate.reservoirSafeFloor}`
+                  `d_G^+\\geq ${reservoirCandidate.certificate.reservoirSafeFloor}`
                 }
               </Math>
             </div>

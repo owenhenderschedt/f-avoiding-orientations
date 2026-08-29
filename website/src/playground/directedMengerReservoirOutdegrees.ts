@@ -22,23 +22,19 @@ function uniqueSorted(
  * Numerical effect of a certified
  * reservoir Menger repair.
  *
- * Let Q be the independent set of bad
- * TOTAL outdegree classes on L.  Every
- * remaining vertex in P_Q is repaired by
- * exactly one unit:
+ * All values here are TOTAL outdegrees in
+ * the original graph.
  *
- *     q -> q+1  for every q in Q.
+ * Every selected demand class is repaired
+ * by one unit:
  *
- * Hence every selected class disappears
- * from the abstract L-possibility set and
- * the corresponding repaired classes are
- * added.
+ *     q -> q+1.
  *
- * The repair paths begin at reservoir
- * vertices in R.  The certificate ensures
- * that every such vertex finishes inside
- *
- *     d-k, d-k+1, ..., d.
+ * The fixed oriented 2-factors, if any,
+ * are untouched. The certificate has
+ * already translated the residual
+ * reservoir interval in H into the
+ * corresponding TOTAL interval in G.
  */
 export function getDirectedMengerReservoirRepairedOutdegrees({
   possibilities,
@@ -84,9 +80,6 @@ export function getDirectedMengerReservoirRepairedOutdegrees({
   }
 }
 
-/*
- * Generalized-name alias for audit code.
- */
 export function getDirectedMengerReservoirClassesRepairedOutdegrees({
   possibilities,
   application,
@@ -99,6 +92,7 @@ export function getDirectedMengerReservoirClassesRepairedOutdegrees({
 }): PartOutdegreePossibilities {
   return getDirectedMengerReservoirRepairedOutdegrees({
     possibilities,
+
     application,
   })
 }

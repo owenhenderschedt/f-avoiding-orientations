@@ -708,11 +708,19 @@ export default function usePlayground(
 
   const directedMengerReservoirCandidate =
     !hasAnyDirectedMengerRepair &&
-    arcReversalFixersCompatibleWithConstruction
+    startingOrientationComplete
       ? createDirectedMengerReservoirApplication(
           {
             degree:
               originalDegree,
+
+            workingDegree:
+              residualGraph
+                .workingDegree,
+
+            fixedOutdegreeContribution:
+              residualGraph
+                .fixedOutdegreeContribution,
 
             forbiddenSet,
 
@@ -1627,7 +1635,6 @@ export default function usePlayground(
     if (
       hasAnyDirectedMengerRepair ||
       !startingOrientationComplete ||
-      !arcReversalFixersCompatibleWithConstruction ||
       directedMengerReservoirCandidate ===
         null
     ) {
@@ -1707,7 +1714,8 @@ export default function usePlayground(
     !hasAnyDirectedMengerRepair
 
   const canApplyDirectedMengerReservoirRepair =
-    canApplyDirectedMengerRepair &&
+    startingOrientationComplete &&
+    !hasAnyDirectedMengerRepair &&
     directedMengerReservoirCandidate !==
       null
 
