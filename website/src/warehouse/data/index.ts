@@ -23,18 +23,16 @@ import {
  * Phase 3 source of truth for WHICH cases
  * exist in the Warehouse.
  *
- * This intentionally reuses the canonical
- * reversal classes already used by the
- * playground and completeness audit.
+ * The case generator determines the
+ * reversal classes.  The audit-generated
+ * data determines the preferred proof
+ * orientation inside each class.
  *
- * Proof DATA is attached separately:
- *
- *   generated audit recipe
- *       ↓
- *   optional human preferred override
- *
- * The Warehouse never reruns the audit just
- * because a user opens this page.
+ * This matters because the audit may find a
+ * direct proof for d-F even when F is the
+ * canonical stored representative.  We
+ * therefore display the member on which the
+ * preferred recipe was ACTUALLY proved.
  */
 function buildDegreeCases(
   degree:
@@ -47,16 +45,16 @@ function buildDegreeCases(
 
   return groups.map(
     (group) => {
-      const representative =
+      const canonical =
         group.options[0]
           .forbiddenSet
 
-      const reversal =
+      const canonicalReversal =
         group.options[1]
           ?.forbiddenSet ??
         reverseForbiddenSet(
           degree,
-          representative,
+          canonical,
         )
 
       const generatedRecipe =
@@ -72,6 +70,33 @@ function buildDegreeCases(
           group.id,
         ) ??
         generatedRecipe
+
+      const recipeForbiddenSet =
+        preferredRecipe
+          ?.forbiddenSet ??
+        null
+
+      const recipeUsesReversal =
+        recipeForbiddenSet !==
+          null &&
+        sameForbiddenSet(
+          recipeForbiddenSet,
+          canonicalReversal,
+        ) &&
+        !sameForbiddenSet(
+          canonical,
+          canonicalReversal,
+        )
+
+      const representative =
+        recipeUsesReversal
+          ? canonicalReversal
+          : canonical
+
+      const reversal =
+        recipeUsesReversal
+          ? canonical
+          : canonicalReversal
 
       return {
         id:

@@ -1,18 +1,22 @@
+import {
+  d4PreferredRecipes,
+} from './d4'
+import {
+  d6PreferredRecipes,
+} from './d6'
+import {
+  d8PreferredRecipes,
+} from './d8'
+import {
+  d10PreferredRecipes,
+} from './d10'
+import {
+  d12PreferredRecipes,
+} from './d12'
 import type {
   WarehouseDegree,
   WarehouseProofRecipe,
 } from '../../types'
-import {
-  d4PreferredRecipes,
-} from './d4'
-
-const emptyRecipes:
-  Readonly<
-    Record<
-      string,
-      WarehouseProofRecipe
-    >
-  > = {}
 
 const generatedByDegree:
   Readonly<
@@ -30,16 +34,16 @@ const generatedByDegree:
     d4PreferredRecipes,
 
   6:
-    emptyRecipes,
+    d6PreferredRecipes,
 
   8:
-    emptyRecipes,
+    d8PreferredRecipes,
 
   10:
-    emptyRecipes,
+    d10PreferredRecipes,
 
   12:
-    emptyRecipes,
+    d12PreferredRecipes,
 }
 
 export function getGeneratedPreferredRecipe({

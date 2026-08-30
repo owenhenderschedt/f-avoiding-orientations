@@ -27,9 +27,6 @@ import {
 import WarehouseDegreeSelector from './components/WarehouseDegreeSelector'
 import WarehouseCaseCard from './components/WarehouseCaseCard'
 import WarehouseCaseDetail from './components/WarehouseCaseDetail'
-import WarehouseToolReferencePanel, {
-  type WarehouseActiveReference,
-} from './components/WarehouseToolReferencePanel'
 
 type ProofWarehouseProps = {
   onHome:
@@ -52,14 +49,6 @@ export default function ProofWarehouse({
     setSelectedCase,
   ] =
     useState<WarehouseCaseRecord | null>(
-      null,
-    )
-
-  const [
-    activeReference,
-    setActiveReference,
-  ] =
-    useState<WarehouseActiveReference>(
       null,
     )
 
@@ -126,10 +115,6 @@ export default function ProofWarehouse({
       null,
     )
 
-    setActiveReference(
-      null,
-    )
-
     setForbiddenSetFilter(
       emptyForbiddenSetFilter(),
     )
@@ -152,47 +137,10 @@ export default function ProofWarehouse({
     setSelectedCase(
       null,
     )
-
-    setActiveReference(
-      null,
-    )
-  }
-
-  function openStepReference(
-    recipe:
-      NonNullable<
-        WarehouseCaseRecord[
-          'preferredRecipe'
-        ]
-      >,
-
-    stepIndex:
-      number,
-  ) {
-    const step =
-      recipe.steps[
-        stepIndex
-      ]
-
-    if (
-      step ===
-        undefined
-    ) {
-      return
-    }
-
-    setActiveReference({
-      recipe,
-
-      step,
-
-      stepIndex,
-    })
   }
 
   return (
-    <>
-      <main
+    <main
       style={{
         minHeight:
           '100vh',
@@ -517,17 +465,10 @@ export default function ProofWarehouse({
                     warehouseCase={
                       selectedCase
                     }
-                    onClose={() => {
+                    onClose={() =>
                       setSelectedCase(
                         null,
                       )
-
-                      setActiveReference(
-                        null,
-                      )
-                    }}
-                    onOpenStepReference={
-                      openStepReference
                     }
                   />
                 )}
@@ -561,18 +502,6 @@ export default function ProofWarehouse({
           </section>
         )}
       </div>
-      </main>
-
-      <WarehouseToolReferencePanel
-        activeReference={
-          activeReference
-        }
-        onClose={() =>
-          setActiveReference(
-            null,
-          )
-        }
-      />
-    </>
+    </main>
   )
 }

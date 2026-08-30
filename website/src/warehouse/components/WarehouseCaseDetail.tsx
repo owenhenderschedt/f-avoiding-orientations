@@ -1,3 +1,6 @@
+import {
+  useState,
+} from 'react'
 import Math from '../../components/Math'
 import type {
   WarehouseCaseRecord,
@@ -10,6 +13,7 @@ import {
 } from '../utils/proofSignature'
 import ForbiddenProfile from './ForbiddenProfile'
 import WarehouseProofStepView from './WarehouseProofStep'
+import WarehouseToolReferencePanel from './WarehouseToolReferencePanel'
 
 type WarehouseCaseDetailProps = {
   warehouseCase:
@@ -17,19 +21,6 @@ type WarehouseCaseDetailProps = {
 
   onClose:
     () => void
-
-  onOpenStepReference:
-    (
-      recipe:
-        NonNullable<
-          WarehouseCaseRecord[
-            'preferredRecipe'
-          ]
-        >,
-
-      stepIndex:
-        number,
-    ) => void
 }
 
 function numberSetLatex(
@@ -67,11 +58,40 @@ function sameNumbers(
 export default function WarehouseCaseDetail({
   warehouseCase,
   onClose,
-  onOpenStepReference,
 }: WarehouseCaseDetailProps) {
   const recipe =
     warehouseCase
       .preferredRecipe
+
+  const [
+    activeStepIndex,
+    setActiveStepIndex,
+  ] =
+    useState<number | null>(
+      null,
+    )
+
+  const activeReference =
+    recipe !==
+      null &&
+    activeStepIndex !==
+      null &&
+    recipe.steps[
+      activeStepIndex
+    ] !==
+      undefined
+      ? {
+          recipe,
+
+          step:
+            recipe.steps[
+              activeStepIndex
+            ],
+
+          stepIndex:
+            activeStepIndex,
+        }
+      : null
 
   const sameFinalOutdegrees =
     recipe !==
@@ -85,7 +105,8 @@ export default function WarehouseCaseDetail({
     )
 
   return (
-    <aside
+    <>
+      <aside
       style={{
         position:
           'sticky',
@@ -352,8 +373,7 @@ export default function WarehouseCaseDetail({
                       index
                     }
                     onOpenReference={() =>
-                      onOpenStepReference(
-                        recipe,
+                      setActiveStepIndex(
                         index,
                       )
                     }
@@ -475,6 +495,18 @@ export default function WarehouseCaseDetail({
           </>
         )}
       </div>
-    </aside>
+      </aside>
+
+      <WarehouseToolReferencePanel
+        activeReference={
+          activeReference
+        }
+        onClose={() =>
+          setActiveStepIndex(
+            null,
+          )
+        }
+      />
+    </>
   )
 }

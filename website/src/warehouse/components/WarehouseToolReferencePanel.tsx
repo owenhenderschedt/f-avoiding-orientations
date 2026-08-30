@@ -39,6 +39,13 @@ import {
   createHasanvandApplication,
 } from '../../tools/hasanvandApplication'
 import {
+  DirectedMengerRepairReference,
+  directedMengerRepairTool,
+} from '../../tools/directedMengerRepair'
+import {
+  createDirectedMengerApplication,
+} from '../../tools/directedMengerApplication'
+import {
   ParityBoundsReference,
 } from '../../tools/parityBounds'
 import {
@@ -99,6 +106,18 @@ function numberSetLatex(
     '\\{' +
     values.join(',') +
     '\\}'
+  )
+}
+
+function uniqueSorted(
+  values:
+    readonly number[],
+) {
+  return Array.from(
+    new Set(values),
+  ).sort(
+    (a, b) =>
+      a - b,
   )
 }
 
@@ -184,6 +203,13 @@ export default function WarehouseToolReferencePanel({
   ) {
     title =
       'Parity Bounds'
+  } else if (
+    step?.type ===
+      'directed-menger-local'
+  ) {
+    title =
+      directedMengerRepairTool
+        .name
   }
 
   let maLuApplication =
@@ -293,6 +319,71 @@ export default function WarehouseToolReferencePanel({
 
         rules:
           step.rules,
+      })
+  }
+
+  let directedMengerApplication =
+    null
+
+  if (
+    step?.type ===
+      'directed-menger-local' &&
+    recipe !==
+      null
+  ) {
+    /*
+     * The audit stores one demand rule for
+     * every currently bad outdegree class
+     * and one capacity rule for every
+     * currently safe outdegree class.
+     *
+     * Hence their union is exactly the set
+     * of possible total outdegrees
+     * immediately before the repair.
+     *
+     * Reconstructing that set lets us feed
+     * the SAME application creator used by
+     * the Playground and recover the full
+     * alpha certificate for the Warehouse.
+     */
+    const startingOutdegrees =
+      uniqueSorted([
+        ...step
+          .demandRules
+          .map(
+            (rule) =>
+              rule.outdegree,
+          ),
+
+        ...step
+          .capacityRules
+          .map(
+            (rule) =>
+              rule.outdegree,
+          ),
+      ])
+
+    directedMengerApplication =
+      createDirectedMengerApplication({
+        degree:
+          recipe.degree,
+
+        forbiddenSet:
+          recipe
+            .forbiddenSet,
+
+        currentOutdegrees:
+          startingOutdegrees,
+
+        demandRules:
+          step.demandRules,
+
+        capacityRules:
+          step
+            .capacityRules,
+
+        direction:
+          step.direction,
       })
   }
 
@@ -581,13 +672,29 @@ export default function WarehouseToolReferencePanel({
         />
       )}
 
+      {step?.type ===
+        'directed-menger-local' &&
+        recipe !==
+          null && (
+        <DirectedMengerRepairReference
+          degree={
+            recipe.degree
+          }
+          forbiddenSet={
+            recipe
+              .forbiddenSet
+          }
+          application={
+            directedMengerApplication
+          }
+        />
+      )}
+
       {step !==
         null &&
         (
           step.type ===
             'stabilize-outdegree-class' ||
-          step.type ===
-            'directed-menger-local' ||
           step.type ===
             'directed-menger-reservoir' ||
           step.type ===

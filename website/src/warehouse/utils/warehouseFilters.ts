@@ -5,16 +5,6 @@ import type {
   WarehouseCaseRecord,
 } from '../types'
 
-/*
- * This matches the Playground's current
- * Ma--Lu filter semantics exactly:
- *
- * a forbidden list is a direct Ma--Lu case
- * when it contains no two consecutive
- * integers, so "hide Ma--Lu cases" keeps
- * only lists that DO contain a consecutive
- * pair.
- */
 export function hasConsecutiveValues(
   forbiddenSet:
     readonly number[],
@@ -64,24 +54,22 @@ export function forbiddenSetMatchesWarehouseFilter(
 }
 
 /*
- * The Warehouse stores one record per
- * reversal class, but the shared filter bar
- * has the same two modes as the Playground.
+ * The Warehouse has one card per reversal
+ * class.
  *
- * Individual-list mode:
- *   keep the reversal class when at least
- *   one member matches.
+ * Unlike the earlier atlas prototype, this
+ * function NEVER swaps the displayed member
+ * merely because the opposite member is the
+ * one matching a filter.  Once proof data is
+ * attached, the displayed member is chosen
+ * to be the member on which the preferred
+ * recipe is literally valid.
  *
- * Entire-pair mode:
- *   keep the reversal class only when every
- *   member matches.
+ * Individual-list mode therefore keeps the
+ * class if either member matches.
  *
- * In individual-list mode, if only the
- * reversed member matches, we flip the
- * displayed representative.  This avoids
- * the confusing situation where a visible
- * card appears not to satisfy the filter
- * that produced it.
+ * Entire-pair mode keeps it only if both
+ * members match.
  */
 export function filterWarehouseCases(
   cases:
@@ -90,7 +78,7 @@ export function filterWarehouseCases(
   filter:
     ForbiddenSetFilterState,
 ): WarehouseCaseRecord[] {
-  return cases.flatMap(
+  return cases.filter(
     (warehouseCase) => {
       const primaryMatches =
         forbiddenSetMatchesWarehouseFilter(
@@ -105,15 +93,12 @@ export function filterWarehouseCases(
           .selfReversing
       ) {
         return primaryMatches
-          ? [
-              warehouseCase,
-            ]
-          : []
       }
 
       const reversalMatches =
         forbiddenSetMatchesWarehouseFilter(
-          warehouseCase.reversal,
+          warehouseCase
+            .reversal,
 
           filter,
         )
@@ -126,41 +111,12 @@ export function filterWarehouseCases(
           primaryMatches &&
           reversalMatches
         )
-          ? [
-              warehouseCase,
-            ]
-          : []
       }
 
-      if (
-        primaryMatches
-      ) {
-        return [
-          warehouseCase,
-        ]
-      }
-
-      if (
+      return (
+        primaryMatches ||
         reversalMatches
-      ) {
-        return [
-          {
-            ...warehouseCase,
-
-            forbiddenSet: [
-              ...warehouseCase
-                .reversal,
-            ],
-
-            reversal: [
-              ...warehouseCase
-                .forbiddenSet,
-            ],
-          },
-        ]
-      }
-
-      return []
+      )
     },
   )
 }
