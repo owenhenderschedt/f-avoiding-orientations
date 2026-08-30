@@ -4,6 +4,7 @@ export const playgroundDegrees = [
   8,
   10,
   12,
+  14,
 ] as const
 
 export type PlaygroundDegree =
@@ -315,6 +316,7 @@ const caseGroupsByDegree:
   8: generateCaseGroups(8),
   10: generateCaseGroups(10),
   12: generateCaseGroups(12),
+  14: generateCaseGroups(14),
 }
 
 export const playgroundCaseGroups =

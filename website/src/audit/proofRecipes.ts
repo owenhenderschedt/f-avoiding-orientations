@@ -98,6 +98,49 @@ export type AuditProofStep =
       exceptionalUpper:
         number
     }
+  | {
+      /*
+       * After one or more cyclically
+       * oriented spanning 2-factors have
+       * been removed, the remaining graph
+       * is a fresh smaller regular graph.
+       *
+       * This step records a certified proof
+       * of that residual instance.
+       */
+      type:
+        'lower-degree-certificate'
+
+      residualDegree:
+        number
+
+      residualForbiddenSet:
+        readonly number[]
+
+      /*
+       * Number of already-fixed outgoing
+       * edges contributed by the removed
+       * 2-factors.
+       */
+      fixedOutdegreeContribution:
+        number
+
+      /*
+       * true means the stored residual
+       * recipe certifies
+       *
+       *     residualDegree - residualForbiddenSet
+       *
+       * and the residual orientation is
+       * reversed before lifting it back to
+       * the original graph.
+       */
+      reversed:
+        boolean
+
+      recipe:
+        AuditProofRecipe
+    }
 
   /*
    * Legacy audit-only recipe variants.

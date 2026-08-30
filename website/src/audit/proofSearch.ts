@@ -26,6 +26,9 @@ import {
 import {
   getAuditStabilizationTransitions,
 } from './auditStabilization'
+import {
+  tryAuditResidualClosure,
+} from './auditResidualClosure'
 import type {
   AuditCaseResult,
   AuditProofRecipe,
@@ -603,6 +606,19 @@ export function searchAuditCase({
   let expandedStates =
     0
 
+  /*
+   * Residual lower-degree searches are real
+   * search work too.  Track them separately
+   * so the reported statistics remain
+   * honest even though they occur inside a
+   * recursive certification step.
+   */
+  let residualExpandedStates =
+    0
+
+  let residualGeneratedStates =
+    0
+
   while (
     frontier.size >
       0 &&
@@ -678,10 +694,84 @@ export function searchAuditCase({
               nextState,
             ),
 
-          expandedStates,
+          expandedStates:
+            expandedStates +
+            residualExpandedStates,
 
           generatedStates:
-            visited.size,
+            visited.size +
+            residualGeneratedStates,
+        }
+      }
+
+      /*
+       * NEW:
+       *
+       * If this child consists only of one
+       * or more oriented 2-factors, regard
+       * the remaining graph as a fresh
+       * lower-degree regular instance.
+       *
+       * For example
+       *
+       *   d = 14,
+       *   F = {0,1,5,7,8,10}
+       *
+       * after one oriented 2-factor becomes
+       *
+       *   d' = 12,
+       *   F' = {0,4,6,7,9}.
+       *
+       * The lower-degree audit can now use
+       * its FULL toolkit, including tools
+       * whose certificates are intentionally
+       * unavailable directly after a
+       * 2-factor in the original state.
+       */
+      const residualClosure =
+        tryAuditResidualClosure({
+          state:
+            nextState,
+
+          maxStates,
+
+          searchResidualCase:
+            searchAuditCase,
+        })
+
+      residualExpandedStates +=
+        residualClosure
+          .expandedStates
+
+      residualGeneratedStates +=
+        residualClosure
+          .generatedStates
+
+      if (
+        residualClosure.recipe !==
+          null
+      ) {
+        return {
+          status:
+            'proved',
+
+          degree,
+
+          forbiddenSet: [
+            ...forbiddenSet,
+          ],
+
+          recipe:
+            residualClosure
+              .recipe,
+
+          expandedStates:
+            expandedStates +
+            residualExpandedStates,
+
+          generatedStates:
+            visited.size +
+            residualGeneratedStates,
         }
       }
 
@@ -729,10 +819,13 @@ export function searchAuditCase({
         ...forbiddenSet,
       ],
 
-      expandedStates,
+      expandedStates:
+        expandedStates +
+        residualExpandedStates,
 
       generatedStates:
-        visited.size,
+        visited.size +
+        residualGeneratedStates,
     }
   }
 
@@ -749,10 +842,13 @@ export function searchAuditCase({
       ...forbiddenSet,
     ],
 
-    expandedStates,
+    expandedStates:
+      expandedStates +
+      residualExpandedStates,
 
     generatedStates:
-      visited.size,
+      visited.size +
+      residualGeneratedStates,
   }
 }
 

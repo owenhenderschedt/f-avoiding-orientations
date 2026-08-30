@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Math from './components/Math'
 import BlobLab from './labs/BlobLab'
 import CompletenessAudit from './audit/CompletenessAudit'
+import ProofWarehouse from './warehouse/ProofWarehouse'
 import ForbiddenSetFilter, {
   emptyForbiddenSetFilter,
   type ForbiddenSetFilterState,
@@ -17,6 +18,7 @@ type AppScreen =
   | 'degree'
   | 'cases'
   | 'playground'
+  | 'warehouse'
   | 'audit'
 
 type SelectedCase = {
@@ -148,6 +150,22 @@ function App() {
     })
 
     setScreen('playground')
+  }
+
+  /*
+   * PROOF WAREHOUSE
+   */
+
+  if (
+    screen === 'warehouse'
+  ) {
+    return (
+      <ProofWarehouse
+        onHome={
+          goHome
+        }
+      />
+    )
   }
 
   /*
@@ -838,36 +856,109 @@ function App() {
           outdegrees evolve.
         </p>
 
-        {/* PRIMARY ENTRY POINT */}
+        {/* PRIMARY ENTRY POINTS */}
 
-        <button
-          type="button"
-          onClick={() =>
-            setScreen('degree')
-          }
+        <div
           style={{
-            font: 'inherit',
-            fontSize: '27px',
-            padding: '22px 38px',
-            border:
-              '1px solid #475569',
-            borderRadius: '15px',
-            background: '#334155',
-            color: '#ffffff',
-            cursor: 'pointer',
-            boxShadow:
-              '0 14px 32px rgba(15, 23, 42, 0.16)',
+            display: 'grid',
+            gridTemplateColumns:
+              'repeat(2, minmax(0, 1fr))',
+            gap: '22px',
+            maxWidth: '760px',
+            margin: '0 auto',
           }}
         >
-          <Math>{'d'}</Math>-regular
-          playground →
-        </button>
+          <button
+            type="button"
+            onClick={() =>
+              setScreen('degree')
+            }
+            style={{
+              minHeight: '154px',
+              padding: '24px 28px',
+              border:
+                '1px solid #475569',
+              borderRadius: '16px',
+              background: '#334155',
+              color: '#ffffff',
+              cursor: 'pointer',
+              boxShadow:
+                '0 14px 32px rgba(15, 23, 42, 0.16)',
+              font: 'inherit',
+              textAlign: 'left',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '28px',
+                lineHeight: 1.2,
+              }}
+            >
+              <Math>{'d'}</Math>-regular
+              playground →
+            </div>
+
+            <div
+              style={{
+                marginTop: '13px',
+                fontSize: '17px',
+                lineHeight: 1.45,
+                color: '#dbe3ec',
+              }}
+            >
+              Build a proof one
+              mathematical move at a time.
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setScreen('warehouse')
+            }
+            style={{
+              minHeight: '154px',
+              padding: '24px 28px',
+              border:
+                '1px solid #475569',
+              borderRadius: '16px',
+              background: '#334155',
+              color: '#ffffff',
+              cursor: 'pointer',
+              boxShadow:
+                '0 14px 32px rgba(15, 23, 42, 0.16)',
+              font: 'inherit',
+              textAlign: 'left',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '28px',
+                lineHeight: 1.2,
+              }}
+            >
+              Proof Warehouse →
+            </div>
+
+            <div
+              style={{
+                marginTop: '13px',
+                fontSize: '17px',
+                lineHeight: 1.45,
+                color: '#dbe3ec',
+              }}
+            >
+              Browse known proofs and
+              look for structural patterns.
+            </div>
+          </button>
+        </div>
 
         {/* SECONDARY ENTRY POINT */}
 
         <div
           style={{
-            marginTop: '22px',
+            marginTop: '24px',
           }}
         >
           <button

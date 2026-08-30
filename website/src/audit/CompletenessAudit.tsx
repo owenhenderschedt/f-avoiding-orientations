@@ -209,7 +209,7 @@ export default function CompletenessAudit({
             graphs with{' '}
 
             <Math>
-              {'d\\leq 12'}
+              {'d\\leq 14'}
             </Math>
             . Search-limited cases are kept
             separate from genuinely
