@@ -846,6 +846,29 @@ function App() {
           Orientations
         </h1>
 
+        <button
+          type="button"
+          onClick={() =>
+            setConjectureOpen(true)
+          }
+          style={{
+            font: 'inherit',
+            fontSize: '19px',
+            padding: '10px 20px',
+            border: '1px solid #94a3b8',
+            borderRadius: '10px',
+            background: '#ffffff',
+            color: '#1e293b',
+            cursor: 'pointer',
+            boxShadow:
+              '0 4px 12px rgba(15, 23, 42, 0.06)',
+            fontWeight: 600,
+            marginBottom: '26px',
+          }}
+        >
+          F-avoiding conjecture
+        </button>
+
         <p
           style={{
             maxWidth: '640px',
@@ -970,29 +993,6 @@ function App() {
             flexWrap: 'wrap',
           }}
         >
-          <button
-            type="button"
-            onClick={() =>
-              setConjectureOpen(true)
-            }
-            style={{
-              font: 'inherit',
-              fontSize: '19px',
-              padding: '11px 20px',
-              border:
-                '1px solid #94a3b8',
-              borderRadius: '10px',
-              background: '#f8fafc',
-              color: '#0f172a',
-              cursor: 'pointer',
-              boxShadow:
-                '0 4px 12px rgba(15, 23, 42, 0.05)',
-              fontWeight: 600,
-            }}
-          >
-            F-avoiding conjecture
-          </button>
-
           <button
             type="button"
             onClick={() =>
