@@ -3,6 +3,7 @@ import Math from './components/Math'
 import BlobLab from './labs/BlobLab'
 import CompletenessAudit from './audit/CompletenessAudit'
 import ProofWarehouse from './warehouse/ProofWarehouse'
+import FAvoidingConjecturePanel from './components/FAvoidingConjecturePanel'
 import ForbiddenSetFilter, {
   emptyForbiddenSetFilter,
   type ForbiddenSetFilterState,
@@ -113,6 +114,11 @@ function App() {
   const [
     reversalExplanationOpen,
     setReversalExplanationOpen,
+  ] = useState(false)
+
+  const [
+    conjectureOpen,
+    setConjectureOpen,
   ] = useState(false)
 
   function goHome() {
@@ -959,8 +965,34 @@ function App() {
         <div
           style={{
             marginTop: '24px',
+            display: 'flex',
+            gap: '12px',
+            flexWrap: 'wrap',
           }}
         >
+          <button
+            type="button"
+            onClick={() =>
+              setConjectureOpen(true)
+            }
+            style={{
+              font: 'inherit',
+              fontSize: '19px',
+              padding: '11px 20px',
+              border:
+                '1px solid #94a3b8',
+              borderRadius: '10px',
+              background: '#f8fafc',
+              color: '#0f172a',
+              cursor: 'pointer',
+              boxShadow:
+                '0 4px 12px rgba(15, 23, 42, 0.05)',
+              fontWeight: 600,
+            }}
+          >
+            F-avoiding conjecture
+          </button>
+
           <button
             type="button"
             onClick={() =>
@@ -984,6 +1016,13 @@ function App() {
           </button>
         </div>
       </div>
+      <FAvoidingConjecturePanel
+        open={conjectureOpen}
+        onClose={() =>
+          setConjectureOpen(false)
+        }
+      />
+
     </main>
   )
 }
