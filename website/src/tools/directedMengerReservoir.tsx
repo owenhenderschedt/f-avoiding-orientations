@@ -155,7 +155,7 @@ export function DirectedMengerReservoirReference({
           If{' '}
           <Math>{'P_Q\\subseteq L'}</Math>{' '}
           is an independent union of bad
-          TOTAL outdegree classes and every
+          total outdegree classes and every
           vertex of{' '}
           <Math>{'P_Q'}</Math>{' '}
           needs one unit of increase, the
@@ -204,7 +204,7 @@ export function DirectedMengerReservoirReference({
           <Math>{'R\\to L'}</Math>, a vertex
           of{' '}
           <Math>{'L'}</Math>{' '}
-          with TOTAL outdegree exactly{' '}
+          with total outdegree exactly{' '}
           <Math>{'r'}</Math>{' '}
           has no outgoing residual edge:
         </p>
@@ -212,7 +212,7 @@ export function DirectedMengerReservoirReference({
         <PanelFormula>
           {
             'd_G^+(v)=r'
-            + '\\quad\\Longleftrightarrow\\quad'
+            + '\\quad\\Longleftrightarrow\\quad '
             + 'd_{H[L]}^+(v)=0.'
           }
         </PanelFormula>
@@ -266,7 +266,7 @@ export function DirectedMengerReservoirReference({
         <p>
           If{' '}
           <Math>{'i(b)=d^-_{H[R]}(b)'}</Math>,
-          then before repair the TOTAL
+          then before repair the total
           outdegree of{' '}
           <Math>{'b\\in R'}</Math>{' '}
           is
@@ -286,7 +286,7 @@ export function DirectedMengerReservoirReference({
           Starting at most this many repair
           paths at{' '}
           <Math>{'b'}</Math>{' '}
-          leaves its TOTAL outdegree at
+          leaves its total outdegree at
           least
         </p>
 
@@ -299,7 +299,7 @@ export function DirectedMengerReservoirReference({
         </PanelFormula>
 
         <p>
-          Hence the TOTAL reservoir
+          Hence the total reservoir
           interval
         </p>
 
@@ -390,7 +390,7 @@ export function DirectedMengerReservoirReference({
           Reversing them increases every
           demand vertex by one and keeps
           every reservoir vertex in its
-          safe TOTAL interval.
+          safe total interval.
         </p>
       </section>
 
@@ -509,7 +509,7 @@ export function DirectedMengerReservoirReference({
 
             <p>
               Every reservoir vertex
-              finishes with TOTAL
+              finishes with total
               outdegree in
             </p>
 
@@ -528,7 +528,7 @@ export function DirectedMengerReservoirReference({
 
             <p>
               Before repair, the possible
-              TOTAL outdegrees were
+              total outdegrees were
             </p>
 
             <PanelFormula>
