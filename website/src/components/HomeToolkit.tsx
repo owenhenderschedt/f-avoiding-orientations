@@ -162,15 +162,15 @@ function LovaszReference() {
         <h3 style={{ marginTop: 0 }}>Theorem (Lovász)</h3>
         <p>
           Let <Math>{'H'}</Math> be a finite graph and let{' '}
-          <Math>{'s,t\geq0'}</Math> be integers satisfying
+          <Math>{'s,t\\geq0'}</Math> be integers satisfying
         </p>
-        <Formula>{'s+t\geq\Delta(H)-1.'}</Formula>
+        <Formula>{'s+t\\geq\\Delta(H)-1.'}</Formula>
         <p>
           Then <Math>{'V(H)'}</Math> can be partitioned as{' '}
-          <Math>{'V(H)=L\cup R'}</Math> so that
+          <Math>{'V(H)=L\\cup R'}</Math> so that
         </p>
         <Formula>
-          {'\Delta(H[L])\leq s,\qquad\Delta(H[R])\leq t.'}
+          {'\\Delta(H[L])\\leq s,\\qquad\\Delta(H[R])\\leq t.'}
         </Formula>
       </section>
 
@@ -182,7 +182,7 @@ function LovaszReference() {
           all partitions, it chooses one minimizing
         </p>
         <Formula>
-          {'\Phi(L,R)=t\,e_H(L)+(s+1)e_H(R),'}
+          {'\\Phi(L,R)=t\\,e_H(L)+(s+1)e_H(R),'}
         </Formula>
         <p>
           and, subject to this, maximizing <Math>{'|R|'}</Math>. Besides
@@ -190,15 +190,15 @@ function LovaszReference() {
           used by Directed Menger — Reservoir.
         </p>
         <p>
-          If <Math>{'P\subseteq L'}</Math> is independent and{' '}
-          <Math>{'S\subseteq R'}</Math>, define
+          If <Math>{'P\\subseteq L'}</Math> is independent and{' '}
+          <Math>{'S\\subseteq R'}</Math>, define
         </p>
         <Formula>
-          {'Q_P(S)=\{p\in P:N_H(p)\cap R\subseteq S\}.'}
+          {'Q_P(S)=\\{p\\in P:N_H(p)\\cap R\\subseteq S\\}.'}
         </Formula>
         <p>Then the extremal partition satisfies</p>
         <Formula>
-          {'e_{H[R]}(S)+e_H(S,R\setminus S)+t|Q_P(S)|\leq t|S|.'}
+          {'e_{H[R]}(S)+e_H(S,R\\setminus S)+t|Q_P(S)|\\leq t|S|.'}
         </Formula>
       </section>
     </>
@@ -215,20 +215,20 @@ function OrientAcrossReference() {
           a Lovász partition satisfies
         </p>
         <Formula>
-          {'\Delta(H[L])\leq s,\qquad\Delta(H[R])\leq t.'}
+          {'\\Delta(H[L])\\leq s,\\qquad\\Delta(H[R])\\leq t.'}
         </Formula>
         <p>
           If every cut edge is oriented from <Math>{'L'}</Math> to{' '}
           <Math>{'R'}</Math>, then
         </p>
         <Formula>
-          {'d_D^+(v)\in\{d-s,\ldots,d\}\ (v\in L),\qquad d_D^+(v)\in\{0,\ldots,t\}\ (v\in R).'}
+          {'d_D^+(v)\\in\\{d-s,\\ldots,d\\}\\ (v\\in L),\\qquad d_D^+(v)\\in\\{0,\\ldots,t\\}\\ (v\\in R).'}
         </Formula>
         <p>
           Reversing all cut edges gives the symmetric bounds
         </p>
         <Formula>
-          {'d_D^+(v)\in\{0,\ldots,s\}\ (v\in L),\qquad d_D^+(v)\in\{d-t,\ldots,d\}\ (v\in R).'}
+          {'d_D^+(v)\\in\\{0,\\ldots,s\\}\\ (v\\in L),\\qquad d_D^+(v)\\in\\{d-t,\\ldots,d\\}\\ (v\\in R).'}
         </Formula>
       </section>
       <section>
@@ -252,10 +252,10 @@ function BalancedReference() {
         <p>
           Every finite graph <Math>{'H'}</Math> has an orientation{' '}
           <Math>{'D'}</Math> such that, for every{' '}
-          <Math>{'v\in V(H)'}</Math>,
+          <Math>{'v\\in V(H)'}</Math>,
         </p>
         <Formula>
-          {'d_D^+(v)\in\left\{\left\lfloor\frac{d_H(v)}2\right\rfloor,\left\lceil\frac{d_H(v)}2\right\rceil\right\}.'}
+          {'d_D^+(v)\\in\\left\\{\\left\\lfloor\\frac{d_H(v)}2\\right\\rfloor,\\left\\lceil\\frac{d_H(v)}2\\right\\rceil\\right\\}.'}
         </Formula>
       </section>
       <section>
@@ -284,7 +284,7 @@ function AvoidCReference() {
           <Math>{'c>1'}</Math> be an integer. Then <Math>{'H'}</Math>{' '}
           has an orientation <Math>{'D'}</Math> such that
         </p>
-        <Formula>{'d_D^+(v)\neq c\qquad\text{for every }v\in V(H).'}</Formula>
+        <Formula>{'d_D^+(v)\\neq c\\qquad\\text{for every }v\\in V(H).'}</Formula>
       </section>
       <section style={{ marginBottom: '32px' }}>
         <h3>Proof idea</h3>
@@ -322,12 +322,12 @@ function MaLuReference() {
         <h3 style={{ marginTop: 0 }}>Theorem (Ma–Lu)</h3>
         <p>
           Let <Math>{'H'}</Math> be a graph and let{' '}
-          <Math>{'F_H:V(H)\to2^{\mathbb N}'}</Math> be a forbidden
+          <Math>{'F_H:V(H)\\to2^{\\mathbb N}'}</Math> be a forbidden
           outdegree-list assignment. Suppose that, for every{' '}
-          <Math>{'v\in V(H)'}</Math>, the set <Math>{'F_H(v)'}</Math>{' '}
+          <Math>{'v\\in V(H)'}</Math>, the set <Math>{'F_H(v)'}</Math>{' '}
           contains no two consecutive integers and
         </p>
-        <Formula>{'|F_H(v)|\leq\frac{d_H(v)-1}{2}.'}</Formula>
+        <Formula>{'|F_H(v)|\\leq\\frac{d_H(v)-1}{2}.'}</Formula>
         <p>
           Then <Math>{'H'}</Math> has an <Math>{'F_H'}</Math>-avoiding
           orientation.
@@ -355,22 +355,22 @@ function HasanvandReference() {
         <h3 style={{ marginTop: 0 }}>Theorem (Hasanvand)</h3>
         <p>
           Let <Math>{'H'}</Math> be a simple graph and let{' '}
-          <Math>{'p,q:V(H)\to\mathbb Z'}</Math> satisfy, for every
+          <Math>{'p,q:V(H)\\to\\mathbb Z'}</Math> satisfy, for every
           vertex <Math>{'v'}</Math>,
         </p>
         <Formula>
-          {'p(v)<q(v),\qquad q(v)\geq\frac12d_H(v),\qquad p(v)\geq\frac12q(v)-2.'}
+          {'p(v)<q(v),\\qquad q(v)\\geq\\frac12d_H(v),\\qquad p(v)\\geq\\frac12q(v)-2.'}
         </Formula>
         <p>The following are equivalent:</p>
         <p>
           (1) <Math>{'H'}</Math> has an orientation with{' '}
-          <Math>{'p(v)\leq d_H^+(v)\leq q(v)'}</Math> for every vertex.
+          <Math>{'p(v)\\leq d_H^+(v)\\leq q(v)'}</Math> for every vertex.
         </p>
         <p>
           (2) <Math>{'H'}</Math> has an orientation with
         </p>
         <Formula>
-          {'d_H^+(v)\in\{p(v),p(v)+1,q(v)-1,q(v)\}\qquad\text{for every }v.'}
+          {'d_H^+(v)\\in\\{p(v),p(v)+1,q(v)-1,q(v)\\}\\qquad\\text{for every }v.'}
         </Formula>
         <p>
           Thus an interval of allowable outdegrees can be compressed to
@@ -399,18 +399,18 @@ function TwoFactorReference() {
         <h3 style={{ marginTop: 0 }}>Lemma (Oriented 2-factor)</h3>
         <p>
           Let <Math>{'G'}</Math> be a finite <Math>{'2k'}</Math>-regular
-          graph with <Math>{'k\geq1'}</Math>. Then <Math>{'G'}</Math>{' '}
+          graph with <Math>{'k\\geq1'}</Math>. Then <Math>{'G'}</Math>{' '}
           contains a spanning 2-factor <Math>{'C'}</Math> whose cycles
           can be oriented so that
         </p>
-        <Formula>{'d_C^+(v)=d_C^-(v)=1\qquad\text{for every }v\in V(G).'}</Formula>
+        <Formula>{'d_C^+(v)=d_C^-(v)=1\\qquad\\text{for every }v\\in V(G).'}</Formula>
       </section>
       <section style={{ marginBottom: '32px' }}>
         <h3>Proof</h3>
         <p>
           Give each component an Eulerian orientation. Split every vertex
           into a left and right copy and replace each directed edge
-          <Math>{'u\to v'}</Math> by the bipartite edge{' '}
+          <Math>{'u\\to v'}</Math> by the bipartite edge{' '}
           <Math>{'u_Lv_R'}</Math>. The resulting bipartite graph is
           <Math>{'k'}</Math>-regular, hence has a perfect matching by
           Hall&apos;s theorem. The corresponding directed edges form the
@@ -438,11 +438,11 @@ function StabilizeReference() {
         <h3 style={{ marginTop: 0 }}>Lemma</h3>
         <p>
           Let <Math>{'D'}</Math> be an orientation, let{' '}
-          <Math>{'X\subseteq V(D)'}</Math>, and let <Math>{'Q'}</Math>{' '}
+          <Math>{'X\\subseteq V(D)'}</Math>, and let <Math>{'Q'}</Math>{' '}
           be a nonempty set of outdegrees containing no two consecutive
           integers. Define
         </p>
-        <Formula>{'P_Q=\{v\in X:d_D^+(v)\in Q\}.'}</Formula>
+        <Formula>{'P_Q=\\{v\\in X:d_D^+(v)\\in Q\\}.'}</Formula>
         <p>
           By repeatedly reversing arcs whose two endpoints currently lie
           in <Math>{'P_Q'}</Math>, one obtains an orientation in which{' '}
@@ -452,10 +452,10 @@ function StabilizeReference() {
       <section>
         <h3>Why it works</h3>
         <p>
-          Reversing an arc <Math>{'x\to y'}</Math> changes the endpoint
+          Reversing an arc <Math>{'x\\to y'}</Math> changes the endpoint
           outdegrees by
         </p>
-        <Formula>{'d_D^+(x)\mapsto d_D^+(x)-1,\qquad d_D^+(y)\mapsto d_D^+(y)+1.'}</Formula>
+        <Formula>{'d_D^+(x)\\mapsto d_D^+(x)-1,\\qquad d_D^+(y)\\mapsto d_D^+(y)+1.'}</Formula>
         <p>
           Since <Math>{'Q'}</Math> contains no consecutive integers, both
           endpoints leave <Math>{'P_Q'}</Math>. Repetition terminates with
@@ -473,9 +473,9 @@ function DirectedMengerReference() {
         <h3 style={{ marginTop: 0 }}>Capacitated directed Menger repair</h3>
         <p>
           Let <Math>{'D'}</Math> be a digraph and let{' '}
-          <Math>{'B\subseteq V(D)'}</Math> be the bad vertices. Give each
-          <Math>{'b\in B'}</Math> a positive demand <Math>{'r(b)'}</Math>{' '}
-          and each <Math>{'v\notin B'}</Math> a nonnegative capacity{' '}
+          <Math>{'B\\subseteq V(D)'}</Math> be the bad vertices. Give each
+          <Math>{'b\\in B'}</Math> a positive demand <Math>{'r(b)'}</Math>{' '}
+          and each <Math>{'v\\notin B'}</Math> a nonnegative capacity{' '}
           <Math>{'c(v)'}</Math>.
         </p>
         <p>
@@ -484,10 +484,10 @@ function DirectedMengerReference() {
           <Math>{'r(b)'}</Math> paths ending there and at most{' '}
           <Math>{'c(v)'}</Math> paths beginning at each nonbad vertex.
           Such a family exists if and only if, for every{' '}
-          <Math>{'Y\subseteq V(D)'}</Math>,
+          <Math>{'Y\\subseteq V(D)'}</Math>,
         </p>
         <Formula>
-          {'\sum_{b\in B\cap Y}r(b)\leq e_D(V(D)\setminus Y,Y)+\sum_{v\in Y\setminus B}c(v).'}
+          {'\\sum_{b\\in B\\cap Y}r(b)\\leq e_D(V(D)\\setminus Y,Y)+\\sum_{v\\in Y\\setminus B}c(v).'}
         </Formula>
         <p>
           Reversing every path increases the outdegree of each bad endpoint
