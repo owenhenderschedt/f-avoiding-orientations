@@ -4,6 +4,7 @@ import BlobLab from './labs/BlobLab'
 import CompletenessAudit from './audit/CompletenessAudit'
 import ProofWarehouse from './warehouse/ProofWarehouse'
 import FAvoidingConjecturePanel from './components/FAvoidingConjecturePanel'
+import HomeToolkit from './components/HomeToolkit'
 import ForbiddenSetFilter, {
   emptyForbiddenSetFilter,
   type ForbiddenSetFilterState,
@@ -873,7 +874,7 @@ function App() {
           style={{
             maxWidth: '640px',
             margin:
-              '0 auto 50px',
+              '0 auto 24px',
             color: '#64748b',
             lineHeight: 1.6,
             fontSize: '21px',
@@ -884,6 +885,8 @@ function App() {
           and watch the possible
           outdegrees evolve.
         </p>
+
+        <HomeToolkit />
 
         {/* PRIMARY ENTRY POINTS */}
 
