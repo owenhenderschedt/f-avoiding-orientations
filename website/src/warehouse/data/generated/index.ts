@@ -13,6 +13,9 @@ import {
 import {
   d12PreferredRecipes,
 } from './d12'
+import {
+  d14PreferredRecipes,
+} from './d14'
 import type {
   WarehouseDegree,
   WarehouseProofRecipe,
@@ -44,6 +47,9 @@ const generatedByDegree:
 
   12:
     d12PreferredRecipes,
+
+  14:
+    d14PreferredRecipes,
 }
 
 export function getGeneratedPreferredRecipe({

@@ -9,6 +9,7 @@ export const warehouseDegrees:
   8,
   10,
   12,
+  14,
 ]
 
 export const warehouseTitle =

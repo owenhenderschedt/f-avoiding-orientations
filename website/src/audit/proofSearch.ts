@@ -897,49 +897,6 @@ export function searchAuditCase({
     }
   }
 
-  /*
-   * Cheap canonical pre-sweep.
-   *
-   * This prevents a short Lovasz +
-   * Stabilization + Reservoir proof from
-   * being hidden behind a huge constructor
-   * frontier.
-   */
-  const canonicalReservoirSweep =
-    tryCanonicalLovaszReservoirSweep(
-      initialState,
-    )
-
-  if (
-    canonicalReservoirSweep.state !==
-      null
-  ) {
-    return {
-      status:
-        'proved',
-
-      degree,
-
-      forbiddenSet: [
-        ...forbiddenSet,
-      ],
-
-      recipe:
-        solvedStateToRecipe(
-          canonicalReservoirSweep
-            .state,
-        ),
-
-      expandedStates:
-        0,
-
-      generatedStates:
-        1 +
-        canonicalReservoirSweep
-          .generatedStates,
-    }
-  }
-
   const frontier =
     new AuditFrontier()
 
@@ -1407,6 +1364,64 @@ export function searchAuditCase({
 
       serial +=
         1
+    }
+  }
+
+  /*
+   * FINAL RESCUE PASS.
+   *
+   * The ordinary search gets first choice
+   * so simple proofs such as Balance G or
+   * Avoid c remain the preferred Warehouse
+   * recipes.
+   *
+   * Only when that search would otherwise
+   * return unresolved do we try the small
+   * canonical
+   *
+   *   Lovasz -> cut -> Balance ->
+   *   [Stabilization] -> Reservoir
+   *
+   * sweep.
+   *
+   * This is still composed entirely of live
+   * audit transitions; it changes only proof
+   * selection/search order.
+   */
+  const canonicalReservoirSweep =
+    tryCanonicalLovaszReservoirSweep(
+      initialState,
+    )
+
+  if (
+    canonicalReservoirSweep.state !==
+      null
+  ) {
+    return {
+      status:
+        'proved',
+
+      degree,
+
+      forbiddenSet: [
+        ...forbiddenSet,
+      ],
+
+      recipe:
+        solvedStateToRecipe(
+          canonicalReservoirSweep
+            .state,
+        ),
+
+      expandedStates:
+        expandedStates +
+        residualExpandedStates,
+
+      generatedStates:
+        visited.size +
+        residualGeneratedStates +
+        canonicalReservoirSweep
+          .generatedStates,
     }
   }
 

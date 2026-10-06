@@ -232,64 +232,31 @@ export const d8PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 6,
-        "residualForbiddenSet": [
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
           0,
-          3
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 6,
-          "forbiddenSet": [
-            0,
-            3
-          ],
-          "steps": [
-            {
-              "type": "ma-lu",
-              "target": "G",
-              "mode": "internal",
-              "selectedValues": [
-                0,
-                3
-              ]
-            }
-          ],
-          "finalOutdegreesL": [
-            1,
-            2,
-            4,
-            5,
-            6
-          ],
-          "finalOutdegreesR": [
-            1,
-            2,
-            4,
-            5,
-            6
-          ]
-        }
+          1,
+          3,
+          4
+        ]
       }
     ],
     "finalOutdegreesL": [
       2,
-      3,
       5,
       6,
-      7
+      7,
+      8
     ],
     "finalOutdegreesR": [
       2,
-      3,
       5,
       6,
-      7
+      7,
+      8
     ]
   },
   "8-0-1-5-3-7-8": {
@@ -539,58 +506,31 @@ export const d8PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 6,
-        "residualForbiddenSet": [
-          2,
-          3
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 6,
-          "forbiddenSet": [
-            2,
-            3
-          ],
-          "steps": [
-            {
-              "type": "lovasz-partition",
-              "s": 4,
-              "t": 1
-            },
-            {
-              "type": "orient-across",
-              "direction": "L-to-R"
-            },
-            {
-              "type": "balance",
-              "target": "L"
-            }
-          ],
-          "finalOutdegreesL": [
-            4,
-            5,
-            6
-          ],
-          "finalOutdegreesR": [
-            0,
-            1
-          ]
-        }
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          0,
+          1,
+          3,
+          4
+        ]
       }
     ],
     "finalOutdegreesL": [
+      2,
       5,
       6,
-      7
+      7,
+      8
     ],
     "finalOutdegreesR": [
-      1,
-      2
+      2,
+      5,
+      6,
+      7,
+      8
     ]
   },
   "8-0-3-5-3-5-8": {
@@ -927,22 +867,32 @@ export const d8PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "parity-bounds",
-        "normalLower": 3,
-        "normalUpper": 5,
-        "exceptionalLower": 6,
-        "exceptionalUpper": 6
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          1,
+          2,
+          4
+        ]
       }
     ],
     "finalOutdegreesL": [
+      0,
       3,
       5,
-      6
+      6,
+      7,
+      8
     ],
     "finalOutdegreesR": [
+      0,
       3,
       5,
-      6
+      6,
+      7,
+      8
     ]
   },
   "8-1-2-5-3-6-7": {
@@ -1022,67 +972,29 @@ export const d8PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "lovasz-partition",
-        "s": 7,
-        "t": 0
-      },
-      {
-        "type": "orient-across",
-        "direction": "R-to-L"
-      },
-      {
-        "type": "hasanvand",
-        "target": "L",
-        "mode": "by-degree",
-        "rules": [
-          {
-            "minDegree": 0,
-            "maxDegree": 2,
-            "p": 0,
-            "q": 1
-          },
-          {
-            "minDegree": 3,
-            "maxDegree": 4,
-            "p": 0,
-            "q": 2
-          },
-          {
-            "minDegree": 5,
-            "maxDegree": 7,
-            "p": 1,
-            "q": 6
-          }
-        ]
-      },
-      {
-        "type": "balance",
-        "target": "R"
-      },
-      {
-        "type": "stabilize-outdegree-class",
-        "target": "L",
-        "qs": [
-          1
-        ]
-      },
-      {
-        "type": "directed-menger-reservoir",
-        "qs": [
-          1
-        ],
-        "repairedOutdegrees": [
-          2
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          0,
+          1,
+          3,
+          4
         ]
       }
     ],
     "finalOutdegreesL": [
-      0,
       2,
       5,
-      6
+      6,
+      7,
+      8
     ],
     "finalOutdegreesR": [
+      2,
+      5,
+      6,
       7,
       8
     ]
@@ -1341,43 +1253,16 @@ export const d8PreferredRecipes:
     "steps": [
       {
         "type": "lovasz-partition",
-        "s": 7,
-        "t": 0
+        "s": 6,
+        "t": 1
       },
       {
         "type": "orient-across",
         "direction": "R-to-L"
       },
       {
-        "type": "hasanvand",
-        "target": "L",
-        "mode": "by-degree",
-        "rules": [
-          {
-            "minDegree": 0,
-            "maxDegree": 2,
-            "p": 0,
-            "q": 1
-          },
-          {
-            "minDegree": 3,
-            "maxDegree": 4,
-            "p": 0,
-            "q": 2
-          },
-          {
-            "minDegree": 5,
-            "maxDegree": 6,
-            "p": 0,
-            "q": 3
-          },
-          {
-            "minDegree": 7,
-            "maxDegree": 7,
-            "p": 2,
-            "q": 7
-          }
-        ]
+        "type": "balance",
+        "target": "L"
       },
       {
         "type": "balance",
@@ -1403,9 +1288,7 @@ export const d8PreferredRecipes:
     "finalOutdegreesL": [
       0,
       1,
-      3,
-      6,
-      7
+      3
     ],
     "finalOutdegreesR": [
       7,

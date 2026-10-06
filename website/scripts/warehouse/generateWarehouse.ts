@@ -23,6 +23,7 @@ const warehouseDegrees =
     8,
     10,
     12,
+    14,
   ] as const satisfies
     readonly PlaygroundDegree[]
 
@@ -377,7 +378,7 @@ async function main() {
    * Audit every degree FIRST.
    *
    * We do not overwrite any Warehouse data
-   * until all five audits have succeeded.
+   * until all six audits have succeeded.
    * A failed run therefore cannot leave a
    * half-regenerated proof warehouse.
    */

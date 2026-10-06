@@ -333,81 +333,48 @@ export const d10PreferredRecipes:
           ],
           "steps": [
             {
-              "type": "oriented-two-factor"
-            },
-            {
-              "type": "lower-degree-certificate",
-              "residualDegree": 6,
-              "residualForbiddenSet": [
+              "type": "run-avoidance",
+              "target": "G",
+              "r": 2,
+              "side": "low",
+              "selectedTotalOutdegrees": [
                 0,
-                3
-              ],
-              "fixedOutdegreeContribution": 1,
-              "reversed": false,
-              "recipe": {
-                "degree": 6,
-                "forbiddenSet": [
-                  0,
-                  3
-                ],
-                "steps": [
-                  {
-                    "type": "ma-lu",
-                    "target": "G",
-                    "mode": "internal",
-                    "selectedValues": [
-                      0,
-                      3
-                    ]
-                  }
-                ],
-                "finalOutdegreesL": [
-                  1,
-                  2,
-                  4,
-                  5,
-                  6
-                ],
-                "finalOutdegreesR": [
-                  1,
-                  2,
-                  4,
-                  5,
-                  6
-                ]
-              }
+                1,
+                3,
+                4
+              ]
             }
           ],
           "finalOutdegreesL": [
             2,
-            3,
             5,
             6,
-            7
+            7,
+            8
           ],
           "finalOutdegreesR": [
             2,
-            3,
             5,
             6,
-            7
+            7,
+            8
           ]
         }
       }
     ],
     "finalOutdegreesL": [
       3,
-      4,
       6,
       7,
-      8
+      8,
+      9
     ],
     "finalOutdegreesR": [
       3,
-      4,
       6,
       7,
-      8
+      8,
+      9
     ]
   },
   "10-0-1-2-6-4-8-9-10": {
@@ -560,71 +527,34 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 8,
-        "residualForbiddenSet": [
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
           0,
-          2,
-          4
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 8,
-          "forbiddenSet": [
-            0,
-            2,
-            4
-          ],
-          "steps": [
-            {
-              "type": "ma-lu",
-              "target": "G",
-              "mode": "internal",
-              "selectedValues": [
-                0,
-                2,
-                4
-              ]
-            }
-          ],
-          "finalOutdegreesL": [
-            1,
-            3,
-            5,
-            6,
-            7,
-            8
-          ],
-          "finalOutdegreesR": [
-            1,
-            3,
-            5,
-            6,
-            7,
-            8
-          ]
-        }
+          1,
+          3,
+          5,
+          6
+        ]
       }
     ],
     "finalOutdegreesL": [
       2,
       4,
-      6,
       7,
       8,
-      9
+      9,
+      10
     ],
     "finalOutdegreesR": [
       2,
       4,
-      6,
       7,
       8,
-      9
+      9,
+      10
     ]
   },
   "10-0-1-3-6-4-7-9-10": {
@@ -754,91 +684,35 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 8,
-        "residualForbiddenSet": [
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
           0,
-          3,
-          4
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 8,
-          "forbiddenSet": [
-            0,
-            3,
-            4
-          ],
-          "steps": [
-            {
-              "type": "oriented-two-factor"
-            },
-            {
-              "type": "lower-degree-certificate",
-              "residualDegree": 6,
-              "residualForbiddenSet": [
-                2,
-                3
-              ],
-              "fixedOutdegreeContribution": 1,
-              "reversed": false,
-              "recipe": {
-                "degree": 6,
-                "forbiddenSet": [
-                  2,
-                  3
-                ],
-                "steps": [
-                  {
-                    "type": "lovasz-partition",
-                    "s": 4,
-                    "t": 1
-                  },
-                  {
-                    "type": "orient-across",
-                    "direction": "L-to-R"
-                  },
-                  {
-                    "type": "balance",
-                    "target": "L"
-                  }
-                ],
-                "finalOutdegreesL": [
-                  4,
-                  5,
-                  6
-                ],
-                "finalOutdegreesR": [
-                  0,
-                  1
-                ]
-              }
-            }
-          ],
-          "finalOutdegreesL": [
-            5,
-            6,
-            7
-          ],
-          "finalOutdegreesR": [
-            1,
-            2
-          ]
-        }
+          1,
+          4,
+          5
+        ]
       }
     ],
     "finalOutdegreesL": [
+      2,
+      3,
       6,
       7,
-      8
+      8,
+      9,
+      10
     ],
     "finalOutdegreesR": [
       2,
-      3
+      3,
+      6,
+      7,
+      8,
+      9,
+      10
     ]
   },
   "10-0-1-4-6-4-6-9-10": {
@@ -968,100 +842,34 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 8,
-        "residualForbiddenSet": [
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
           0,
-          4,
-          5
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 8,
-          "forbiddenSet": [
-            0,
-            4,
-            5
-          ],
-          "steps": [
-            {
-              "type": "oriented-two-factor"
-            },
-            {
-              "type": "lower-degree-certificate",
-              "residualDegree": 6,
-              "residualForbiddenSet": [
-                3,
-                4
-              ],
-              "fixedOutdegreeContribution": 1,
-              "reversed": false,
-              "recipe": {
-                "degree": 6,
-                "forbiddenSet": [
-                  3,
-                  4
-                ],
-                "steps": [
-                  {
-                    "type": "hasanvand",
-                    "target": "G",
-                    "mode": "uniform",
-                    "rules": [
-                      {
-                        "minDegree": 6,
-                        "maxDegree": 6,
-                        "p": 1,
-                        "q": 6
-                      }
-                    ]
-                  }
-                ],
-                "finalOutdegreesL": [
-                  1,
-                  2,
-                  5,
-                  6
-                ],
-                "finalOutdegreesR": [
-                  1,
-                  2,
-                  5,
-                  6
-                ]
-              }
-            }
-          ],
-          "finalOutdegreesL": [
-            2,
-            3,
-            6,
-            7
-          ],
-          "finalOutdegreesR": [
-            2,
-            3,
-            6,
-            7
-          ]
-        }
+          1,
+          3,
+          5,
+          6
+        ]
       }
     ],
     "finalOutdegreesL": [
-      3,
+      2,
       4,
       7,
-      8
+      8,
+      9,
+      10
     ],
     "finalOutdegreesR": [
-      3,
+      2,
       4,
       7,
-      8
+      8,
+      9,
+      10
     ]
   },
   "10-0-1-5-7-3-5-9-10": {
@@ -1623,56 +1431,34 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 8,
-        "residualForbiddenSet": [
-          1,
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          0,
           2,
-          4
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 8,
-          "forbiddenSet": [
-            1,
-            2,
-            4
-          ],
-          "steps": [
-            {
-              "type": "parity-bounds",
-              "normalLower": 3,
-              "normalUpper": 5,
-              "exceptionalLower": 6,
-              "exceptionalUpper": 6
-            }
-          ],
-          "finalOutdegreesL": [
-            3,
-            5,
-            6
-          ],
-          "finalOutdegreesR": [
-            3,
-            5,
-            6
-          ]
-        }
+          3,
+          5,
+          6
+        ]
       }
     ],
     "finalOutdegreesL": [
+      1,
       4,
-      6,
-      7
+      7,
+      8,
+      9,
+      10
     ],
     "finalOutdegreesR": [
+      1,
       4,
-      6,
-      7
+      7,
+      8,
+      9,
+      10
     ]
   },
   "10-0-2-3-6-4-7-8-10": {
@@ -1802,103 +1588,35 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 8,
-        "residualForbiddenSet": [
-          1,
-          3,
-          4
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 8,
-          "forbiddenSet": [
-            1,
-            3,
-            4
-          ],
-          "steps": [
-            {
-              "type": "lovasz-partition",
-              "s": 7,
-              "t": 0
-            },
-            {
-              "type": "orient-across",
-              "direction": "R-to-L"
-            },
-            {
-              "type": "hasanvand",
-              "target": "L",
-              "mode": "by-degree",
-              "rules": [
-                {
-                  "minDegree": 0,
-                  "maxDegree": 2,
-                  "p": 0,
-                  "q": 1
-                },
-                {
-                  "minDegree": 3,
-                  "maxDegree": 4,
-                  "p": 0,
-                  "q": 2
-                },
-                {
-                  "minDegree": 5,
-                  "maxDegree": 7,
-                  "p": 1,
-                  "q": 6
-                }
-              ]
-            },
-            {
-              "type": "balance",
-              "target": "R"
-            },
-            {
-              "type": "stabilize-outdegree-class",
-              "target": "L",
-              "qs": [
-                1
-              ]
-            },
-            {
-              "type": "directed-menger-reservoir",
-              "qs": [
-                1
-              ],
-              "repairedOutdegrees": [
-                2
-              ]
-            }
-          ],
-          "finalOutdegreesL": [
-            0,
-            2,
-            5,
-            6
-          ],
-          "finalOutdegreesR": [
-            7,
-            8
-          ]
-        }
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          0,
+          2,
+          4,
+          5
+        ]
       }
     ],
     "finalOutdegreesL": [
       1,
       3,
       6,
-      7
+      7,
+      8,
+      9,
+      10
     ],
     "finalOutdegreesR": [
+      1,
+      3,
+      6,
+      7,
       8,
-      9
+      9,
+      10
     ]
   },
   "10-0-2-4-6-4-6-8-10": {
@@ -2028,66 +1746,34 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 8,
-        "residualForbiddenSet": [
-          1,
-          4,
-          5
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 8,
-          "forbiddenSet": [
-            1,
-            4,
-            5
-          ],
-          "steps": [
-            {
-              "type": "hasanvand",
-              "target": "G",
-              "mode": "uniform",
-              "rules": [
-                {
-                  "minDegree": 8,
-                  "maxDegree": 8,
-                  "p": 2,
-                  "q": 7
-                }
-              ]
-            }
-          ],
-          "finalOutdegreesL": [
-            2,
-            3,
-            6,
-            7
-          ],
-          "finalOutdegreesR": [
-            2,
-            3,
-            6,
-            7
-          ]
-        }
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          0,
+          2,
+          3,
+          5,
+          6
+        ]
       }
     ],
     "finalOutdegreesL": [
-      3,
+      1,
       4,
       7,
-      8
+      8,
+      9,
+      10
     ],
     "finalOutdegreesR": [
-      3,
+      1,
       4,
       7,
-      8
+      8,
+      9,
+      10
     ]
   },
   "10-0-2-5-7-3-5-8-10": {
@@ -2639,111 +2325,34 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "oriented-two-factor"
-      },
-      {
-        "type": "lower-degree-certificate",
-        "residualDegree": 8,
-        "residualForbiddenSet": [
+        "type": "run-avoidance",
+        "target": "G",
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          0,
           2,
-          4,
-          5
-        ],
-        "fixedOutdegreeContribution": 1,
-        "reversed": false,
-        "recipe": {
-          "degree": 8,
-          "forbiddenSet": [
-            2,
-            4,
-            5
-          ],
-          "steps": [
-            {
-              "type": "lovasz-partition",
-              "s": 7,
-              "t": 0
-            },
-            {
-              "type": "orient-across",
-              "direction": "R-to-L"
-            },
-            {
-              "type": "hasanvand",
-              "target": "L",
-              "mode": "by-degree",
-              "rules": [
-                {
-                  "minDegree": 0,
-                  "maxDegree": 2,
-                  "p": 0,
-                  "q": 1
-                },
-                {
-                  "minDegree": 3,
-                  "maxDegree": 4,
-                  "p": 0,
-                  "q": 2
-                },
-                {
-                  "minDegree": 5,
-                  "maxDegree": 6,
-                  "p": 0,
-                  "q": 3
-                },
-                {
-                  "minDegree": 7,
-                  "maxDegree": 7,
-                  "p": 2,
-                  "q": 7
-                }
-              ]
-            },
-            {
-              "type": "balance",
-              "target": "R"
-            },
-            {
-              "type": "stabilize-outdegree-class",
-              "target": "L",
-              "qs": [
-                2
-              ]
-            },
-            {
-              "type": "directed-menger-reservoir",
-              "qs": [
-                2
-              ],
-              "repairedOutdegrees": [
-                3
-              ]
-            }
-          ],
-          "finalOutdegreesL": [
-            0,
-            1,
-            3,
-            6,
-            7
-          ],
-          "finalOutdegreesR": [
-            7,
-            8
-          ]
-        }
+          3,
+          5,
+          6
+        ]
       }
     ],
     "finalOutdegreesL": [
       1,
-      2,
       4,
       7,
-      8
+      8,
+      9,
+      10
     ],
     "finalOutdegreesR": [
+      1,
+      4,
+      7,
       8,
-      9
+      9,
+      10
     ]
   },
   "10-0-3-5-7-3-5-7-10": {
@@ -3466,70 +3075,48 @@ export const d10PreferredRecipes:
           ],
           "steps": [
             {
-              "type": "oriented-two-factor"
-            },
-            {
-              "type": "lower-degree-certificate",
-              "residualDegree": 6,
-              "residualForbiddenSet": [
-                2,
-                3
-              ],
-              "fixedOutdegreeContribution": 1,
-              "reversed": false,
-              "recipe": {
-                "degree": 6,
-                "forbiddenSet": [
-                  2,
-                  3
-                ],
-                "steps": [
-                  {
-                    "type": "lovasz-partition",
-                    "s": 4,
-                    "t": 1
-                  },
-                  {
-                    "type": "orient-across",
-                    "direction": "L-to-R"
-                  },
-                  {
-                    "type": "balance",
-                    "target": "L"
-                  }
-                ],
-                "finalOutdegreesL": [
-                  4,
-                  5,
-                  6
-                ],
-                "finalOutdegreesR": [
-                  0,
-                  1
-                ]
-              }
+              "type": "run-avoidance",
+              "target": "G",
+              "r": 2,
+              "side": "low",
+              "selectedTotalOutdegrees": [
+                0,
+                1,
+                3,
+                4
+              ]
             }
           ],
           "finalOutdegreesL": [
+            2,
             5,
             6,
-            7
+            7,
+            8
           ],
           "finalOutdegreesR": [
-            1,
-            2
+            2,
+            5,
+            6,
+            7,
+            8
           ]
         }
       }
     ],
     "finalOutdegreesL": [
+      3,
       6,
       7,
-      8
+      8,
+      9
     ],
     "finalOutdegreesR": [
-      2,
-      3
+      3,
+      6,
+      7,
+      8,
+      9
     ]
   },
   "10-0-4-6-7-3-4-6-10": {
@@ -3777,77 +3364,48 @@ export const d10PreferredRecipes:
           ],
           "steps": [
             {
-              "type": "lovasz-partition",
-              "s": 4,
-              "t": 3
-            },
-            {
-              "type": "orient-across",
-              "direction": "L-to-R"
-            },
-            {
-              "type": "balance",
-              "target": "L"
-            },
-            {
-              "type": "balance",
-              "target": "R"
-            },
-            {
-              "type": "directed-menger-local",
-              "direction": "decrease",
-              "demandRules": [
-                {
-                  "outdegree": 7,
-                  "demand": 1
-                }
-              ],
-              "capacityRules": [
-                {
-                  "outdegree": 0,
-                  "capacity": 3
-                },
-                {
-                  "outdegree": 1,
-                  "capacity": 2
-                },
-                {
-                  "outdegree": 2,
-                  "capacity": 1
-                },
-                {
-                  "outdegree": 6,
-                  "capacity": 0
-                },
-                {
-                  "outdegree": 8,
-                  "capacity": 0
-                }
+              "type": "run-avoidance",
+              "target": "G",
+              "r": 2,
+              "side": "high",
+              "selectedTotalOutdegrees": [
+                4,
+                5,
+                7,
+                8
               ]
             }
           ],
           "finalOutdegreesL": [
-            6,
-            8
+            0,
+            1,
+            2,
+            3,
+            6
           ],
           "finalOutdegreesR": [
             0,
             1,
             2,
-            3
+            3,
+            6
           ]
         }
       }
     ],
     "finalOutdegreesL": [
-      7,
-      9
+      1,
+      2,
+      3,
+      4,
+      7
     ],
     "finalOutdegreesR": [
       1,
       2,
       3,
-      4
+      4,
+      7
     ]
   },
   "10-0-5-6-9-1-4-5-10": {
@@ -3883,79 +3441,48 @@ export const d10PreferredRecipes:
           ],
           "steps": [
             {
-              "type": "oriented-two-factor"
-            },
-            {
-              "type": "lower-degree-certificate",
-              "residualDegree": 6,
-              "residualForbiddenSet": [
-                3,
-                4
-              ],
-              "fixedOutdegreeContribution": 1,
-              "reversed": false,
-              "recipe": {
-                "degree": 6,
-                "forbiddenSet": [
-                  3,
-                  4
-                ],
-                "steps": [
-                  {
-                    "type": "hasanvand",
-                    "target": "G",
-                    "mode": "uniform",
-                    "rules": [
-                      {
-                        "minDegree": 6,
-                        "maxDegree": 6,
-                        "p": 1,
-                        "q": 6
-                      }
-                    ]
-                  }
-                ],
-                "finalOutdegreesL": [
-                  1,
-                  2,
-                  5,
-                  6
-                ],
-                "finalOutdegreesR": [
-                  1,
-                  2,
-                  5,
-                  6
-                ]
-              }
+              "type": "run-avoidance",
+              "target": "G",
+              "r": 2,
+              "side": "high",
+              "selectedTotalOutdegrees": [
+                4,
+                5,
+                7,
+                8
+              ]
             }
           ],
           "finalOutdegreesL": [
+            0,
+            1,
             2,
             3,
-            6,
-            7
+            6
           ],
           "finalOutdegreesR": [
+            0,
+            1,
             2,
             3,
-            6,
-            7
+            6
           ]
         }
       }
     ],
     "finalOutdegreesL": [
+      1,
+      2,
       3,
       4,
-      7,
-      8
+      7
     ],
     "finalOutdegreesR": [
+      1,
+      2,
       3,
       4,
-      7,
-      8
+      7
     ]
   },
   "10-0-5-7-8-2-3-5-10": {
@@ -3991,35 +3518,51 @@ export const d10PreferredRecipes:
           ],
           "steps": [
             {
-              "type": "parity-bounds",
-              "normalLower": 3,
-              "normalUpper": 5,
-              "exceptionalLower": 2,
-              "exceptionalUpper": 2
+              "type": "run-avoidance",
+              "target": "G",
+              "r": 2,
+              "side": "high",
+              "selectedTotalOutdegrees": [
+                4,
+                6,
+                7
+              ]
             }
           ],
           "finalOutdegreesL": [
+            0,
+            1,
             2,
             3,
-            5
+            5,
+            8
           ],
           "finalOutdegreesR": [
+            0,
+            1,
             2,
             3,
-            5
+            5,
+            8
           ]
         }
       }
     ],
     "finalOutdegreesL": [
+      1,
+      2,
       3,
       4,
-      6
+      6,
+      9
     ],
     "finalOutdegreesR": [
+      1,
+      2,
       3,
       4,
-      6
+      6,
+      9
     ]
   },
   "10-0-5-7-9-1-3-5-10": {
@@ -4097,80 +3640,47 @@ export const d10PreferredRecipes:
           ],
           "steps": [
             {
-              "type": "oriented-two-factor"
-            },
-            {
-              "type": "lower-degree-certificate",
-              "residualDegree": 6,
-              "residualForbiddenSet": [
-                3,
-                6
-              ],
-              "fixedOutdegreeContribution": 1,
-              "reversed": false,
-              "recipe": {
-                "degree": 6,
-                "forbiddenSet": [
-                  3,
-                  6
-                ],
-                "steps": [
-                  {
-                    "type": "ma-lu",
-                    "target": "G",
-                    "mode": "internal",
-                    "selectedValues": [
-                      3,
-                      6
-                    ]
-                  }
-                ],
-                "finalOutdegreesL": [
-                  0,
-                  1,
-                  2,
-                  4,
-                  5
-                ],
-                "finalOutdegreesR": [
-                  0,
-                  1,
-                  2,
-                  4,
-                  5
-                ]
-              }
+              "type": "run-avoidance",
+              "target": "G",
+              "r": 2,
+              "side": "high",
+              "selectedTotalOutdegrees": [
+                4,
+                5,
+                7,
+                8
+              ]
             }
           ],
           "finalOutdegreesL": [
+            0,
             1,
             2,
             3,
-            5,
             6
           ],
           "finalOutdegreesR": [
+            0,
             1,
             2,
             3,
-            5,
             6
           ]
         }
       }
     ],
     "finalOutdegreesL": [
+      1,
       2,
       3,
       4,
-      6,
       7
     ],
     "finalOutdegreesR": [
+      1,
       2,
       3,
       4,
-      6,
       7
     ]
   },
@@ -4423,54 +3933,35 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "hasanvand",
+        "type": "run-avoidance",
         "target": "G",
-        "mode": "uniform",
-        "rules": [
-          {
-            "minDegree": 10,
-            "maxDegree": 10,
-            "p": 2,
-            "q": 8
-          }
-        ]
-      },
-      {
-        "type": "directed-menger-local",
-        "direction": "increase",
-        "demandRules": [
-          {
-            "outdegree": 2,
-            "demand": 1
-          }
-        ],
-        "capacityRules": [
-          {
-            "outdegree": 3,
-            "capacity": 0
-          },
-          {
-            "outdegree": 7,
-            "capacity": 1
-          },
-          {
-            "outdegree": 8,
-            "capacity": 2
-          }
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          1,
+          2,
+          4,
+          5
         ]
       }
     ],
     "finalOutdegreesL": [
+      0,
       3,
       6,
       7,
-      8
+      8,
+      9,
+      10
     ],
     "finalOutdegreesR": [
+      0,
       3,
       6,
       7,
-      8
+      8,
+      9,
+      10
     ]
   },
   "10-1-2-4-6-4-6-8-9": {
@@ -4577,30 +4068,35 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "hasanvand",
+        "type": "run-avoidance",
         "target": "G",
-        "mode": "uniform",
-        "rules": [
-          {
-            "minDegree": 10,
-            "maxDegree": 10,
-            "p": 3,
-            "q": 8
-          }
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          1,
+          2,
+          5,
+          6
         ]
       }
     ],
     "finalOutdegreesL": [
+      0,
       3,
       4,
       7,
-      8
+      8,
+      9,
+      10
     ],
     "finalOutdegreesR": [
+      0,
       3,
       4,
       7,
-      8
+      8,
+      9,
+      10
     ]
   },
   "10-1-2-5-7-3-5-8-9": {
@@ -4821,12 +4317,12 @@ export const d10PreferredRecipes:
     "steps": [
       {
         "type": "lovasz-partition",
-        "s": 6,
-        "t": 3
+        "s": 4,
+        "t": 5
       },
       {
         "type": "orient-across",
-        "direction": "L-to-R"
+        "direction": "R-to-L"
       },
       {
         "type": "balance",
@@ -4837,52 +4333,25 @@ export const d10PreferredRecipes:
         "target": "R"
       },
       {
-        "type": "directed-menger-local",
-        "direction": "increase",
-        "demandRules": [
-          {
-            "outdegree": 1,
-            "demand": 1
-          }
+        "type": "directed-menger-reservoir",
+        "qs": [
+          1
         ],
-        "capacityRules": [
-          {
-            "outdegree": 0,
-            "capacity": 0
-          },
-          {
-            "outdegree": 2,
-            "capacity": 0
-          },
-          {
-            "outdegree": 7,
-            "capacity": 1
-          },
-          {
-            "outdegree": 8,
-            "capacity": 2
-          },
-          {
-            "outdegree": 9,
-            "capacity": 3
-          },
-          {
-            "outdegree": 10,
-            "capacity": 4
-          }
+        "repairedOutdegrees": [
+          2
         ]
       }
     ],
     "finalOutdegreesL": [
+      0,
+      2
+    ],
+    "finalOutdegreesR": [
       6,
       7,
       8,
       9,
       10
-    ],
-    "finalOutdegreesR": [
-      0,
-      2
     ]
   },
   "10-1-3-4-6-4-6-7-9": {
@@ -4989,44 +4458,21 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "hasanvand",
+        "type": "run-avoidance",
         "target": "G",
-        "mode": "uniform",
-        "rules": [
-          {
-            "minDegree": 10,
-            "maxDegree": 10,
-            "p": 3,
-            "q": 10
-          }
-        ]
-      },
-      {
-        "type": "directed-menger-local",
-        "direction": "increase",
-        "demandRules": [
-          {
-            "outdegree": 3,
-            "demand": 1
-          }
-        ],
-        "capacityRules": [
-          {
-            "outdegree": 4,
-            "capacity": 0
-          },
-          {
-            "outdegree": 9,
-            "capacity": 2
-          },
-          {
-            "outdegree": 10,
-            "capacity": 3
-          }
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          0,
+          1,
+          3,
+          5,
+          6
         ]
       }
     ],
     "finalOutdegreesL": [
+      2,
       4,
       7,
       8,
@@ -5034,6 +4480,7 @@ export const d10PreferredRecipes:
       10
     ],
     "finalOutdegreesR": [
+      2,
       4,
       7,
       8,
@@ -5310,43 +4757,16 @@ export const d10PreferredRecipes:
     "steps": [
       {
         "type": "lovasz-partition",
-        "s": 9,
-        "t": 0
+        "s": 6,
+        "t": 3
       },
       {
         "type": "orient-across",
         "direction": "R-to-L"
       },
       {
-        "type": "hasanvand",
-        "target": "L",
-        "mode": "by-degree",
-        "rules": [
-          {
-            "minDegree": 0,
-            "maxDegree": 2,
-            "p": 0,
-            "q": 1
-          },
-          {
-            "minDegree": 3,
-            "maxDegree": 4,
-            "p": 0,
-            "q": 2
-          },
-          {
-            "minDegree": 5,
-            "maxDegree": 6,
-            "p": 0,
-            "q": 3
-          },
-          {
-            "minDegree": 7,
-            "maxDegree": 9,
-            "p": 2,
-            "q": 7
-          }
-        ]
+        "type": "balance",
+        "target": "L"
       },
       {
         "type": "balance",
@@ -5356,30 +4776,26 @@ export const d10PreferredRecipes:
         "type": "stabilize-outdegree-class",
         "target": "L",
         "qs": [
-          1,
-          7
+          1
         ]
       },
       {
         "type": "directed-menger-reservoir",
         "qs": [
-          1,
-          7
+          1
         ],
         "repairedOutdegrees": [
-          2,
-          8
+          2
         ]
       }
     ],
     "finalOutdegreesL": [
       0,
       2,
-      3,
-      6,
-      8
+      3
     ],
     "finalOutdegreesR": [
+      8,
       9,
       10
     ]
@@ -5776,44 +5192,21 @@ export const d10PreferredRecipes:
     ],
     "steps": [
       {
-        "type": "hasanvand",
+        "type": "run-avoidance",
         "target": "G",
-        "mode": "uniform",
-        "rules": [
-          {
-            "minDegree": 10,
-            "maxDegree": 10,
-            "p": 3,
-            "q": 10
-          }
-        ]
-      },
-      {
-        "type": "directed-menger-local",
-        "direction": "increase",
-        "demandRules": [
-          {
-            "outdegree": 3,
-            "demand": 1
-          }
-        ],
-        "capacityRules": [
-          {
-            "outdegree": 4,
-            "capacity": 0
-          },
-          {
-            "outdegree": 9,
-            "capacity": 2
-          },
-          {
-            "outdegree": 10,
-            "capacity": 3
-          }
+        "r": 2,
+        "side": "low",
+        "selectedTotalOutdegrees": [
+          0,
+          2,
+          3,
+          5,
+          6
         ]
       }
     ],
     "finalOutdegreesL": [
+      1,
       4,
       7,
       8,
@@ -5821,6 +5214,7 @@ export const d10PreferredRecipes:
       10
     ],
     "finalOutdegreesR": [
+      1,
       4,
       7,
       8,
@@ -5947,43 +5341,66 @@ export const d10PreferredRecipes:
     "steps": [
       {
         "type": "lovasz-partition",
-        "s": 9,
-        "t": 0
+        "s": 6,
+        "t": 3
       },
       {
         "type": "orient-across",
         "direction": "R-to-L"
       },
       {
-        "type": "hasanvand",
-        "target": "L",
-        "mode": "by-degree",
-        "rules": [
-          {
-            "minDegree": 0,
-            "maxDegree": 2,
-            "p": 0,
-            "q": 1
-          },
-          {
-            "minDegree": 3,
-            "maxDegree": 4,
-            "p": 0,
-            "q": 2
-          },
-          {
-            "minDegree": 5,
-            "maxDegree": 6,
-            "p": 0,
-            "q": 3
-          },
-          {
-            "minDegree": 7,
-            "maxDegree": 9,
-            "p": 2,
-            "q": 8
-          }
+        "type": "balance",
+        "target": "L"
+      },
+      {
+        "type": "balance",
+        "target": "R"
+      },
+      {
+        "type": "directed-menger-reservoir",
+        "qs": [
+          2
+        ],
+        "repairedOutdegrees": [
+          3
         ]
+      }
+    ],
+    "finalOutdegreesL": [
+      0,
+      1,
+      3
+    ],
+    "finalOutdegreesR": [
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  "10-2-4-5-7-3-5-6-8": {
+    "id": "audit-d10-10-2-4-5-7-3-5-6-8",
+    "source": "audit",
+    "degree": 10,
+    "forbiddenSet": [
+      2,
+      4,
+      5,
+      7
+    ],
+    "steps": [
+      {
+        "type": "lovasz-partition",
+        "s": 6,
+        "t": 3
+      },
+      {
+        "type": "orient-across",
+        "direction": "R-to-L"
+      },
+      {
+        "type": "balance",
+        "target": "L"
       },
       {
         "type": "balance",
@@ -6009,98 +5426,10 @@ export const d10PreferredRecipes:
     "finalOutdegreesL": [
       0,
       1,
-      3,
-      7,
-      8
+      3
     ],
     "finalOutdegreesR": [
-      9,
-      10
-    ]
-  },
-  "10-2-4-5-7-3-5-6-8": {
-    "id": "audit-d10-10-2-4-5-7-3-5-6-8",
-    "source": "audit",
-    "degree": 10,
-    "forbiddenSet": [
-      2,
-      4,
-      5,
-      7
-    ],
-    "steps": [
-      {
-        "type": "lovasz-partition",
-        "s": 9,
-        "t": 0
-      },
-      {
-        "type": "orient-across",
-        "direction": "R-to-L"
-      },
-      {
-        "type": "hasanvand",
-        "target": "L",
-        "mode": "by-degree",
-        "rules": [
-          {
-            "minDegree": 0,
-            "maxDegree": 2,
-            "p": 0,
-            "q": 1
-          },
-          {
-            "minDegree": 3,
-            "maxDegree": 4,
-            "p": 0,
-            "q": 2
-          },
-          {
-            "minDegree": 5,
-            "maxDegree": 6,
-            "p": 0,
-            "q": 3
-          },
-          {
-            "minDegree": 7,
-            "maxDegree": 9,
-            "p": 2,
-            "q": 7
-          }
-        ]
-      },
-      {
-        "type": "balance",
-        "target": "R"
-      },
-      {
-        "type": "stabilize-outdegree-class",
-        "target": "L",
-        "qs": [
-          2,
-          7
-        ]
-      },
-      {
-        "type": "directed-menger-reservoir",
-        "qs": [
-          2,
-          7
-        ],
-        "repairedOutdegrees": [
-          3,
-          8
-        ]
-      }
-    ],
-    "finalOutdegreesL": [
-      0,
-      1,
-      3,
-      6,
-      8
-    ],
-    "finalOutdegreesR": [
+      8,
       9,
       10
     ]
@@ -6126,34 +5455,15 @@ export const d10PreferredRecipes:
         "direction": "R-to-L"
       },
       {
-        "type": "hasanvand",
+        "type": "run-avoidance",
         "target": "L",
-        "mode": "by-degree",
-        "rules": [
-          {
-            "minDegree": 0,
-            "maxDegree": 2,
-            "p": 0,
-            "q": 1
-          },
-          {
-            "minDegree": 3,
-            "maxDegree": 4,
-            "p": 0,
-            "q": 2
-          },
-          {
-            "minDegree": 5,
-            "maxDegree": 6,
-            "p": 0,
-            "q": 3
-          },
-          {
-            "minDegree": 7,
-            "maxDegree": 9,
-            "p": 2,
-            "q": 7
-          }
+        "r": 2,
+        "side": "high",
+        "selectedTotalOutdegrees": [
+          4,
+          5,
+          8,
+          9
         ]
       },
       {

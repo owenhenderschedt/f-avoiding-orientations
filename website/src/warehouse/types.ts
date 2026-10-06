@@ -3,7 +3,7 @@ import type {
 } from '../audit/proofRecipes'
 
 export type WarehouseDegree =
-  4 | 6 | 8 | 10 | 12
+  4 | 6 | 8 | 10 | 12 | 14
 
 export type WarehouseToolId =
   | 'oriented-two-factor'
@@ -14,6 +14,7 @@ export type WarehouseToolId =
   | 'ma-lu'
   | 'hasanvand'
   | 'parity-bounds'
+  | 'run-avoidance'
   | 'stabilize-outdegree-class'
   | 'directed-menger-local'
   | 'directed-menger-reservoir'
