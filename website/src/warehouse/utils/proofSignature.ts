@@ -75,6 +75,13 @@ export function warehouseStepSignature(
         )}`
       )
 
+    case 'run-avoidance':
+      return (
+        `Run ${targetLabel(
+          step.target,
+        )} (r=${step.r}, ${step.side})`
+      )
+
     case 'hasanvand':
       return (
         `Hasanvand ${targetLabel(

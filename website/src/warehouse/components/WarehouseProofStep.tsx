@@ -171,6 +171,32 @@ export default function WarehouseProofStepView({
         )}
 
         {step.type ===
+          'run-avoidance' && (
+          <div
+            style={{
+              marginTop:
+                '4px',
+
+              color:
+                '#64748b',
+
+              fontSize:
+                '14px',
+            }}
+          >
+            Eliminated total outdegrees:{' '}
+
+            <Math>
+              {
+                numberSetLatex(
+                  step.selectedTotalOutdegrees,
+                )
+              }
+            </Math>
+          </div>
+        )}
+
+        {step.type ===
           'stabilize-outdegree-class' && (
           <div
             style={{
