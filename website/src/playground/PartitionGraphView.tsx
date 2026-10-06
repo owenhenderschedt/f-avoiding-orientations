@@ -3,6 +3,7 @@ import BalancedBadge from '../components/BalancedBadge'
 import AvoidCBadge from '../components/AvoidCBadge'
 import MaLuBadge from '../components/MaLuBadge'
 import HasanvandBadge from '../components/HasanvandBadge'
+import RunAvoidanceBadge from '../components/RunAvoidanceBadge'
 import StabilizeOutdegreeClassBadge from '../components/StabilizeOutdegreeClassBadge'
 import DirectedMengerReservoirBadge from '../components/DirectedMengerReservoirBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
@@ -22,6 +23,9 @@ import type {
 import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
+import type {
+  RunAvoidanceApplication,
+} from '../tools/runAvoidanceApplication'
 import type {
   StabilizeOutdegreeClassApplication,
 } from '../tools/stabilizeOutdegreeClassApplication'
@@ -81,6 +85,12 @@ type PartitionGraphViewProps = {
   hasanvandApplicationR:
     HasanvandApplication | null
 
+  runAvoidanceApplicationL:
+    RunAvoidanceApplication | null
+
+  runAvoidanceApplicationR:
+    RunAvoidanceApplication | null
+
   stabilizeOutdegreeClassApplication:
     StabilizeOutdegreeClassApplication | null
 
@@ -124,6 +134,12 @@ type PartitionGraphViewProps = {
     (
       application:
         HasanvandApplication,
+    ) => void
+
+  onOpenRunAvoidanceReference:
+    (
+      application:
+        RunAvoidanceApplication,
     ) => void
 
   onOpenStabilizeOutdegreeClassReference:
@@ -327,6 +343,8 @@ export default function PartitionGraphView({
   maLuApplicationR,
   hasanvandApplicationL,
   hasanvandApplicationR,
+  runAvoidanceApplicationL,
+  runAvoidanceApplicationR,
   stabilizeOutdegreeClassApplication,
   directedMengerApplication,
   directedMengerReservoirApplication = null,
@@ -337,6 +355,7 @@ export default function PartitionGraphView({
   onOpenAvoidCReference,
   onOpenMaLuReference,
   onOpenHasanvandReference,
+  onOpenRunAvoidanceReference,
   onOpenStabilizeOutdegreeClassReference,
   onOpenDirectedMengerReference,
   onOpenDirectedMengerReservoirReference,
@@ -717,6 +736,20 @@ export default function PartitionGraphView({
           />
         )}
 
+        {runAvoidanceApplicationL !==
+          null && (
+          <RunAvoidanceBadge
+            application={
+              runAvoidanceApplicationL
+            }
+            x={120}
+            y={250}
+            onOpen={
+              onOpenRunAvoidanceReference
+            }
+          />
+        )}
+
         {/* R CONSTRUCTOR BADGES */}
 
         {balancedR && (
@@ -769,6 +802,20 @@ export default function PartitionGraphView({
             y={250}
             onOpen={
               onOpenHasanvandReference
+            }
+          />
+        )}
+
+        {runAvoidanceApplicationR !==
+          null && (
+          <RunAvoidanceBadge
+            application={
+              runAvoidanceApplicationR
+            }
+            x={460}
+            y={250}
+            onOpen={
+              onOpenRunAvoidanceReference
             }
           />
         )}

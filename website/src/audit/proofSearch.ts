@@ -18,6 +18,9 @@ import {
   getAuditHasanvandTransitions,
 } from './auditHasanvand'
 import {
+  getAuditRunAvoidanceTransitions,
+} from './auditRunAvoidance'
+import {
   getAuditLocalMengerTransitions,
 } from './auditDirectedMengerLocal'
 import {
@@ -100,6 +103,10 @@ function getAuditTransitions(
       state,
     ),
 
+    ...getAuditRunAvoidanceTransitions(
+      state,
+    ),
+
     ...getAuditTwoFactorTransitions(
       state,
     ),
@@ -151,6 +158,8 @@ function wholeGraphOriented(
       null ||
     state.maLuG !==
       null ||
+    state.runAvoidanceG !==
+      null ||
     state.hasanvandG !==
       null ||
     state.parityBoundsG !==
@@ -168,6 +177,8 @@ function leftInternallyOriented(
       null ||
     state.maLuL !==
       null ||
+    state.runAvoidanceL !==
+      null ||
     state.hasanvandL !==
       null
   )
@@ -183,9 +194,189 @@ function rightInternallyOriented(
       null ||
     state.maLuR !==
       null ||
+    state.runAvoidanceR !==
+      null ||
     state.hasanvandR !==
       null
   )
+}
+
+/*
+ * Bounded canonical finisher.
+ *
+ * Once Lovasz and the cut direction are in
+ * place, try completing any still-unoriented
+ * parts using Balance only.  There are at
+ * most two such moves.
+ *
+ * On each resulting state test the existing
+ * live reservoir transition directly and
+ * after one stabilization.
+ *
+ * This is only a search shortcut: every
+ * state in the returned recipe is produced
+ * by an ordinary audit transition.
+ */
+function tryBalancedReservoirFinisher(
+  state:
+    AuditSearchState,
+): AuditSearchState | null {
+  if (
+    state.partition ===
+      null ||
+    state.lovaszApplication ===
+      null ||
+    state.acrossDirection ===
+      null ||
+    state.stabilization !==
+      null ||
+    state.directedMenger !==
+      null ||
+    state
+      .directedMengerReservoir !==
+      null
+  ) {
+    return null
+  }
+
+  const balanceClosure:
+    AuditSearchState[] = [
+      state,
+    ]
+
+  const seen =
+    new Set<string>([
+      getAuditStateKey(
+        state,
+      ),
+    ])
+
+  let layerStart =
+    0
+
+  /*
+   * At most L and R can still need their
+   * internal orientations, hence depth 2.
+   */
+  for (
+    let depth = 0;
+    depth < 2;
+    depth += 1
+  ) {
+    const layerEnd =
+      balanceClosure.length
+
+    for (
+      let index =
+        layerStart;
+      index <
+        layerEnd;
+      index += 1
+    ) {
+      const current =
+        balanceClosure[index]
+
+      for (
+        const candidate
+        of getBasicAuditTransitions(
+          current,
+        )
+      ) {
+        const lastStep =
+          candidate.steps[
+            candidate.steps.length -
+              1
+          ]
+
+        if (
+          lastStep ===
+            undefined ||
+          lastStep.type !==
+            'balance' ||
+          lastStep.target ===
+            'G'
+        ) {
+          continue
+        }
+
+        const key =
+          getAuditStateKey(
+            candidate,
+          )
+
+        if (
+          seen.has(
+            key,
+          )
+        ) {
+          continue
+        }
+
+        seen.add(
+          key,
+        )
+
+        balanceClosure.push(
+          candidate,
+        )
+      }
+    }
+
+    layerStart =
+      layerEnd
+  }
+
+  for (
+    const candidate
+    of balanceClosure
+  ) {
+    /*
+     * Weighted Reservoir may already finish
+     * without stabilization.
+     */
+    for (
+      const repaired
+      of getAuditReservoirMengerTransitions(
+        candidate,
+      )
+    ) {
+      if (
+        isAuditStateSolved(
+          repaired,
+        )
+      ) {
+        return repaired
+      }
+    }
+
+    /*
+     * Otherwise try exactly one stabilization
+     * followed by the live reservoir theorem.
+     */
+    for (
+      const stabilized
+      of getAuditStabilizationTransitions(
+        candidate,
+      )
+    ) {
+      for (
+        const repaired
+        of getAuditReservoirMengerTransitions(
+          stabilized,
+        )
+      ) {
+        if (
+          isAuditStateSolved(
+            repaired,
+          )
+        ) {
+          return repaired
+        }
+      }
+    }
+  }
+
+  return null
 }
 
 /*
@@ -244,24 +435,45 @@ function getConstructionPenalty(
 /*
  * Best-first priority.
  *
- * 1. First prefer states with fewer
- *    currently forbidden possibilities.
+ * Search the CONSTRUCTION layer before
+ * diving deeply into repair states.
  *
- * 2. Among those, prefer states whose
- *    starting orientation is closer to
- *    completion.
+ * This matters because constructor tools
+ * such as Run Avoidance can create many
+ * attractive-looking near-solutions.  If
+ * badCount is made the dominant priority,
+ * those states can bury a short Lovasz
+ * construction whose next move solves the
+ * case immediately.
  *
- * 3. Once a stabilization certificate has
- *    been created, examine it promptly so
- *    its reservoir successor is not buried
- *    beneath unrelated constructor states.
+ * Order:
  *
- * 4. Finally prefer shorter recipes.
+ * 1. Pure construction states before states
+ *    that have already entered the repair
+ *    layer.
  *
- * This affects only SEARCH ORDER.  Every
- * transition still comes from the same
- * live toolkit and the same visited-state
- * deduplication.
+ * 2. Shorter recipes first.  Thus the
+ *    constructor search behaves roughly
+ *    breadth-first instead of greedily
+ *    following one near-solution.
+ *
+ * 3. Among equally short construction
+ *    states, prefer a more complete starting
+ *    orientation.
+ *
+ * 4. Then prefer fewer currently forbidden
+ *    possibilities.
+ *
+ * 5. Inside the repair layer, continue to
+ *    prefer an existing stabilization
+ *    certificate so its reservoir successor
+ *    is examined promptly.
+ *
+ * Solved children are checked immediately
+ * when generated, before they enter the
+ * frontier.  Therefore this changes only
+ * SEARCH ORDER, never the toolkit or the
+ * validity of a proof.
  */
 function getStatePriority(
   state:
@@ -293,6 +505,20 @@ function getStatePriority(
       state,
     )
 
+  const inRepairLayer =
+    state.stabilization !==
+      null ||
+    state.directedMenger !==
+      null ||
+    state
+      .directedMengerReservoir !==
+      null
+
+  const repairPenalty =
+    inRepairLayer
+      ? 1
+      : 0
+
   const fixerPenalty =
     state.stabilization !==
       null
@@ -300,13 +526,15 @@ function getStatePriority(
       : 1
 
   return (
-    badCount *
+    repairPenalty *
+      1_000_000_000 +
+    state.steps.length *
       1_000_000 +
     constructionPenalty *
       10_000 +
-    fixerPenalty *
+    badCount *
       100 +
-    state.steps.length
+    fixerPenalty
   )
 }
 
@@ -516,6 +744,101 @@ class AuditFrontier {
   }
 }
 
+function tryCanonicalLovaszReservoirSweep(
+  initialState:
+    AuditSearchState,
+) {
+  let generatedStates =
+    0
+
+  /*
+   * First choose a genuine Lovasz partition.
+   */
+  for (
+    const partitionState
+    of getBasicAuditTransitions(
+      initialState,
+    )
+  ) {
+    const partitionStep =
+      partitionState.steps[
+        partitionState.steps.length -
+          1
+      ]
+
+    if (
+      partitionStep ===
+        undefined ||
+      partitionStep.type !==
+        'lovasz-partition'
+    ) {
+      continue
+    }
+
+    generatedStates +=
+      1
+
+    /*
+     * Then choose one of the live cut
+     * orientations.
+     */
+    for (
+      const cutState
+      of getBasicAuditTransitions(
+        partitionState,
+      )
+    ) {
+      const cutStep =
+        cutState.steps[
+          cutState.steps.length -
+            1
+        ]
+
+      if (
+        cutStep ===
+          undefined ||
+        cutStep.type !==
+          'orient-across'
+      ) {
+        continue
+      }
+
+      generatedStates +=
+        1
+
+      /*
+       * The existing bounded finisher tries
+       * Balance on either/both missing parts,
+       * then Reservoir directly and after one
+       * Stabilization.
+       */
+      const finish =
+        tryBalancedReservoirFinisher(
+          cutState,
+        )
+
+      if (
+        finish !==
+          null
+      ) {
+        return {
+          state:
+            finish,
+
+          generatedStates,
+        }
+      }
+    }
+  }
+
+  return {
+    state:
+      null,
+
+    generatedStates,
+  }
+}
+
 export function searchAuditCase({
   degree,
   forbiddenSet,
@@ -571,6 +894,49 @@ export function searchAuditCase({
 
       generatedStates:
         1,
+    }
+  }
+
+  /*
+   * Cheap canonical pre-sweep.
+   *
+   * This prevents a short Lovasz +
+   * Stabilization + Reservoir proof from
+   * being hidden behind a huge constructor
+   * frontier.
+   */
+  const canonicalReservoirSweep =
+    tryCanonicalLovaszReservoirSweep(
+      initialState,
+    )
+
+  if (
+    canonicalReservoirSweep.state !==
+      null
+  ) {
+    return {
+      status:
+        'proved',
+
+      degree,
+
+      forbiddenSet: [
+        ...forbiddenSet,
+      ],
+
+      recipe:
+        solvedStateToRecipe(
+          canonicalReservoirSweep
+            .state,
+        ),
+
+      expandedStates:
+        0,
+
+      generatedStates:
+        1 +
+        canonicalReservoirSweep
+          .generatedStates,
     }
   }
 
@@ -701,6 +1067,258 @@ export function searchAuditCase({
           generatedStates:
             visited.size +
             residualGeneratedStates,
+        }
+      }
+
+      const balancedReservoirFinish =
+        tryBalancedReservoirFinisher(
+          nextState,
+        )
+
+      if (
+        balancedReservoirFinish !==
+          null
+      ) {
+        return {
+          status:
+            'proved',
+
+          degree,
+
+          forbiddenSet: [
+            ...forbiddenSet,
+          ],
+
+          recipe:
+            solvedStateToRecipe(
+              balancedReservoirFinish,
+            ),
+
+          expandedStates:
+            expandedStates +
+            residualExpandedStates,
+
+          generatedStates:
+            visited.size +
+            residualGeneratedStates,
+        }
+      }
+
+      /*
+       * TWO-STEP FINISHER LOOKAHEAD.
+       *
+       * A complete constructor state may be
+       * only
+       *
+       *   stabilization -> reservoir
+       *
+       * away from a proof.  Such a state can
+       * otherwise sit behind thousands of
+       * equally short constructor states
+       * before it is ever expanded.
+       *
+       * Test this only when the structural
+       * prerequisites for the current
+       * L-demand / R-reservoir theorem are
+       * already present.  This therefore
+       * avoids opening a general repair
+       * search from every generated state.
+       *
+       * Again, this adds no mathematical
+       * transition: both moves are ordinary
+       * live audit transitions.
+       */
+      if (
+        nextState.partition !==
+          null &&
+        nextState.lovaszApplication !==
+          null &&
+        nextState.acrossDirection ===
+          'R-to-L' &&
+        leftInternallyOriented(
+          nextState,
+        ) &&
+        nextState.balancedR &&
+        nextState.stabilization ===
+          null &&
+        nextState.directedMenger ===
+          null &&
+        nextState
+          .directedMengerReservoir ===
+          null
+      ) {
+        const immediateStabilizations =
+          getAuditStabilizationTransitions(
+            nextState,
+          )
+
+        for (
+          const stabilizedState
+          of immediateStabilizations
+        ) {
+          const immediateReservoirStates =
+            getAuditReservoirMengerTransitions(
+              stabilizedState,
+            )
+
+          for (
+            const reservoirState
+            of immediateReservoirStates
+          ) {
+            if (
+              !isAuditStateSolved(
+                reservoirState,
+              )
+            ) {
+              continue
+            }
+
+            /*
+             * These two lookahead states were
+             * genuinely generated even though
+             * the search returns before they
+             * need to enter the frontier.
+             */
+            const lookaheadKeys =
+              new Set<string>()
+
+            const stabilizedKey =
+              getAuditStateKey(
+                stabilizedState,
+              )
+
+            if (
+              !visited.has(
+                stabilizedKey,
+              )
+            ) {
+              lookaheadKeys.add(
+                stabilizedKey,
+              )
+            }
+
+            const reservoirKey =
+              getAuditStateKey(
+                reservoirState,
+              )
+
+            if (
+              !visited.has(
+                reservoirKey,
+              )
+            ) {
+              lookaheadKeys.add(
+                reservoirKey,
+              )
+            }
+
+            return {
+              status:
+                'proved',
+
+              degree,
+
+              forbiddenSet: [
+                ...forbiddenSet,
+              ],
+
+              recipe:
+                solvedStateToRecipe(
+                  reservoirState,
+                ),
+
+              expandedStates:
+                expandedStates +
+                residualExpandedStates,
+
+              generatedStates:
+                visited.size +
+                lookaheadKeys.size +
+                residualGeneratedStates,
+            }
+          }
+        }
+      }
+
+      /*
+       * A stabilization certificate is often
+       * designed specifically to unlock an
+       * immediate reservoir repair.
+       *
+       * Repair states are intentionally kept
+       * behind the pure-construction frontier,
+       * but we should not delay a reservoir
+       * application that already FINISHES the
+       * proof.  Test that one certified step
+       * here before placing the stabilization
+       * state into the delayed repair layer.
+       *
+       * This is only search lookahead: it
+       * introduces no new mathematical
+       * transition.
+       */
+      if (
+        nextState.stabilization !==
+          null &&
+        nextState.directedMenger ===
+          null &&
+        nextState
+          .directedMengerReservoir ===
+          null
+      ) {
+        const immediateReservoirStates =
+          getAuditReservoirMengerTransitions(
+            nextState,
+          )
+
+        for (
+          const reservoirState
+          of immediateReservoirStates
+        ) {
+          if (
+            !isAuditStateSolved(
+              reservoirState,
+            )
+          ) {
+            continue
+          }
+
+          const reservoirKey =
+            getAuditStateKey(
+              reservoirState,
+            )
+
+          const newlyGenerated =
+            visited.has(
+              reservoirKey,
+            )
+              ? 0
+              : 1
+
+          return {
+            status:
+              'proved',
+
+            degree,
+
+            forbiddenSet: [
+              ...forbiddenSet,
+            ],
+
+            recipe:
+              solvedStateToRecipe(
+                reservoirState,
+              ),
+
+            expandedStates:
+              expandedStates +
+              residualExpandedStates,
+
+            generatedStates:
+              visited.size +
+              newlyGenerated +
+              residualGeneratedStates,
+          }
         }
       }
 

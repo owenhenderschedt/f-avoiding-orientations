@@ -5,6 +5,7 @@ import {
 import Math from '../components/Math'
 import MaLuSelector from '../components/MaLuSelector'
 import HasanvandSelector from '../components/HasanvandSelector'
+import RunAvoidanceSelector from '../components/RunAvoidanceSelector'
 import ParityBoundsSelector, {
   type ParityBoundsSelection,
 } from '../components/ParityBoundsSelector'
@@ -31,6 +32,11 @@ import type {
   HasanvandMode,
   HasanvandTarget,
 } from '../tools/hasanvandMath'
+import {
+  getRunAvoidanceRValues,
+  type RunAvoidanceSide,
+  type RunAvoidanceTarget,
+} from '../tools/runAvoidanceMath'
 import type {
   AcrossDirection,
 } from '../tools/orientAcrossPartition'
@@ -96,6 +102,36 @@ type ToolMenuProps = {
 
   hasanvandR:
     HasanvandApplication | null
+
+  /*
+   * Optional during incremental
+   * wiring. Once BlobLab supplies
+   * these, Run Avoidance becomes a
+   * normal constructor in the menu.
+   */
+  runAvoidanceG?: boolean
+  runAvoidanceL?: boolean
+  runAvoidanceR?: boolean
+
+  onApplyRunAvoidance?:
+    (
+      target:
+        RunAvoidanceTarget,
+
+      r: number,
+
+      side:
+        RunAvoidanceSide,
+
+      selectedTotalOutdegrees:
+        readonly number[],
+    ) => void
+
+  onOpenRunAvoidanceReference?:
+    (
+      target:
+        RunAvoidanceTarget,
+    ) => void
 
   /*
    * Parity Bounds is currently a
@@ -544,6 +580,11 @@ export default function ToolMenu({
   hasanvandG,
   hasanvandL,
   hasanvandR,
+  runAvoidanceG = false,
+  runAvoidanceL = false,
+  runAvoidanceR = false,
+  onApplyRunAvoidance,
+  onOpenRunAvoidanceReference,
   parityBoundsG = false,
   canApplyParityBounds = false,
   onApplyParityBounds,
@@ -627,6 +668,16 @@ export default function ToolMenu({
     )
 
   const [
+    runAvoidanceTarget,
+    setRunAvoidanceTarget,
+  ] =
+    useState<
+      RunAvoidanceTarget | null
+    >(
+      null,
+    )
+
+  const [
     parityBoundsOpen,
     setParityBoundsOpen,
   ] =
@@ -663,6 +714,7 @@ export default function ToolMenu({
     maLuG ||
     hasanvandG !==
       null ||
+    runAvoidanceG ||
     parityBoundsG
 
   const leftInternallyOriented =
@@ -671,7 +723,8 @@ export default function ToolMenu({
       null ||
     maLuL ||
     hasanvandL !==
-      null
+      null ||
+    runAvoidanceL
 
   const rightInternallyOriented =
     balancedR ||
@@ -679,7 +732,8 @@ export default function ToolMenu({
       null ||
     maLuR ||
     hasanvandR !==
-      null
+      null ||
+    runAvoidanceR
 
   const constructorsLocked =
     directedMengerApplied
@@ -763,6 +817,15 @@ export default function ToolMenu({
   const canUseHasanvandInG =
     canOrientG
 
+  const canUseRunAvoidanceInG =
+    canOrientG &&
+    onApplyRunAvoidance !==
+      undefined &&
+    getRunAvoidanceRValues(
+      workingDegree,
+    ).length >
+      0
+
   const canUseParityBoundsInG =
     canOrientG &&
     canApplyParityBounds &&
@@ -779,6 +842,39 @@ export default function ToolMenu({
 
   const canUseHasanvandInR =
     canOrientR
+
+  /*
+   * On a Lovasz part, Run Avoidance
+   * targets FINAL total outdegrees.
+   * Therefore the cut must already have
+   * a fixed direction before those
+   * totals can be translated locally.
+   */
+  const canUseRunAvoidanceInL =
+    canOrientL &&
+    partition !==
+      null &&
+    acrossDirection !==
+      null &&
+    onApplyRunAvoidance !==
+      undefined &&
+    getRunAvoidanceRValues(
+      partition.s,
+    ).length >
+      0
+
+  const canUseRunAvoidanceInR =
+    canOrientR &&
+    partition !==
+      null &&
+    acrossDirection !==
+      null &&
+    onApplyRunAvoidance !==
+      undefined &&
+    getRunAvoidanceRValues(
+      partition.t,
+    ).length >
+      0
 
   const anyStabilizationAvailable =
     (
@@ -945,6 +1041,53 @@ export default function ToolMenu({
           acrossDirection,
         )
 
+  let runAvoidanceMaxDegree =
+    0
+
+  if (
+    runAvoidanceTarget ===
+    'G'
+  ) {
+    runAvoidanceMaxDegree =
+      workingDegree
+  }
+
+  if (
+    runAvoidanceTarget ===
+      'L' &&
+    partition !==
+      null
+  ) {
+    runAvoidanceMaxDegree =
+      partition.s
+  }
+
+  if (
+    runAvoidanceTarget ===
+      'R' &&
+    partition !==
+      null
+  ) {
+    runAvoidanceMaxDegree =
+      partition.t
+  }
+
+  const runAvoidanceTotalCandidates =
+    runAvoidanceTarget ===
+    null
+      ? []
+      : getCurrentTotalOutdegrees(
+          runAvoidanceTarget,
+
+          workingDegree,
+
+          fixedOutdegreeContribution,
+
+          partition,
+
+          acrossDirection,
+        )
+
   let hasanvandMaxDegree =
     0
 
@@ -1011,6 +1154,10 @@ export default function ToolMenu({
     )
 
     setHasanvandTarget(
+      null,
+    )
+
+    setRunAvoidanceTarget(
       null,
     )
 
@@ -1094,6 +1241,19 @@ export default function ToolMenu({
     )
 
     setHasanvandTarget(
+      target,
+    )
+  }
+
+  function openRunAvoidanceMenu(
+    target:
+      RunAvoidanceTarget,
+  ) {
+    setOrientationTarget(
+      null,
+    )
+
+    setRunAvoidanceTarget(
       target,
     )
   }
@@ -1262,6 +1422,41 @@ export default function ToolMenu({
       mode,
 
       rules,
+    )
+
+    setToolsOpen(
+      false,
+    )
+
+    closeSubmenus()
+  }
+
+  function applyRunAvoidance(
+    r: number,
+
+    side:
+      RunAvoidanceSide,
+
+    selectedTotalOutdegrees:
+      readonly number[],
+  ) {
+    if (
+      runAvoidanceTarget ===
+        null ||
+      onApplyRunAvoidance ===
+        undefined
+    ) {
+      return
+    }
+
+    onApplyRunAvoidance(
+      runAvoidanceTarget,
+
+      r,
+
+      side,
+
+      selectedTotalOutdegrees,
     )
 
     setToolsOpen(
@@ -1777,6 +1972,50 @@ export default function ToolMenu({
               }
             />
 
+          /* RUN AVOIDANCE SELECTOR */
+
+          ) : runAvoidanceTarget !==
+            null ? (
+            <RunAvoidanceSelector
+              target={
+                runAvoidanceTarget
+              }
+              maxInternalDegree={
+                runAvoidanceMaxDegree
+              }
+              globalForbiddenSet={
+                globalForbiddenSet
+              }
+              totalCandidateOutdegrees={
+                runAvoidanceTotalCandidates
+              }
+              workingDegree={
+                workingDegree
+              }
+              fixedOutdegreeContribution={
+                fixedOutdegreeContribution
+              }
+              partition={
+                partition
+              }
+              acrossDirection={
+                acrossDirection
+              }
+              onApply={
+                applyRunAvoidance
+              }
+              onOpenReference={() =>
+                onOpenRunAvoidanceReference?.(
+                  runAvoidanceTarget,
+                )
+              }
+              onBack={() =>
+                setRunAvoidanceTarget(
+                  null,
+                )
+              }
+            />
+
           /* HASANVAND SELECTOR */
 
           ) : hasanvandTarget !==
@@ -1952,6 +2191,22 @@ export default function ToolMenu({
                     </button>
                   )}
 
+                  {canUseRunAvoidanceInG && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openRunAvoidanceMenu(
+                          'G',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Run Avoidance →
+                    </button>
+                  )}
+
                   {canUseHasanvandInG && (
                     <button
                       type="button"
@@ -2048,6 +2303,22 @@ export default function ToolMenu({
                     </button>
                   )}
 
+                  {canUseRunAvoidanceInL && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openRunAvoidanceMenu(
+                          'L',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Run Avoidance →
+                    </button>
+                  )}
+
                   {canUseHasanvandInL && (
                     <button
                       type="button"
@@ -2126,6 +2397,22 @@ export default function ToolMenu({
                       }
                     >
                       Ma–Lu →
+                    </button>
+                  )}
+
+                  {canUseRunAvoidanceInR && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openRunAvoidanceMenu(
+                          'R',
+                        )
+                      }
+                      style={
+                        menuButtonStyle
+                      }
+                    >
+                      Run Avoidance →
                     </button>
                   )}
 

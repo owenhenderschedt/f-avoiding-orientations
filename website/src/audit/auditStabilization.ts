@@ -33,6 +33,8 @@ function wholeGraphOriented(
       null ||
     state.maLuG !==
       null ||
+    state.runAvoidanceG !==
+      null ||
     state.hasanvandG !==
       null ||
     state.parityBoundsG !==
@@ -50,6 +52,8 @@ function leftInternallyOriented(
       null ||
     state.maLuL !==
       null ||
+    state.runAvoidanceL !==
+      null ||
     state.hasanvandL !==
       null
   )
@@ -64,6 +68,8 @@ function rightInternallyOriented(
     state.avoidCR !==
       null ||
     state.maLuR !==
+      null ||
+    state.runAvoidanceR !==
       null ||
     state.hasanvandR !==
       null

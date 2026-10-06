@@ -17,6 +17,9 @@ import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
 import type {
+  RunAvoidanceApplication,
+} from '../tools/runAvoidanceApplication'
+import type {
   ParityBoundsApplication,
 } from '../tools/parityBoundsApplication'
 import type {
@@ -93,6 +96,15 @@ type GraphViewProps = {
   hasanvandApplicationR:
     HasanvandApplication | null
 
+  runAvoidanceApplicationG:
+    RunAvoidanceApplication | null
+
+  runAvoidanceApplicationL:
+    RunAvoidanceApplication | null
+
+  runAvoidanceApplicationR:
+    RunAvoidanceApplication | null
+
   parityBoundsApplicationG?:
     ParityBoundsApplication | null
 
@@ -136,6 +148,12 @@ type GraphViewProps = {
     (
       application:
         HasanvandApplication,
+    ) => void
+
+  onOpenRunAvoidanceReference:
+    (
+      application:
+        RunAvoidanceApplication,
     ) => void
 
   onOpenParityBoundsReference?:
@@ -186,6 +204,9 @@ export default function GraphView({
   hasanvandApplicationG,
   hasanvandApplicationL,
   hasanvandApplicationR,
+  runAvoidanceApplicationG,
+  runAvoidanceApplicationL,
+  runAvoidanceApplicationR,
   parityBoundsApplicationG = null,
   stabilizeOutdegreeClassApplication,
   directedMengerApplication,
@@ -196,6 +217,7 @@ export default function GraphView({
   onOpenAvoidCReference,
   onOpenMaLuReference,
   onOpenHasanvandReference,
+  onOpenRunAvoidanceReference,
   onOpenParityBoundsReference,
   onOpenStabilizeOutdegreeClassReference,
   onOpenDirectedMengerReference,
@@ -261,6 +283,9 @@ export default function GraphView({
         hasanvandApplicationG={
           hasanvandApplicationG
         }
+        runAvoidanceApplicationG={
+          runAvoidanceApplicationG
+        }
         parityBoundsApplicationG={
           parityBoundsApplicationG
         }
@@ -284,6 +309,9 @@ export default function GraphView({
         }
         onOpenHasanvandReference={
           onOpenHasanvandReference
+        }
+        onOpenRunAvoidanceReference={
+          onOpenRunAvoidanceReference
         }
         onOpenParityBoundsReference={
           onOpenParityBoundsReference
@@ -345,6 +373,12 @@ export default function GraphView({
       hasanvandApplicationR={
         hasanvandApplicationR
       }
+      runAvoidanceApplicationL={
+        runAvoidanceApplicationL
+      }
+      runAvoidanceApplicationR={
+        runAvoidanceApplicationR
+      }
       stabilizeOutdegreeClassApplication={
         stabilizeOutdegreeClassApplication
       }
@@ -374,6 +408,9 @@ export default function GraphView({
       }
       onOpenHasanvandReference={
         onOpenHasanvandReference
+      }
+      onOpenRunAvoidanceReference={
+        onOpenRunAvoidanceReference
       }
       onOpenStabilizeOutdegreeClassReference={
         onOpenStabilizeOutdegreeClassReference

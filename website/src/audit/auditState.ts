@@ -12,6 +12,9 @@ import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
 import type {
+  RunAvoidanceApplication,
+} from '../tools/runAvoidanceApplication'
+import type {
   ParityBoundsApplication,
 } from '../tools/parityBoundsApplication'
 import type {
@@ -23,6 +26,9 @@ import type {
 import type {
   DirectedMengerReservoirApplication,
 } from '../tools/directedMengerReservoirApplication'
+import type {
+  DirectedMengerWeightedReservoirApplication,
+} from '../tools/directedMengerWeightedReservoirApplication'
 import {
   allOutdegrees,
   type PartOutdegreePossibilities,
@@ -111,6 +117,15 @@ export type AuditSearchState = {
   hasanvandR:
     HasanvandApplication | null
 
+  runAvoidanceG:
+    RunAvoidanceApplication | null
+
+  runAvoidanceL:
+    RunAvoidanceApplication | null
+
+  runAvoidanceR:
+    RunAvoidanceApplication | null
+
   /*
    * Whole-working-graph Parity Bounds
    * constructor.
@@ -158,10 +173,16 @@ export type AuditSearchState = {
 
   /*
    * One LIVE reservoir application stores
-   * all simultaneous repairs q -> q+1.
+   * the completed simultaneous repair.
+   *
+   * This may be the original one-unit
+   * reservoir theorem or the generalized
+   * weighted-density theorem.
    */
   directedMengerReservoir:
-    DirectedMengerReservoirApplication | null
+    | DirectedMengerReservoirApplication
+    | DirectedMengerWeightedReservoirApplication
+    | null
 
   outdegreePossibilities:
     PartOutdegreePossibilities
@@ -272,6 +293,15 @@ export function createInitialAuditState({
       null,
 
     hasanvandR:
+      null,
+
+    runAvoidanceG:
+      null,
+
+    runAvoidanceL:
+      null,
+
+    runAvoidanceR:
       null,
 
     parityBoundsG:
@@ -401,6 +431,22 @@ export function getAuditStateKey(
           application.mode,
           ...application
             .selectedValues,
+        ].join(':')
+
+  const runAvoidanceKey = (
+    application:
+      RunAvoidanceApplication | null,
+  ) =>
+    application ===
+      null
+      ? '-'
+      : [
+          application.target,
+          `r=${application.r}`,
+          application.side,
+          application
+            .selectedTotalOutdegrees
+            .join(','),
         ].join(':')
 
   const hasanvandKey = (
@@ -552,6 +598,12 @@ export function getAuditStateKey(
     `maluL=${maLuKey(state.maLuL)}`,
 
     `maluR=${maLuKey(state.maLuR)}`,
+
+    `runG=${runAvoidanceKey(state.runAvoidanceG)}`,
+
+    `runL=${runAvoidanceKey(state.runAvoidanceL)}`,
+
+    `runR=${runAvoidanceKey(state.runAvoidanceR)}`,
 
     `hasG=${hasanvandKey(state.hasanvandG)}`,
 

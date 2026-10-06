@@ -84,6 +84,8 @@ function wholeGraphAlreadyOriented(
       null ||
     state.maLuG !==
       null ||
+    state.runAvoidanceG !==
+      null ||
     state.hasanvandG !==
       null ||
     state.parityBoundsG !==
@@ -101,6 +103,8 @@ function leftAlreadyOriented(
       null ||
     state.maLuL !==
       null ||
+    state.runAvoidanceL !==
+      null ||
     state.hasanvandL !==
       null
   )
@@ -115,6 +119,8 @@ function rightAlreadyOriented(
     state.avoidCR !==
       null ||
     state.maLuR !==
+      null ||
+    state.runAvoidanceR !==
       null ||
     state.hasanvandR !==
       null
@@ -191,6 +197,15 @@ function getConstructorOutdegreePossibilities(
 
       maLuR:
         state.maLuR,
+
+      runAvoidanceG:
+        state.runAvoidanceG,
+
+      runAvoidanceL:
+        state.runAvoidanceL,
+
+      runAvoidanceR:
+        state.runAvoidanceR,
 
       hasanvandG:
         state.hasanvandG,

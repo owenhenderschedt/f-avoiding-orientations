@@ -96,6 +96,60 @@ export function getLovaszPairs(
 }
 
 /*
+ * All ORDERED tight Lovasz pairs.
+ *
+ * The ordinary menu uses getLovaszPairs(),
+ * which lists one representative modulo
+ * swapping L and R.
+ *
+ * That symmetry is not safe for automated
+ * proof search once a later theorem treats
+ * the two parts differently.  For example,
+ * Directed Menger Reservoir currently uses
+ *
+ *   demand part    = L,
+ *   reservoir part = R.
+ *
+ * Therefore the completeness audit must be
+ * allowed to distinguish
+ *
+ *   (s,t)  from  (t,s).
+ */
+export function getOrderedLovaszPairs(
+  degree: number,
+): LovaszPair[] {
+  if (
+    !Number.isInteger(
+      degree,
+    ) ||
+    degree < 1
+  ) {
+    return []
+  }
+
+  const pairs:
+    LovaszPair[] = []
+
+  for (
+    let t = 0;
+    t <=
+      degree - 1;
+    t += 1
+  ) {
+    pairs.push({
+      s:
+        degree -
+        1 -
+        t,
+
+      t,
+    })
+  }
+
+  return pairs
+}
+
+/*
  * Kept for compatibility with older
  * code importing the original
  * 12-regular menu.

@@ -21,6 +21,13 @@ import {
   getHasanvandPartOutdegreePossibilities,
   getHasanvandWholeGraphChoices,
 } from '../tools/hasanvandOutdegrees'
+import type {
+  RunAvoidanceApplication,
+} from '../tools/runAvoidanceApplication'
+import {
+  getRunAvoidancePartOutdegreePossibilities,
+  getRunAvoidanceWholeGraphChoices,
+} from '../tools/runAvoidanceOutdegrees'
 import {
   allOutdegrees,
   uniqueSorted,
@@ -63,6 +70,15 @@ type DeriveOutdegreePossibilitiesArgs = {
 
   hasanvandR:
     HasanvandApplication | null
+
+  runAvoidanceG?:
+    RunAvoidanceApplication | null
+
+  runAvoidanceL?:
+    RunAvoidanceApplication | null
+
+  runAvoidanceR?:
+    RunAvoidanceApplication | null
 }
 
 function balancedInternalChoices(
@@ -130,6 +146,9 @@ function possibilitiesForPart(
 
   hasanvandApplication:
     HasanvandApplication | null,
+
+  runAvoidanceApplication:
+    RunAvoidanceApplication | null,
 ): OutdegreeSet {
   /*
    * Ma-Lu has its own helper because
@@ -191,6 +210,33 @@ function possibilitiesForPart(
 
         application:
           hasanvandApplication,
+      },
+    )
+  }
+
+  /*
+   * Run Avoidance is another
+   * degree-sensitive constructor on a
+   * Lovasz part. Its application stores
+   * the certified translated local list
+   * for every possible internal degree.
+   */
+  if (
+    runAvoidanceApplication !==
+    null
+  ) {
+    return getRunAvoidancePartOutdegreePossibilities(
+      {
+        degree,
+
+        maxInternalDegree,
+
+        part,
+
+        acrossDirection,
+
+        application:
+          runAvoidanceApplication,
       },
     )
   }
@@ -294,6 +340,9 @@ export default function deriveOutdegreePossibilities({
   hasanvandG,
   hasanvandL,
   hasanvandR,
+  runAvoidanceG = null,
+  runAvoidanceL = null,
+  runAvoidanceR = null,
 }: DeriveOutdegreePossibilitiesArgs):
   PartOutdegreePossibilities {
   if (balancedG) {
@@ -364,6 +413,26 @@ export default function deriveOutdegreePossibilities({
     }
   }
 
+  /*
+   * Whole-graph Run Avoidance removes
+   * precisely the internal outdegrees
+   * certified by the theorem.
+   */
+  if (
+    runAvoidanceG !== null
+  ) {
+    const values =
+      getRunAvoidanceWholeGraphChoices(
+        degree,
+        runAvoidanceG,
+      )
+
+    return {
+      L: values,
+      R: values,
+    }
+  }
+
   if (
     partition === null
   ) {
@@ -388,6 +457,7 @@ export default function deriveOutdegreePossibilities({
       avoidCL,
       maLuL,
       hasanvandL,
+      runAvoidanceL,
     ),
 
     R: possibilitiesForPart(
@@ -399,6 +469,7 @@ export default function deriveOutdegreePossibilities({
       avoidCR,
       maLuR,
       hasanvandR,
+      runAvoidanceR,
     ),
   }
 }

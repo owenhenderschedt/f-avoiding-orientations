@@ -51,6 +51,13 @@ function constructionIsPristine(
     state.maLuR ===
       null &&
 
+    state.runAvoidanceG ===
+      null &&
+    state.runAvoidanceL ===
+      null &&
+    state.runAvoidanceR ===
+      null &&
+
     state.hasanvandG ===
       null &&
     state.hasanvandL ===

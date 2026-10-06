@@ -3,6 +3,9 @@ import type {
   DirectedMengerReservoirClassesApplication,
 } from '../tools/directedMengerReservoirApplication'
 import type {
+  DirectedMengerWeightedReservoirApplication,
+} from '../tools/directedMengerWeightedReservoirApplication'
+import type {
   PartOutdegreePossibilities,
 } from './outdegreePossibilities'
 
@@ -25,10 +28,15 @@ function uniqueSorted(
  * All values here are TOTAL outdegrees in
  * the original graph.
  *
- * Every selected demand class is repaired
- * by one unit:
+ * Every selected demand class is replaced
+ * by the certified repaired outdegree.
+ * This includes both the original
  *
- *     q -> q+1.
+ *     q -> q+1
+ *
+ * reservoir theorem and weighted repairs
+ *
+ *     q -> q+a.
  *
  * The fixed oriented 2-factors, if any,
  * are untouched. The certificate has
@@ -44,7 +52,8 @@ export function getDirectedMengerReservoirRepairedOutdegrees({
     PartOutdegreePossibilities
 
   application:
-    DirectedMengerReservoirApplication
+    | DirectedMengerReservoirApplication
+    | DirectedMengerWeightedReservoirApplication
 }): PartOutdegreePossibilities {
   const selectedClasses =
     new Set(

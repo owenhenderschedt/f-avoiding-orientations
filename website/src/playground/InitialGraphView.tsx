@@ -3,6 +3,7 @@ import BalancedBadge from '../components/BalancedBadge'
 import AvoidCBadge from '../components/AvoidCBadge'
 import MaLuBadge from '../components/MaLuBadge'
 import HasanvandBadge from '../components/HasanvandBadge'
+import RunAvoidanceBadge from '../components/RunAvoidanceBadge'
 import ParityBoundsBadge from '../components/ParityBoundsBadge'
 import StabilizeOutdegreeClassBadge from '../components/StabilizeOutdegreeClassBadge'
 import PossibleOutdegrees from './PossibleOutdegrees'
@@ -18,6 +19,9 @@ import type {
 import type {
   HasanvandApplication,
 } from '../tools/hasanvandApplication'
+import type {
+  RunAvoidanceApplication,
+} from '../tools/runAvoidanceApplication'
 import type {
   ParityBoundsApplication,
 } from '../tools/parityBoundsApplication'
@@ -59,6 +63,9 @@ type InitialGraphViewProps = {
   hasanvandApplicationG:
     HasanvandApplication | null
 
+  runAvoidanceApplicationG:
+    RunAvoidanceApplication | null
+
   parityBoundsApplicationG?:
     ParityBoundsApplication | null
 
@@ -96,6 +103,12 @@ type InitialGraphViewProps = {
     (
       application:
         HasanvandApplication,
+    ) => void
+
+  onOpenRunAvoidanceReference:
+    (
+      application:
+        RunAvoidanceApplication,
     ) => void
 
   onOpenParityBoundsReference?:
@@ -270,6 +283,7 @@ export default function InitialGraphView({
   avoidCG,
   maLuApplicationG,
   hasanvandApplicationG,
+  runAvoidanceApplicationG,
   parityBoundsApplicationG = null,
   stabilizeOutdegreeClassApplication,
   directedMengerApplication,
@@ -278,6 +292,7 @@ export default function InitialGraphView({
   onOpenAvoidCReference,
   onOpenMaLuReference,
   onOpenHasanvandReference,
+  onOpenRunAvoidanceReference,
   onOpenParityBoundsReference,
   onOpenStabilizeOutdegreeClassReference,
   onOpenDirectedMengerReference,
@@ -536,6 +551,20 @@ export default function InitialGraphView({
             y={320}
             onOpen={
               onOpenHasanvandReference
+            }
+          />
+        )}
+
+        {runAvoidanceApplicationG !==
+          null && (
+          <RunAvoidanceBadge
+            application={
+              runAvoidanceApplicationG
+            }
+            x={190}
+            y={320}
+            onOpen={
+              onOpenRunAvoidanceReference
             }
           />
         )}

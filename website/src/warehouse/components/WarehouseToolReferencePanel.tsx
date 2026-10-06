@@ -153,7 +153,8 @@ export default function WarehouseToolReferencePanel({
       ? 'Proof move'
       : warehouseStepSignature(
           step,
-        )
+        ) ??
+        'Proof move'
 
   if (
     step?.type ===

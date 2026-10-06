@@ -47,6 +47,16 @@ import type {
   MaLuTarget,
 } from '../tools/maLuMath'
 import {
+  RunAvoidanceReference,
+  runAvoidanceTool,
+} from '../tools/runAvoidance'
+import type {
+  RunAvoidanceApplication,
+} from '../tools/runAvoidanceApplication'
+import type {
+  RunAvoidanceTarget,
+} from '../tools/runAvoidanceMath'
+import {
   ParityBoundsReference,
 } from '../tools/parityBounds'
 import type {
@@ -116,6 +126,13 @@ type ActiveReference =
       target: MaLuTarget
       application:
         MaLuApplication | null
+    }
+  | {
+      type: 'run-avoidance'
+      target:
+        RunAvoidanceTarget
+      application:
+        RunAvoidanceApplication | null
     }
   | {
       type: 'parity-bounds'
@@ -319,6 +336,8 @@ export default function BlobLab({
     playground.maLuG ||
     playground.hasanvandG !==
       null ||
+    playground.runAvoidanceG !==
+      null ||
     playground.parityBoundsG
 
   const leftInternallyOriented =
@@ -327,6 +346,8 @@ export default function BlobLab({
       null ||
     playground.maLuL ||
     playground.hasanvandL !==
+      null ||
+    playground.runAvoidanceL !==
       null
 
   const rightInternallyOriented =
@@ -335,6 +356,8 @@ export default function BlobLab({
       null ||
     playground.maLuR ||
     playground.hasanvandR !==
+      null ||
+    playground.runAvoidanceR !==
       null
 
   const orientationStatus =
@@ -397,6 +420,36 @@ export default function BlobLab({
 
       application:
         null,
+    })
+  }
+
+  function openRunAvoidanceSelectorReference(
+    target:
+      RunAvoidanceTarget,
+  ) {
+    setActiveReference({
+      type:
+        'run-avoidance',
+
+      target,
+
+      application:
+        null,
+    })
+  }
+
+  function openAppliedRunAvoidanceReference(
+    application:
+      RunAvoidanceApplication,
+  ) {
+    setActiveReference({
+      type:
+        'run-avoidance',
+
+      target:
+        application.target,
+
+      application,
     })
   }
 
@@ -606,7 +659,10 @@ export default function BlobLab({
                 'ma-lu'
               ? maLuTool.name
               : activeReference?.type ===
-                  'parity-bounds'
+                  'run-avoidance'
+                ? runAvoidanceTool.name
+                : activeReference?.type ===
+                    'parity-bounds'
                 ? 'Parity Bounds'
                 : activeReference?.type ===
                     'stabilize-outdegree-class'
@@ -838,6 +894,18 @@ export default function BlobLab({
               playground
                 .hasanvandApplicationR
             }
+            runAvoidanceApplicationG={
+              playground
+                .runAvoidanceG
+            }
+            runAvoidanceApplicationL={
+              playground
+                .runAvoidanceL
+            }
+            runAvoidanceApplicationR={
+              playground
+                .runAvoidanceR
+            }
             parityBoundsApplicationG={
               playground
                 .parityBoundsApplication
@@ -892,6 +960,9 @@ export default function BlobLab({
             }
             onOpenHasanvandReference={
               openAppliedHasanvandReference
+            }
+            onOpenRunAvoidanceReference={
+              openAppliedRunAvoidanceReference
             }
             onOpenParityBoundsReference={
               openAppliedParityBoundsReference
@@ -998,6 +1069,21 @@ export default function BlobLab({
               hasanvandR={
                 playground
                   .hasanvandR
+              }
+              runAvoidanceG={
+                playground
+                  .runAvoidanceG !==
+                null
+              }
+              runAvoidanceL={
+                playground
+                  .runAvoidanceL !==
+                null
+              }
+              runAvoidanceR={
+                playground
+                  .runAvoidanceR !==
+                null
               }
               parityBoundsG={
                 playground
@@ -1108,6 +1194,13 @@ export default function BlobLab({
               }
               onOpenHasanvandReference={
                 openHasanvandSelectorReference
+              }
+              onApplyRunAvoidance={
+                playground
+                  .applyRunAvoidance
+              }
+              onOpenRunAvoidanceReference={
+                openRunAvoidanceSelectorReference
               }
             />
 
@@ -1490,6 +1583,51 @@ export default function BlobLab({
 
                     if (
                       move.type ===
+                      'run-avoidance'
+                    ) {
+                      const application =
+                        move.application
+
+                      return (
+                        <span
+                          key={
+                            index
+                          }
+                        >
+                          Run Avoidance on{' '}
+
+                          <Math>
+                            {
+                              application
+                                .target
+                            }
+                          </Math>
+                          ,{' '}
+
+                          <Math>
+                            {
+                              `r=${application.r}`
+                            }
+                          </Math>
+                          ,{' '}
+
+                          {application.side}
+                          , eliminate{' '}
+
+                          <Math>
+                            {
+                              `Q=${latexSet(
+                                application
+                                  .selectedTotalOutdegrees,
+                              )}`
+                            }
+                          </Math>
+                        </span>
+                      )
+                    }
+
+                    if (
+                      move.type ===
                       'parity-bounds'
                     ) {
                       return (
@@ -1710,6 +1848,36 @@ export default function BlobLab({
         {activeReference?.type ===
           'ma-lu' && (
           <MaLuReference
+            target={
+              activeReference
+                .target
+            }
+            degree={
+              playground
+                .workingDegree
+            }
+            fixedOutdegreeContribution={
+              playground
+                .fixedOutdegreeContribution
+            }
+            partition={
+              playground
+                .partition
+            }
+            acrossDirection={
+              playground
+                .acrossDirection
+            }
+            application={
+              activeReference
+                .application
+            }
+          />
+        )}
+
+        {activeReference?.type ===
+          'run-avoidance' && (
+          <RunAvoidanceReference
             target={
               activeReference
                 .target

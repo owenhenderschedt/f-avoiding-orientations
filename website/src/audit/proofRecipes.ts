@@ -13,6 +13,10 @@ import type {
   MaLuTarget,
 } from '../tools/maLuMath'
 import type {
+  RunAvoidanceSide,
+  RunAvoidanceTarget,
+} from '../tools/runAvoidanceMath'
+import type {
   StabilizeTarget,
 } from '../tools/stabilizeOutdegreeClassMath'
 import type {
@@ -67,6 +71,22 @@ export type AuditProofStep =
         MaLuApplicationMode
 
       selectedValues:
+        readonly number[]
+    }
+  | {
+      type:
+        'run-avoidance'
+
+      target:
+        RunAvoidanceTarget
+
+      r:
+        number
+
+      side:
+        RunAvoidanceSide
+
+      selectedTotalOutdegrees:
         readonly number[]
     }
   | {
@@ -198,6 +218,16 @@ export type AuditProofStep =
         readonly MengerCapacityRule[]
     }
   | {
+      /*
+       * Simultaneous certified reservoir
+       * repairs.  The two arrays are paired:
+       *
+       *   qs[i] -> repairedOutdegrees[i].
+       *
+       * This covers both the original
+       * one-unit theorem and weighted
+       * reservoir repairs.
+       */
       type:
         'directed-menger-reservoir'
 

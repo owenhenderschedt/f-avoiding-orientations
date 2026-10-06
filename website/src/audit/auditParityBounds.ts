@@ -61,6 +61,8 @@ function wholeGraphAlreadyOriented(
       null ||
     state.maLuG !==
       null ||
+    state.runAvoidanceG !==
+      null ||
     state.hasanvandG !==
       null ||
     state.parityBoundsG !==

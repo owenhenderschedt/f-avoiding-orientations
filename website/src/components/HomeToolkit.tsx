@@ -10,6 +10,7 @@ type HomeToolId =
   | 'balanced'
   | 'avoid-c'
   | 'ma-lu'
+  | 'run-avoidance'
   | 'hasanvand'
   | 'parity'
   | 'two-factor'
@@ -59,6 +60,12 @@ const toolGroups: readonly {
         name: 'Ma–Lu',
         description:
           'Avoid a nonconsecutive forbidden list satisfying the local half-degree bound.',
+      },
+      {
+        id: 'run-avoidance',
+        name: 'Run Avoidance',
+        description:
+          'Avoid vertex-dependent low or high outdegree lists whenever no forbidden run is too long.',
       },
       {
         id: 'hasanvand',
@@ -348,6 +355,82 @@ function MaLuReference() {
   )
 }
 
+function RunAvoidanceReference() {
+  return (
+    <>
+      <section style={{ marginBottom: '32px' }}>
+        <h3 style={{ marginTop: 0 }}>
+          Run Avoidance Theorem
+        </h3>
+
+        <p>
+          Let <Math>{'H'}</Math> be any finite graph, let{' '}
+          <Math>{'r\\geq 1'}</Math>, and define
+        </p>
+
+        <Formula>
+          {'s_r=r+\\left\\lceil\\frac r2\\right\\rceil.'}
+        </Formula>
+
+        <p>
+          Give each vertex <Math>{'v'}</Math> its own forbidden
+          outdegree list <Math>{'F(v)'}</Math>. Suppose
+        </p>
+
+        <Formula>
+          {'F(v)\\subseteq\\{0,1,\\ldots,d_H(v)-s_r-1\\}'}
+        </Formula>
+
+        <p>
+          for every <Math>{'v\\in V(H)'}</Math>, and suppose no{' '}
+          <Math>{'F(v)'}</Math> contains{' '}
+          <Math>{'r+1'}</Math> consecutive integers. Then{' '}
+          <Math>{'H'}</Math> has an <Math>{'F'}</Math>-avoiding
+          orientation.
+        </p>
+      </section>
+
+      <section style={{ marginBottom: '32px' }}>
+        <h3>Symmetric high form</h3>
+
+        <p>
+          Reversing every edge gives the corresponding high-outdegree
+          version. If
+        </p>
+
+        <Formula>
+          {'F(v)\\subseteq\\{s_r+1,\\ldots,d_H(v)\\}'}
+        </Formula>
+
+        <p>
+          for every vertex, and again no list contains{' '}
+          <Math>{'r+1'}</Math> consecutive integers, then an{' '}
+          <Math>{'F'}</Math>-avoiding orientation exists.
+        </p>
+      </section>
+
+      <section>
+        <h3>Role in the toolkit</h3>
+
+        <p>
+          The forbidden list may vary from vertex to vertex. This is
+          important after a Lovász partition: once the crossing edges
+          have been oriented, a chosen set of final total outdegrees
+          translates into a different internal list at each possible
+          internal degree.
+        </p>
+
+        <p style={{ marginBottom: 0 }}>
+          A Run Avoidance application uses either the low theorem or
+          the high theorem. The playground also permits strategically
+          eliminating safe total outdegrees when doing so makes the
+          theorem applicable.
+        </p>
+      </section>
+    </>
+  )
+}
+
 function HasanvandReference() {
   return (
     <>
@@ -540,6 +623,8 @@ function GeneralToolReference({
       return <AvoidCReference />
     case 'ma-lu':
       return <MaLuReference />
+    case 'run-avoidance':
+      return <RunAvoidanceReference />
     case 'hasanvand':
       return <HasanvandReference />
     case 'parity':

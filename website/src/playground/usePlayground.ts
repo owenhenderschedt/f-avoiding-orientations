@@ -15,6 +15,14 @@ import {
   createHasanvandApplication,
   type HasanvandApplication,
 } from '../tools/hasanvandApplication'
+import {
+  createRunAvoidanceApplication,
+  type RunAvoidanceApplication,
+} from '../tools/runAvoidanceApplication'
+import type {
+  RunAvoidanceSide,
+  RunAvoidanceTarget,
+} from '../tools/runAvoidanceMath'
 import type {
   HasanvandDegreeRule,
   HasanvandMode,
@@ -95,6 +103,11 @@ export type PlaygroundMove =
       type: 'hasanvand-compression'
       application:
         HasanvandApplication
+    }
+  | {
+      type: 'run-avoidance'
+      application:
+        RunAvoidanceApplication
     }
   | {
       type: 'avoid-c-whole-graph'
@@ -180,6 +193,15 @@ export type PlaygroundState = {
   hasanvandR:
     HasanvandApplication | null
 
+  runAvoidanceG:
+    RunAvoidanceApplication | null
+
+  runAvoidanceL:
+    RunAvoidanceApplication | null
+
+  runAvoidanceR:
+    RunAvoidanceApplication | null
+
   /*
    * Parity Bounds is currently a
    * whole-working-graph constructor.
@@ -225,6 +247,10 @@ const initialState:
   hasanvandG: null,
   hasanvandL: null,
   hasanvandR: null,
+
+  runAvoidanceG: null,
+  runAvoidanceL: null,
+  runAvoidanceR: null,
 
   parityBoundsG:
     null,
@@ -391,6 +417,38 @@ function deriveState(
         'R'
       ) {
         state.hasanvandR =
+          move.application
+      }
+    }
+
+    if (
+      move.type ===
+      'run-avoidance'
+    ) {
+      if (
+        move.application
+          .target ===
+        'G'
+      ) {
+        state.runAvoidanceG =
+          move.application
+      }
+
+      if (
+        move.application
+          .target ===
+        'L'
+      ) {
+        state.runAvoidanceL =
+          move.application
+      }
+
+      if (
+        move.application
+          .target ===
+        'R'
+      ) {
+        state.runAvoidanceR =
           move.application
       }
     }
@@ -567,6 +625,8 @@ export default function usePlayground(
       null ||
     state.hasanvandG !==
       null ||
+    state.runAvoidanceG !==
+      null ||
     state.parityBoundsG !==
       null
 
@@ -577,6 +637,8 @@ export default function usePlayground(
     state.maLuL !==
       null ||
     state.hasanvandL !==
+      null ||
+    state.runAvoidanceL !==
       null
 
   const rightAlreadyOriented =
@@ -586,6 +648,8 @@ export default function usePlayground(
     state.maLuR !==
       null ||
     state.hasanvandR !==
+      null ||
+    state.runAvoidanceR !==
       null
 
   const startingOrientationComplete =
@@ -662,6 +726,15 @@ export default function usePlayground(
 
         hasanvandR:
           state.hasanvandR,
+
+        runAvoidanceG:
+          state.runAvoidanceG,
+
+        runAvoidanceL:
+          state.runAvoidanceL,
+
+        runAvoidanceR:
+          state.runAvoidanceR,
       },
     )
 
@@ -1382,6 +1455,133 @@ export default function usePlayground(
   }
 
   /*
+   * Apply the generalized Run Avoidance
+   * theorem to the current residual graph
+   * or to one Lovasz part.
+   *
+   * selectedTotalOutdegrees are FINAL
+   * total outdegree classes. They may
+   * include currently safe classes:
+   * deliberately removing a safe class
+   * can enable a later repair theorem.
+   */
+  function applyRunAvoidance(
+    target:
+      RunAvoidanceTarget,
+
+    r: number,
+
+    side:
+      RunAvoidanceSide,
+
+    selectedTotalOutdegrees:
+      readonly number[],
+  ) {
+    if (
+      hasAnyDirectedMengerRepair ||
+      state.parityBoundsG !==
+        null ||
+      selectedTotalOutdegrees.length ===
+        0
+    ) {
+      return
+    }
+
+    if (
+      target === 'G'
+    ) {
+      if (
+        state.partition !==
+          null ||
+        state
+          .stabilizeOutdegreeClass !==
+          null ||
+        wholeGraphAlreadyOriented
+      ) {
+        return
+      }
+    } else {
+      if (
+        state.partition ===
+          null ||
+        state.acrossDirection ===
+          null
+      ) {
+        return
+      }
+
+      if (
+        state
+          .stabilizeOutdegreeClass
+          ?.target ===
+        target
+      ) {
+        return
+      }
+
+      if (
+        target === 'L' &&
+        leftAlreadyOriented
+      ) {
+        return
+      }
+
+      if (
+        target === 'R' &&
+        rightAlreadyOriented
+      ) {
+        return
+      }
+    }
+
+    const application =
+      createRunAvoidanceApplication({
+        target,
+
+        workingDegree:
+          residualGraph
+            .workingDegree,
+
+        fixedOutdegreeContribution:
+          residualGraph
+            .fixedOutdegreeContribution,
+
+        partition:
+          state.partition,
+
+        acrossDirection:
+          state
+            .acrossDirection,
+
+        r,
+
+        side,
+
+        selectedTotalOutdegrees,
+      })
+
+    if (
+      application ===
+      null
+    ) {
+      return
+    }
+
+    setMoves(
+      (current) => [
+        ...current,
+
+        {
+          type:
+            'run-avoidance',
+
+          application,
+        },
+      ],
+    )
+  }
+
+  /*
    * New whole-working-graph constructor.
    *
    * It may be applied after one or more
@@ -1812,6 +2012,15 @@ export default function usePlayground(
     hasanvandApplicationR:
       state.hasanvandR,
 
+    runAvoidanceG:
+      state.runAvoidanceG,
+
+    runAvoidanceL:
+      state.runAvoidanceL,
+
+    runAvoidanceR:
+      state.runAvoidanceR,
+
     /*
      * New Parity Bounds state.
      */
@@ -1891,6 +2100,8 @@ export default function usePlayground(
     applyMaLuPart,
 
     applyHasanvandCompression,
+
+    applyRunAvoidance,
 
     /*
      * New action.
